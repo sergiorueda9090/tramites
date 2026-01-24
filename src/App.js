@@ -1,24 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { ThemeProvider, CssBaseline, Snackbar, Alert } from '@mui/material';
+import AppRouter from './router/AppRouter';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import AppBackdrop from './components/common/AppBackdrop';
+import { createAppTheme } from './theme/theme';
+import { selectThemeMode, selectSnackbar, hideSnackbar } from './store/uiStore/uiStore';
 
 function App() {
+  const dispatch = useDispatch();
+  const themeMode = useSelector(selectThemeMode);
+  const snackbar = useSelector(selectSnackbar);
+
+  const theme = useMemo(() => createAppTheme(themeMode), [themeMode]);
+
+  const handleCloseSnackbar = () => {
+    dispatch(hideSnackbar());
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <ErrorBoundary fullPage>
+        <AppRouter />
+
+        {/* Global Backdrop */}
+        <AppBackdrop />
+
+        {/* Global Snackbar */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          Learn React
-        </a>
-      </header>
-    </div>
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 
