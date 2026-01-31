@@ -4,13 +4,14 @@ import MainLayout from '../components/layout/MainLayout';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import PublicRoute from '../components/auth/PublicRoute';
 import SessionManager from '../components/auth/SessionManager';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
 
 // Lazy load pages
-const Dashboard = lazy(() => import('../pages/Dashboard'));
-const Usuarios  = lazy(() => import('../pages/Usuarios'));
-const Login     = lazy(() => import('../pages/Login'));
+const Dashboard       = lazy(() => import('../pages/Dashboard'));
+const Usuarios        = lazy(() => import('../pages/Usuarios'));
+const Login           = lazy(() => import('../pages/Login'));
+const Configuraciones = lazy(() => import('../pages/Configuraciones/Configuraciones'));
 
 // Placeholder pages for routes that are not yet implemented
 const PlaceholderPage = ({ title }) => (
@@ -54,7 +55,7 @@ const AppRouter = () => {
             <Route path="certificados" element={<PlaceholderPage title="Certificados" />} />
             <Route path="usuarios" element={<Usuarios />} />
             <Route path="reportes" element={<PlaceholderPage title="Reportes" />} />
-            <Route path="configuracion" element={<PlaceholderPage title="Configuración" />} />
+            <Route path="configuracion" element={<Configuraciones />} />
             <Route path="profile" element={<PlaceholderPage title="Mi Perfil" />} />
           </Route>
 

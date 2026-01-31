@@ -1,9 +1,14 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Box, Typography, Link, useTheme } from '@mui/material';
+import { selectLayoutStyle } from '../../store/uiStore/uiStore';
 
 const Footer = () => {
   const theme = useTheme();
   const currentYear = new Date().getFullYear();
+  const layoutStyle = useSelector(selectLayoutStyle);
+
+  const isColored = layoutStyle === 'colored';
 
   return (
     <Box
@@ -13,7 +18,8 @@ const Footer = () => {
         px: 3,
         mt: 'auto',
         borderTop: `1px solid ${theme.palette.divider}`,
-        bgcolor: 'background.paper',
+        bgcolor: isColored ? 'primary.main' : 'background.paper',
+        color: isColored ? 'primary.contrastText' : 'text.primary',
       }}
     >
       <Box
@@ -25,14 +31,17 @@ const Footer = () => {
           gap: 1,
         }}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          sx={{ color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}
+        >
           © {currentYear} Movilidad2A. Todos los derechos reservados.
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Link
             href="#"
             variant="body2"
-            color="text.secondary"
+            sx={{ color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}
             underline="hover"
           >
             Términos
@@ -40,7 +49,7 @@ const Footer = () => {
           <Link
             href="#"
             variant="body2"
-            color="text.secondary"
+            sx={{ color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}
             underline="hover"
           >
             Privacidad
@@ -48,12 +57,15 @@ const Footer = () => {
           <Link
             href="#"
             variant="body2"
-            color="text.secondary"
+            sx={{ color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}
             underline="hover"
           >
             Soporte
           </Link>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            sx={{ color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary' }}
+          >
             v1.0.0
           </Typography>
         </Box>

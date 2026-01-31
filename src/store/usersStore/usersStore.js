@@ -7,10 +7,14 @@ const initialState = {
   loading: false,
   error: null,
 
-  // Paginación
-  page: 0,
-  pageSize: DEFAULT_PAGE_SIZE,
-  totalRows: 0,
+  // Paginación (del servidor - formato DRF)
+  pagination: {
+    count: 0,
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+    next: null,
+    previous: null,
+  },
 
   // Ordenamiento
   sortField: null,
@@ -19,13 +23,15 @@ const initialState = {
   // Filtros
   filters: {
     search: '',
-    rol: '',
+    role: '',
     estado: '',
+    is_active: '',
   },
   appliedFilters: {
     search: '',
-    rol: '',
+    role: '',
     estado: '',
+    is_active: '',
   },
 
   // Modal
@@ -35,11 +41,14 @@ const initialState = {
   // Formulario
   form: {
     id: null,
-    nombre: '',
+    first_name: '',
+    last_name: '',
+    username: '',
     email: '',
-    rol: '',
+    role: '',
     password: '',
-    estado: true,
+    is_active: false,
+    image: null,
   },
 };
 
@@ -59,17 +68,26 @@ export const usersStore = createSlice({
     // Lista de usuarios
     setUsers: (state, action) => {
       state.users = action.payload;
-      state.totalRows = action.payload.length;
       state.loading = false;
     },
 
-    // Paginación
+    // Paginación (formato DRF: count, next, previous)
+    setPagination: (state, action) => {
+      const { count, next, previous, page, pageSize } = action.payload;
+      state.pagination = {
+        count: count || 0,
+        page: page || state.pagination.page,
+        pageSize: pageSize || state.pagination.pageSize,
+        next: next || null,
+        previous: previous || null,
+      };
+    },
     setPage: (state, action) => {
-      state.page = action.payload;
+      state.pagination.page = action.payload;
     },
     setPageSize: (state, action) => {
-      state.pageSize = action.payload;
-      state.page = 0;
+      state.pagination.pageSize = action.payload;
+      state.pagination.page = 1;
     },
 
     // Ordenamiento
@@ -90,12 +108,12 @@ export const usersStore = createSlice({
     },
     applyFilters: (state) => {
       state.appliedFilters = { ...state.filters };
-      state.page = 0;
+      state.pagination.page = 1;
     },
     clearFilters: (state) => {
-      state.filters = { search: '', rol: '', estado: '' };
-      state.appliedFilters = { search: '', rol: '', estado: '' };
-      state.page = 0;
+      state.filters = { search: '', role: '', estado: '', is_active: '' };
+      state.appliedFilters = { search: '', role: '', estado: '', is_active: '' };
+      state.pagination.page = 1;
     },
     clearFilter: (state, action) => {
       const field = action.payload;
@@ -109,11 +127,13 @@ export const usersStore = createSlice({
       state.selectedUser = null;
       state.form = {
         id: null,
-        nombre: '',
+        first_name: '',
+        last_name: '',
         email: '',
-        rol: '',
+        role: '',
         password: '',
-        estado: true,
+        is_active: false,
+        image: null,
       };
     },
     openEditModal: (state, action) => {
@@ -121,11 +141,14 @@ export const usersStore = createSlice({
       state.selectedUser = action.payload;
       state.form = {
         id: action.payload.id,
-        nombre: action.payload.nombre,
-        email: action.payload.email,
-        rol: action.payload.rol,
+        first_name: action.payload.first_name || '',
+        username: action.payload.username || '',
+        last_name: action.payload.last_name || '',
+        email: action.payload.email || '',
+        role: action.payload.role || '',
         password: '',
-        estado: action.payload.estado,
+        is_active: action.payload.is_active ?? false,
+        image: action.payload.image || null,
       };
     },
     closeModal: (state) => {
@@ -142,23 +165,6 @@ export const usersStore = createSlice({
     resetForm: (state) => {
       state.form = initialState.form;
     },
-
-    // CRUD
-    addUser: (state, action) => {
-      state.users.unshift(action.payload);
-      state.totalRows = state.users.length;
-    },
-    updateUser: (state, action) => {
-      const index = state.users.findIndex(u => u.id === action.payload.id);
-      if (index !== -1) {
-        state.users[index] = action.payload;
-      }
-    },
-    removeUser: (state, action) => {
-      state.users = state.users.filter(u => u.id !== action.payload);
-      state.totalRows = state.users.length;
-    },
-
     // Reset
     resetStore: () => initialState,
   },
@@ -168,6 +174,7 @@ export const {
   setLoading,
   setError,
   setUsers,
+  setPagination,
   setPage,
   setPageSize,
   setSort,
@@ -180,9 +187,6 @@ export const {
   closeModal,
   updateForm,
   resetForm,
-  addUser,
-  updateUser,
-  removeUser,
   resetStore,
 } = usersStore.actions;
 
@@ -190,9 +194,16 @@ export const {
 export const selectUsers = (state) => state.usersStore.users;
 export const selectLoading = (state) => state.usersStore.loading;
 export const selectError = (state) => state.usersStore.error;
-export const selectPage = (state) => state.usersStore.page;
-export const selectPageSize = (state) => state.usersStore.pageSize;
-export const selectTotalRows = (state) => state.usersStore.totalRows;
+export const selectPagination = (state) => state.usersStore.pagination;
+export const selectPage = (state) => state.usersStore.pagination.page;
+export const selectPageSize = (state) => state.usersStore.pagination.pageSize;
+export const selectTotalRows = (state) => state.usersStore.pagination.count;
+export const selectTotalPages = (state) => {
+  const { count, pageSize } = state.usersStore.pagination;
+  return Math.ceil(count / pageSize) || 1;
+};
+export const selectHasNext = (state) => state.usersStore.pagination.next !== null;
+export const selectHasPrevious = (state) => state.usersStore.pagination.previous !== null;
 export const selectSortField = (state) => state.usersStore.sortField;
 export const selectSortOrder = (state) => state.usersStore.sortOrder;
 export const selectFilters = (state) => state.usersStore.filters;
@@ -209,29 +220,35 @@ export const selectActiveFilters = (state) => {
     .map(([key, value]) => ({ key, value }));
 };
 
-// Selector para datos filtrados
+// Selector para filtrado local (dentro de la página actual)
 export const selectFilteredUsers = (state) => {
   const { users, appliedFilters } = state.usersStore;
   const { search, rol, estado } = appliedFilters;
 
+  if (!search && !rol && estado === '') {
+    return users;
+  }
+
   return users.filter((user) => {
     if (search) {
       const searchLower = search.toLowerCase();
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
       if (
-        !user.nombre.toLowerCase().includes(searchLower) &&
-        !user.email.toLowerCase().includes(searchLower)
+        !fullName.includes(searchLower) &&
+        !(user.email || '').toLowerCase().includes(searchLower) &&
+        !(user.username || '').toLowerCase().includes(searchLower)
       ) {
         return false;
       }
     }
 
-    if (rol && user.rol !== rol) {
+    if (rol && user.idrol !== parseInt(rol)) {
       return false;
     }
 
     if (estado !== '') {
       const estadoBool = estado === 'true';
-      if (user.estado !== estadoBool) {
+      if (user.is_active !== estadoBool) {
         return false;
       }
     }
@@ -240,7 +257,7 @@ export const selectFilteredUsers = (state) => {
   });
 };
 
-// Selector para datos ordenados
+// Selector para datos ordenados localmente
 export const selectSortedUsers = (state) => {
   const filteredUsers = selectFilteredUsers(state);
   const { sortField, sortOrder } = state.usersStore;
@@ -267,18 +284,14 @@ export const selectSortedUsers = (state) => {
   });
 };
 
-// Selector para datos paginados
+// Selector para datos paginados (la paginación es del servidor)
 export const selectPaginatedUsers = (state) => {
-  const sortedUsers = selectSortedUsers(state);
-  const { page, pageSize } = state.usersStore;
-  const start = page * pageSize;
-  const end = start + pageSize;
-  return sortedUsers.slice(start, end);
+  return selectSortedUsers(state);
 };
 
-// Selector para total de filas filtradas
+// Selector para total de filas (del servidor)
 export const selectFilteredTotalRows = (state) => {
-  return selectFilteredUsers(state).length;
+  return state.usersStore.pagination.count;
 };
 
 export default usersStore.reducer;

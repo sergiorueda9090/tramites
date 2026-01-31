@@ -1,7 +1,18 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+const getStoredCustomColors = () => {
+  try {
+    const stored = localStorage.getItem('customColors');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
+
 const initialState = {
   themeMode: localStorage.getItem('themeMode') || 'light',
+  customColors: getStoredCustomColors(),
+  layoutStyle: localStorage.getItem('layoutStyle') || 'default',
   sidebarOpen: true,
   sidebarCollapsed: false,
   notifications: [],
@@ -29,6 +40,18 @@ export const uiStore = createSlice({
     setThemeMode: (state, action) => {
       state.themeMode = action.payload;
       localStorage.setItem('themeMode', action.payload);
+    },
+    setCustomColors: (state, action) => {
+      state.customColors = action.payload;
+      localStorage.setItem('customColors', JSON.stringify(action.payload));
+    },
+    resetCustomColors: (state) => {
+      state.customColors = null;
+      localStorage.removeItem('customColors');
+    },
+    setLayoutStyle: (state, action) => {
+      state.layoutStyle = action.payload;
+      localStorage.setItem('layoutStyle', action.payload);
     },
     toggleSidebar: (state) => {
       state.sidebarOpen = !state.sidebarOpen;
@@ -112,6 +135,9 @@ export const uiStore = createSlice({
 export const {
   toggleThemeMode,
   setThemeMode,
+  setCustomColors,
+  resetCustomColors,
+  setLayoutStyle,
   toggleSidebar,
   setSidebarOpen,
   toggleSidebarCollapsed,
@@ -132,6 +158,8 @@ export const {
 
 // Selectors
 export const selectThemeMode = (state) => state.uiStore.themeMode;
+export const selectCustomColors = (state) => state.uiStore.customColors;
+export const selectLayoutStyle = (state) => state.uiStore.layoutStyle;
 export const selectSidebarOpen = (state) => state.uiStore.sidebarOpen;
 export const selectSidebarCollapsed = (state) => state.uiStore.sidebarCollapsed;
 export const selectNotifications = (state) => state.uiStore.notifications;

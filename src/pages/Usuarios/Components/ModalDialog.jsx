@@ -42,9 +42,15 @@ const UsuarioDialog = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField
             fullWidth
+            label="username"
+            value={form.username}
+            onChange={handleChange('username')}
+          />
+          <TextField
+            fullWidth
             label="Nombre"
-            value={form.nombre}
-            onChange={handleChange('nombre')}
+            value={form.first_name}
+            onChange={handleChange('first_name')}
           />
           <TextField
             fullWidth
@@ -54,11 +60,11 @@ const UsuarioDialog = ({
             onChange={handleChange('email')}
           />
           <FormControl fullWidth>
-            <InputLabel>Rol</InputLabel>
+            <InputLabel>Role</InputLabel>
             <Select
-              label="Rol"
-              value={form.rol}
-              onChange={handleChange('rol')}
+              label="Role"
+              value={form.role}
+              onChange={handleChange('role')}
             >
               {Object.entries(USER_ROLE_LABELS).map(([value, label]) => (
                 <MenuItem key={value} value={value}>
@@ -79,8 +85,8 @@ const UsuarioDialog = ({
           <FormControlLabel
             control={
               <Switch
-                checked={form.estado}
-                onChange={handleChange('estado')}
+                checked={form.is_active}
+                onChange={handleChange('is_active')}
               />
             }
             label="Usuario activo"

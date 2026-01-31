@@ -183,13 +183,52 @@ export const apiService = {
     return response.data;
   },
 
+  /**
+   * POST con multipart/form-data (para endpoints que requieren FormParser)
+   */
+  postForm: async (url, data = {}) => {
+    const formData = data instanceof FormData ? data : objectToFormData(data);
+    const response = await api.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   put: async (url, data = {}) => {
     const response = await api.put(url, data);
     return response.data;
   },
 
+  /**
+   * PUT con multipart/form-data (para endpoints que requieren FormParser)
+   */
+  putForm: async (url, data = {}) => {
+    const formData = data instanceof FormData ? data : objectToFormData(data);
+    const response = await api.put(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   patch: async (url, data = {}) => {
     const response = await api.patch(url, data);
+    return response.data;
+  },
+
+  /**
+   * PATCH con multipart/form-data (para endpoints que requieren FormParser)
+   */
+  patchForm: async (url, data = {}) => {
+    const formData = data instanceof FormData ? data : objectToFormData(data);
+    const response = await api.patch(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -218,6 +257,43 @@ export const apiService = {
 
     return response.data;
   },
+};
+
+/**
+ * Convierte un objeto a FormData
+ * @param {Object} obj - Objeto a convertir
+ * @returns {FormData}
+ */
+const objectToFormData = (obj) => {
+  const formData = new FormData();
+
+  Object.entries(obj).forEach(([key, value]) => {
+    // Ignorar valores null o undefined
+    if (value === null || value === undefined) return;
+
+    // Manejar archivos (File o Blob)
+    if (value instanceof File || value instanceof Blob) {
+      formData.append(key, value);
+    }
+    // Manejar booleanos
+    else if (typeof value === 'boolean') {
+      formData.append(key, value ? 'true' : 'false');
+    }
+    // Manejar arrays
+    else if (Array.isArray(value)) {
+      value.forEach((item) => formData.append(key, item));
+    }
+    // Manejar objetos (convertir a JSON string)
+    else if (typeof value === 'object') {
+      formData.append(key, JSON.stringify(value));
+    }
+    // Manejar otros valores (string, number)
+    else {
+      formData.append(key, value);
+    }
+  });
+
+  return formData;
 };
 
 export default api;

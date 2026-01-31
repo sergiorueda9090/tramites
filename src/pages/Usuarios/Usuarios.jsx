@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -16,6 +16,7 @@ import {
   selectSelectedUser,
   selectForm,
   selectLoading,
+  selectAppliedFilters,
   setPage,
   setPageSize,
   setSort,
@@ -24,7 +25,6 @@ import {
   clearFilters,
   clearFilter,
   openCreateModal,
-  openEditModal,
   closeModal,
   updateForm,
 } from '../../store/usersStore/usersStore';
@@ -34,6 +34,8 @@ import {
   saveThunk,
   deleteThunk,
   viewThunk,
+  showThunk,
+  toggleStatusThunk,
 } from '../../store/usersStore/usersThunks';
 
 import {
@@ -48,6 +50,7 @@ const Usuarios = () => {
   // Selectores
   const filters = useSelector(selectFilters);
   const activeFilters = useSelector(selectActiveFilters);
+  const appliedFilters = useSelector(selectAppliedFilters);
   const page = useSelector(selectPage);
   const pageSize = useSelector(selectPageSize);
   const sortField = useSelector(selectSortField);
@@ -59,10 +62,51 @@ const Usuarios = () => {
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
 
-  // Cargar usuarios al montar
+  /**
+   * Construye los parámetros de consulta para el backend
+   */
+  const buildQueryParams = useCallback(() => {
+    const params = {
+      page,
+      page_size: pageSize,
+    };
+
+    // Agregar búsqueda si existe
+    if (appliedFilters.search) {
+      params.search = appliedFilters.search;
+    }
+
+    // Agregar filtro de role si existe
+    if (appliedFilters.role) {
+      params.role = appliedFilters.role;
+    }
+
+    // Agregar filtro de estado si existe
+    if (appliedFilters.is_active !== '') {
+      params.is_active = appliedFilters.is_active;
+    }
+
+    // Agregar ordenamiento si existe
+    if (sortField) {
+      // El backend usa formato: 'field' para asc, '-field' para desc
+      params.ordering = sortOrder === 'desc' ? `-${sortField}` : sortField;
+    }
+
+    return params;
+  }, [page, pageSize, appliedFilters, sortField, sortOrder]);
+
+  /**
+   * Cargar usuarios del backend
+   */
+  const fetchUsers = useCallback(() => {
+    const params = buildQueryParams();
+    dispatch(listAllThunk(params));
+  }, [dispatch, buildQueryParams]);
+
+  // Cargar usuarios al montar y cuando cambian los parámetros
   useEffect(() => {
-    dispatch(listAllThunk());
-  }, [dispatch]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Handlers de paginación
   const handlePageChange = (newPage) => {
@@ -101,11 +145,15 @@ const Usuarios = () => {
   };
 
   const handleEdit = (user) => {
-    dispatch(openEditModal(user));
+    dispatch(showThunk(user.id));
   };
 
   const handleDelete = (user) => {
     dispatch(deleteThunk(user));
+  };
+
+  const handleToggleStatus = (user) => {
+    dispatch(toggleStatusThunk(user));
   };
 
   const handleCreate = () => {
@@ -175,6 +223,7 @@ const Usuarios = () => {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onToggleStatus={handleToggleStatus}
       />
 
       {/* Create/Edit Dialog */}

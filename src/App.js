@@ -2,17 +2,18 @@ import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { ThemeProvider, CssBaseline, Snackbar, Alert } from '@mui/material';
 import AppRouter from './router/AppRouter';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import AppBackdrop from './components/common/AppBackdrop';
+import ErrorBoundary from './components/ErrorBoundary';
+import AppBackdrop from './components/AppBackdrop';
 import { createAppTheme } from './theme/theme';
-import { selectThemeMode, selectSnackbar, hideSnackbar } from './store/uiStore/uiStore';
+import { selectThemeMode, selectCustomColors, selectSnackbar, hideSnackbar } from './store/uiStore/uiStore';
 
 function App() {
   const dispatch = useDispatch();
   const themeMode = useSelector(selectThemeMode);
+  const customColors = useSelector(selectCustomColors);
   const snackbar = useSelector(selectSnackbar);
 
-  const theme = useMemo(() => createAppTheme(themeMode), [themeMode]);
+  const theme = useMemo(() => createAppTheme(themeMode, customColors), [themeMode, customColors]);
 
   const handleCloseSnackbar = () => {
     dispatch(hideSnackbar());

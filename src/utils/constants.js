@@ -50,24 +50,23 @@ export const INSPECTION_STATUS_COLORS = {
 };
 
 export const USER_ROLES = {
-  ADMIN: 'admin',
-  TECNICO: 'tecnico',
-  RECEPCIONISTA: 'recepcionista',
-  SUPERVISOR: 'supervisor',
+  SUPERADMIN: 'SuperAdmin',
+  ADMIN     : 'admin',
+  AUXILIAR  : 'Auxiliar',
+
 };
 
 export const USER_ROLE_LABELS = {
-  [USER_ROLES.ADMIN]: 'Administrador',
-  [USER_ROLES.TECNICO]: 'Técnico',
-  [USER_ROLES.RECEPCIONISTA]: 'Recepcionista',
-  [USER_ROLES.SUPERVISOR]: 'Supervisor',
+  [USER_ROLES.SUPERADMIN]: 'SuperAdmin',
+  [USER_ROLES.ADMIN]: 'admin',
+  [USER_ROLES.AUXILIAR]: 'Auxiliar',
 };
 
 export const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 60;
 
-export const PAGINATION_OPTIONS = [10, 25, 50, 100];
-export const DEFAULT_PAGE_SIZE = 25;
+export const PAGINATION_OPTIONS = [5, 10, 25, 50, 100];
+export const DEFAULT_PAGE_SIZE = 5;
 
 export const DATE_FORMAT = 'DD/MM/YYYY';
 export const DATE_TIME_FORMAT = 'DD/MM/YYYY HH:mm';
@@ -75,9 +74,9 @@ export const TIME_FORMAT = 'HH:mm';
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/',
-    REFRESH: '/auth/refresh/',
-    LOGOUT: '/auth/logout/',
+    LOGIN   : '/api/token/',
+    REFRESH : '/auth/refresh/',
+    LOGOUT  : '/auth/logout/',
   },
   USERS: '/users/',
   INSPECTIONS: '/inspecciones/',

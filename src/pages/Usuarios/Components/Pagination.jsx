@@ -2,19 +2,19 @@ import React from 'react';
 import {
   Box,
   IconButton,
+  Tooltip,
   Typography,
   Select,
   MenuItem,
   FormControl,
   useTheme,
   alpha,
-  Tooltip,
 } from '@mui/material';
 import FirstPageIcon from '@mui/icons-material/FirstPage';
 import LastPageIcon from '@mui/icons-material/LastPage';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { PAGINATION_OPTIONS } from '../../utils/constants';
+import { PAGINATION_OPTIONS } from '../../../utils/constants';
 
 const Pagination = ({
   page = 0,
@@ -66,7 +66,6 @@ const Pagination = ({
     }
   };
 
-  // Generar botones de página
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = compact ? 3 : 5;
@@ -130,19 +129,13 @@ const Pagination = ({
           fontSize: '0.875rem',
           fontWeight: isActive ? 600 : 400,
           transition: 'all 0.2s ease',
-          backgroundColor: isActive
-            ? 'primary.main'
-            : 'transparent',
-          color: isActive
-            ? 'primary.contrastText'
-            : 'text.secondary',
+          backgroundColor: isActive ? 'primary.main' : 'transparent',
+          color: isActive ? 'primary.contrastText' : 'text.secondary',
           '&:hover': {
             backgroundColor: isActive
               ? 'primary.dark'
               : alpha(theme.palette.primary.main, 0.08),
-            color: isActive
-              ? 'primary.contrastText'
-              : 'primary.main',
+            color: isActive ? 'primary.contrastText' : 'primary.main',
             transform: 'scale(1.05)',
           },
           '&:active': {
@@ -169,7 +162,6 @@ const Pagination = ({
         backgroundColor: alpha(theme.palette.background.default, 0.5),
       }}
     >
-      {/* Información de filas y selector de cantidad */}
       <Box
         sx={{
           display: 'flex',
@@ -178,7 +170,6 @@ const Pagination = ({
           flexWrap: 'wrap',
         }}
       >
-        {/* Selector de filas por página */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography
             variant="body2"
@@ -224,7 +215,6 @@ const Pagination = ({
           </Typography>
         </Box>
 
-        {/* Información de registros */}
         {showRowsInfo && (
           <Box
             sx={{
@@ -262,7 +252,6 @@ const Pagination = ({
         )}
       </Box>
 
-      {/* Controles de navegación */}
       <Box
         sx={{
           display: 'flex',
@@ -287,7 +276,6 @@ const Pagination = ({
           tooltip="Página anterior"
         />
 
-        {/* Botones de página */}
         <Box
           sx={{
             display: 'flex',
@@ -296,7 +284,6 @@ const Pagination = ({
             mx: 1,
           }}
         >
-          {/* Mostrar puntos suspensivos al inicio si es necesario */}
           {pageNumbers.length > 0 && pageNumbers[0] > 0 && (
             <>
               <PageButton pageNum={0} />
@@ -312,12 +299,10 @@ const Pagination = ({
             </>
           )}
 
-          {/* Páginas visibles */}
           {pageNumbers.map((pageNum) => (
             <PageButton key={pageNum} pageNum={pageNum} />
           ))}
 
-          {/* Mostrar puntos suspensivos al final si es necesario */}
           {pageNumbers.length > 0 && pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
             <>
               {pageNumbers[pageNumbers.length - 1] < totalPages - 2 && (

@@ -8,6 +8,7 @@ import {
   Typography,
   Badge,
   Avatar,
+  AvatarGroup,
   Menu,
   MenuItem,
   Box,
@@ -19,6 +20,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -32,6 +34,7 @@ import {
   toggleSidebar,
   toggleThemeMode,
   selectThemeMode,
+  selectLayoutStyle,
   selectUnreadNotificationsCount,
 } from '../../store/uiStore/uiStore';
 import { loginFail } from '../../store/authStore/authStore';
@@ -49,6 +52,15 @@ const routeLabels = {
   [ROUTES.PROFILE]: 'Perfil',
 };
 
+// Usuarios conectados simulados (esto vendría de un WebSocket o API en producción)
+const connectedUsers = [
+  { id: 1, name: 'María García', avatar: null, color: '#e91e63' },
+  { id: 2, name: 'Carlos López', avatar: null, color: '#2196f3' },
+  { id: 3, name: 'Ana Martínez', avatar: null, color: '#4caf50' },
+  { id: 4, name: 'Pedro Sánchez', avatar: null, color: '#ff9800' },
+  { id: 5, name: 'Laura Torres', avatar: null, color: '#9c27b0' },
+];
+
 const Navbar = ({ sidebarCollapsed }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -58,7 +70,10 @@ const Navbar = ({ sidebarCollapsed }) => {
 
   const user = useSelector((state) => state.authStore);
   const themeMode = useSelector(selectThemeMode);
+  const layoutStyle = useSelector(selectLayoutStyle);
   const unreadCount = useSelector(selectUnreadNotificationsCount);
+
+  const isColored = layoutStyle === 'colored';
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
@@ -103,17 +118,20 @@ const Navbar = ({ sidebarCollapsed }) => {
   return (
     <AppBar
       position="fixed"
+      elevation={0}
       sx={{
         width: { md: `calc(100% - ${drawerWidth}px)` },
         ml: { md: `${drawerWidth}px` },
-        bgcolor: 'background.paper',
-        color: 'text.primary',
+        bgcolor: isColored ? 'primary.main' : 'background.paper',
+        color: isColored ? 'primary.contrastText' : 'text.primary',
+        borderRadius: 0,
+        borderBottom: '1px solid',
+        borderColor: isColored ? 'transparent' : 'divider',
         transition: theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.leavingScreen,
         }),
       }}
-      elevation={1}
     >
       <Toolbar>
         <IconButton
@@ -128,7 +146,12 @@ const Navbar = ({ sidebarCollapsed }) => {
 
         <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}>
           <Breadcrumbs
-            separator={<NavigateNextIcon fontSize="small" />}
+            separator={
+              <NavigateNextIcon
+                fontSize="small"
+                sx={{ color: isColored ? 'rgba(255,255,255,0.7)' : 'text.secondary' }}
+              />
+            }
             aria-label="breadcrumb"
           >
             {breadcrumbs.map((crumb, index) => {
@@ -138,8 +161,12 @@ const Navbar = ({ sidebarCollapsed }) => {
               return isLast ? (
                 <Typography
                   key={crumb.path}
-                  color="text.primary"
-                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    color: isColored ? 'white' : 'text.primary',
+                  }}
                 >
                   {Icon && <Icon fontSize="small" />}
                   {crumb.label}
@@ -148,13 +175,17 @@ const Navbar = ({ sidebarCollapsed }) => {
                 <Link
                   key={crumb.path}
                   underline="hover"
-                  color="inherit"
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate(crumb.path);
                   }}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    color: isColored ? 'rgba(255,255,255,0.8)' : 'inherit',
+                  }}
                 >
                   {Icon && <Icon fontSize="small" />}
                   {crumb.label}
@@ -164,7 +195,101 @@ const Navbar = ({ sidebarCollapsed }) => {
           </Breadcrumbs>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Usuarios conectados */}
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 0,
+              bgcolor: isColored ? 'rgba(255,255,255,0.1)' : 'action.hover',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
+              <FiberManualRecordIcon
+                sx={{
+                  fontSize: 10,
+                  color: 'success.main',
+                  animation: 'pulse 2s infinite',
+                  '@keyframes pulse': {
+                    '0%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                    '100%': { opacity: 1 },
+                  },
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isColored ? 'rgba(255,255,255,0.8)' : 'text.secondary',
+                  fontWeight: 500,
+                }}
+              >
+                {connectedUsers.length} en línea
+              </Typography>
+            </Box>
+            <AvatarGroup
+              max={4}
+              sx={{
+                '& .MuiAvatar-root': {
+                  width: 28,
+                  height: 28,
+                  fontSize: '0.75rem',
+                  borderRadius: 0,
+                  border: '2px solid',
+                  borderColor: isColored ? 'primary.main' : 'background.paper',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'scale(1.15)',
+                    zIndex: 10,
+                  },
+                },
+              }}
+            >
+              {connectedUsers.map((connectedUser) => (
+                <Tooltip
+                  key={connectedUser.id}
+                  title={
+                    <Box sx={{ textAlign: 'center', py: 0.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {connectedUser.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'success.light', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}
+                      >
+                        <FiberManualRecordIcon sx={{ fontSize: 8 }} />
+                        En línea
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="bottom"
+                >
+                  <Avatar
+                    src={connectedUser.avatar}
+                    sx={{ bgcolor: connectedUser.color }}
+                  >
+                    {getInitials(connectedUser.name)}
+                  </Avatar>
+                </Tooltip>
+              ))}
+            </AvatarGroup>
+          </Box>
+
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              borderColor: isColored ? 'rgba(255,255,255,0.2)' : 'divider',
+            }}
+          />
+
           <Tooltip title={themeMode === 'dark' ? 'Modo claro' : 'Modo oscuro'}>
             <IconButton color="inherit" onClick={handleToggleTheme}>
               {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
@@ -183,10 +308,12 @@ const Navbar = ({ sidebarCollapsed }) => {
             <IconButton onClick={handleMenuOpen} sx={{ p: 0, ml: 1 }}>
               <Avatar
                 sx={{
-                  bgcolor: 'primary.main',
+                  bgcolor: isColored ? 'rgba(255,255,255,0.2)' : 'primary.main',
+                  color: isColored ? 'white' : 'primary.contrastText',
                   width: 36,
                   height: 36,
                   fontSize: '0.875rem',
+                  borderRadius: 0,
                 }}
               >
                 {user?.name_user ? getInitials(user.name_user) : 'U'}
@@ -202,7 +329,7 @@ const Navbar = ({ sidebarCollapsed }) => {
           onClick={handleMenuClose}
           PaperProps={{
             elevation: 3,
-            sx: { minWidth: 200, mt: 1.5 },
+            sx: { minWidth: 200, mt: 1.5, borderRadius: 0 },
           }}
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
@@ -243,7 +370,7 @@ const Navbar = ({ sidebarCollapsed }) => {
           onClose={handleNotificationClose}
           PaperProps={{
             elevation: 3,
-            sx: { minWidth: 300, maxHeight: 400, mt: 1.5 },
+            sx: { minWidth: 300, maxHeight: 400, mt: 1.5, borderRadius: 0 },
           }}
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}

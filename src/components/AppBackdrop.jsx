@@ -1,10 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Backdrop, Box, Typography, CircularProgress } from '@mui/material';
+import { Backdrop, Box, Typography } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { selectGlobalLoading, selectLoadingMessage } from '../../store/uiStore/uiStore';
+import { selectGlobalLoading, selectLoadingMessage } from '../store/uiStore/uiStore';
 
-// Animaciones
 const pulse = keyframes`
   0%, 100% {
     opacity: 1;
@@ -61,7 +60,6 @@ const AppBackdrop = () => {
           animation: `${fadeIn} 0.3s ease-out`,
         }}
       >
-        {/* Logo animado */}
         <Box
           sx={{
             position: 'relative',
@@ -70,7 +68,6 @@ const AppBackdrop = () => {
             justifyContent: 'center',
           }}
         >
-          {/* Círculo exterior giratorio */}
           <Box
             sx={{
               position: 'absolute',
@@ -84,7 +81,6 @@ const AppBackdrop = () => {
             }}
           />
 
-          {/* Círculo interior giratorio (dirección opuesta) */}
           <Box
             sx={{
               position: 'absolute',
@@ -98,7 +94,6 @@ const AppBackdrop = () => {
             }}
           />
 
-          {/* Logo central */}
           <Box
             sx={{
               width: 60,
@@ -123,7 +118,6 @@ const AppBackdrop = () => {
           </Box>
         </Box>
 
-        {/* Mensaje de carga */}
         <Box sx={{ textAlign: 'center' }}>
           <Typography
             variant="h6"
@@ -145,7 +139,6 @@ const AppBackdrop = () => {
           </Typography>
         </Box>
 
-        {/* Barra de progreso lineal animada */}
         <Box
           sx={{
             width: 200,

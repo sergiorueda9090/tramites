@@ -28,6 +28,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {
   selectSidebarOpen,
   selectSidebarCollapsed,
+  selectLayoutStyle,
   setSidebarOpen,
   toggleSidebarCollapsed,
 } from '../../store/uiStore/uiStore';
@@ -67,6 +68,9 @@ const Sidebar = () => {
 
   const sidebarOpen = useSelector(selectSidebarOpen);
   const sidebarCollapsed = useSelector(selectSidebarCollapsed);
+  const layoutStyle = useSelector(selectLayoutStyle);
+
+  const isColored = layoutStyle === 'colored';
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -92,13 +96,53 @@ const Sidebar = () => {
 
   const drawerWidth = sidebarCollapsed && !isMobile ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
+  // Estilos según el layoutStyle
+  const styles = {
+    container: isColored
+      ? {
+          background: `linear-gradient(180deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+        }
+      : {
+          bgcolor: 'background.paper',
+        },
+    logo: isColored
+      ? { bgcolor: 'rgba(255,255,255,0.2)' }
+      : { bgcolor: 'primary.main' },
+    logoText: isColored ? 'white' : 'white',
+    title: isColored ? 'white' : 'text.primary',
+    subtitle: isColored ? 'rgba(255,255,255,0.7)' : 'text.secondary',
+    sectionTitle: isColored ? 'rgba(255,255,255,0.6)' : 'text.secondary',
+    divider: isColored ? 'rgba(255,255,255,0.12)' : 'divider',
+    menuItem: (active) =>
+      isColored
+        ? {
+            bgcolor: active ? 'rgba(255,255,255,0.2)' : 'transparent',
+            color: 'white',
+            '&:hover': {
+              bgcolor: active ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+            },
+          }
+        : {
+            bgcolor: active ? 'primary.main' : 'transparent',
+            color: active ? 'primary.contrastText' : 'text.primary',
+            '&:hover': {
+              bgcolor: active ? 'primary.dark' : 'action.hover',
+            },
+          },
+    menuIcon: (active) =>
+      isColored
+        ? { color: active ? 'white' : 'rgba(255,255,255,0.7)' }
+        : { color: active ? 'primary.contrastText' : 'text.secondary' },
+    collapseIcon: isColored ? { color: 'white' } : { color: 'text.primary' },
+  };
+
   const drawerContent = (
     <Box
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: 'background.paper',
+        ...styles.container,
       }}
     >
       {/* Logo */}
@@ -117,22 +161,22 @@ const Sidebar = () => {
               sx={{
                 width: 40,
                 height: 40,
-                bgcolor: 'primary.main',
-                borderRadius: 2,
+                ...styles.logo,
+                borderRadius: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Typography variant="body1" color="white" fontWeight="bold">
+              <Typography variant="body1" color={styles.logoText} fontWeight="bold">
                 M2A
               </Typography>
             </Box>
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} noWrap>
+              <Typography variant="subtitle1" fontWeight={600} noWrap color={styles.title}>
                 Movilidad2A
               </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
+              <Typography variant="caption" noWrap sx={{ color: styles.subtitle }}>
                 Sistema de Gestión
               </Typography>
             </Box>
@@ -143,21 +187,21 @@ const Sidebar = () => {
             sx={{
               width: 40,
               height: 40,
-              bgcolor: 'primary.main',
-              borderRadius: 2,
+              ...styles.logo,
+              borderRadius: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Typography variant="body2" color="white" fontWeight="bold">
+            <Typography variant="body2" color={styles.logoText} fontWeight="bold">
               M2A
             </Typography>
           </Box>
         )}
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: styles.divider }} />
 
       {/* Navigation */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
@@ -170,7 +214,7 @@ const Sidebar = () => {
                   px: 3,
                   py: 1.5,
                   display: 'block',
-                  color: 'text.secondary',
+                  color: styles.sectionTitle,
                   fontWeight: 600,
                 }}
               >
@@ -191,20 +235,16 @@ const Sidebar = () => {
                       <ListItemButton
                         onClick={() => handleNavigation(item.path)}
                         sx={{
-                          borderRadius: 2,
+                          borderRadius: 0,
                           mb: 0.5,
                           justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                          bgcolor: active ? 'primary.main' : 'transparent',
-                          color: active ? 'primary.contrastText' : 'text.primary',
-                          '&:hover': {
-                            bgcolor: active ? 'primary.dark' : 'action.hover',
-                          },
+                          ...styles.menuItem(active),
                         }}
                       >
                         <ListItemIcon
                           sx={{
                             minWidth: sidebarCollapsed && !isMobile ? 0 : 40,
-                            color: active ? 'primary.contrastText' : 'text.secondary',
+                            ...styles.menuIcon(active),
                           }}
                         >
                           <Icon />
@@ -228,13 +268,13 @@ const Sidebar = () => {
         ))}
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: styles.divider }} />
 
       {/* Collapse Toggle */}
       {!isMobile && (
         <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
           <Tooltip title={sidebarCollapsed ? 'Expandir' : 'Contraer'} placement="right">
-            <IconButton onClick={handleToggleCollapse}>
+            <IconButton onClick={handleToggleCollapse} sx={styles.collapseIcon}>
               {sidebarCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
             </IconButton>
           </Tooltip>

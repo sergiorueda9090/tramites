@@ -49,41 +49,4 @@ const LoadingSpinner = ({
   return content;
 };
 
-export const TableLoadingSkeleton = ({ rows = 5, columns = 5 }) => {
-  return (
-    <Box sx={{ width: '100%' }}>
-      {[...Array(rows)].map((_, rowIndex) => (
-        <Box
-          key={rowIndex}
-          sx={{
-            display: 'flex',
-            gap: 2,
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          {[...Array(columns)].map((_, colIndex) => (
-            <Box
-              key={colIndex}
-              sx={{
-                flex: 1,
-                height: 20,
-                bgcolor: 'action.hover',
-                borderRadius: 1,
-                animation: 'pulse 1.5s ease-in-out infinite',
-                '@keyframes pulse': {
-                  '0%': { opacity: 1 },
-                  '50%': { opacity: 0.5 },
-                  '100%': { opacity: 1 },
-                },
-              }}
-            />
-          ))}
-        </Box>
-      ))}
-    </Box>
-  );
-};
-
 export default LoadingSpinner;
