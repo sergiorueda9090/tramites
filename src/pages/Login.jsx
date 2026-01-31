@@ -18,6 +18,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { setAuthenticated } from '../store/authStore/authStore';
+import { getAuth } from '../store/authStore/authThunks';
 import { showBackdrop, hideBackdrop } from '../store/uiStore/uiStore';
 import { apiService } from '../services/api';
 import AlertService from '../services/alertService';
@@ -82,7 +83,9 @@ const Login = () => {
     setError(null);
     dispatch(showBackdrop('Iniciando sesión...'));
 
-    try {
+    dispatch(getAuth( formData.email, formData.password ))
+
+    /*try {
       // Llamar al API de autenticación
       const response = await apiService.post(API_ENDPOINTS.AUTH.LOGIN, {
         email: formData.email,
@@ -137,7 +140,8 @@ const Login = () => {
       );
     } finally {
       setIsLoading(false);
-    }
+    }*/
+   
   };
 
   const handleTogglePassword = () => {

@@ -19,6 +19,7 @@ import {
   Link,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -30,6 +31,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeIcon from '@mui/icons-material/Home';
+import WifiOffIcon from '@mui/icons-material/WifiOff';
 import {
   toggleSidebar,
   toggleThemeMode,
@@ -40,6 +42,7 @@ import {
 import { loginFail } from '../../store/authStore/authStore';
 import { ROUTES, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '../../utils/constants';
 import { getInitials } from '../../utils/helpers';
+import { usePresence } from '../../hooks/usePresence';
 
 const routeLabels = {
   [ROUTES.DASHBOARD]: 'Dashboard',
@@ -52,15 +55,6 @@ const routeLabels = {
   [ROUTES.PROFILE]: 'Perfil',
 };
 
-// Usuarios conectados simulados (esto vendría de un WebSocket o API en producción)
-const connectedUsers = [
-  { id: 1, name: 'María García', avatar: null, color: '#e91e63' },
-  { id: 2, name: 'Carlos López', avatar: null, color: '#2196f3' },
-  { id: 3, name: 'Ana Martínez', avatar: null, color: '#4caf50' },
-  { id: 4, name: 'Pedro Sánchez', avatar: null, color: '#ff9800' },
-  { id: 5, name: 'Laura Torres', avatar: null, color: '#9c27b0' },
-];
-
 const Navbar = ({ sidebarCollapsed }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -72,6 +66,22 @@ const Navbar = ({ sidebarCollapsed }) => {
   const themeMode = useSelector(selectThemeMode);
   const layoutStyle = useSelector(selectLayoutStyle);
   const unreadCount = useSelector(selectUnreadNotificationsCount);
+
+  // DEBUG: Log del usuario
+  console.log('=== NAVBAR DEBUG ===');
+  console.log('User completo:', user);
+  console.log('User id_user:', user?.id_user);
+  console.log('User isLogin:', user?.isLogin);
+  console.log('====================');
+
+  // Hook de presencia para usuarios conectados en tiempo real
+  const { connectedUsers, isConnected, onlineCount } = usePresence();
+
+  console.log('=== PRESENCE DEBUG ===');
+  console.log('connectedUsers:', connectedUsers);
+  console.log('isConnected:', isConnected);
+  console.log('onlineCount:', onlineCount);
+  console.log('======================');
 
   const isColored = layoutStyle === 'colored';
 
@@ -196,7 +206,7 @@ const Navbar = ({ sidebarCollapsed }) => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* Usuarios conectados */}
+          {/* Usuarios conectados en tiempo real */}
           <Box
             sx={{
               display: { xs: 'none', md: 'flex' },
@@ -209,18 +219,29 @@ const Navbar = ({ sidebarCollapsed }) => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
-              <FiberManualRecordIcon
-                sx={{
-                  fontSize: 10,
-                  color: 'success.main',
-                  animation: 'pulse 2s infinite',
-                  '@keyframes pulse': {
-                    '0%': { opacity: 1 },
-                    '50%': { opacity: 0.5 },
-                    '100%': { opacity: 1 },
-                  },
-                }}
-              />
+              {isConnected ? (
+                <FiberManualRecordIcon
+                  sx={{
+                    fontSize: 10,
+                    color: 'success.main',
+                    animation: 'pulse 2s infinite',
+                    '@keyframes pulse': {
+                      '0%': { opacity: 1 },
+                      '50%': { opacity: 0.5 },
+                      '100%': { opacity: 1 },
+                    },
+                  }}
+                />
+              ) : (
+                <Tooltip title="Conectando...">
+                  <WifiOffIcon
+                    sx={{
+                      fontSize: 14,
+                      color: 'warning.main',
+                    }}
+                  />
+                </Tooltip>
+              )}
               <Typography
                 variant="caption"
                 sx={{
@@ -228,57 +249,69 @@ const Navbar = ({ sidebarCollapsed }) => {
                   fontWeight: 500,
                 }}
               >
-                {connectedUsers.length} en línea
+                {onlineCount} en linea
               </Typography>
             </Box>
-            <AvatarGroup
-              max={4}
-              sx={{
-                '& .MuiAvatar-root': {
-                  width: 28,
-                  height: 28,
-                  fontSize: '0.75rem',
-                  borderRadius: 0,
-                  border: '2px solid',
-                  borderColor: isColored ? 'primary.main' : 'background.paper',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'scale(1.15)',
-                    zIndex: 10,
+            {connectedUsers.length > 0 ? (
+              <AvatarGroup
+                max={4}
+                sx={{
+                  '& .MuiAvatar-root': {
+                    width: 28,
+                    height: 28,
+                    fontSize: '0.75rem',
+                    borderRadius: 0,
+                    border: '2px solid',
+                    borderColor: isColored ? 'primary.main' : 'background.paper',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'scale(1.15)',
+                      zIndex: 10,
+                    },
                   },
-                },
-              }}
-            >
-              {connectedUsers.map((connectedUser) => (
-                <Tooltip
-                  key={connectedUser.id}
-                  title={
-                    <Box sx={{ textAlign: 'center', py: 0.5 }}>
-                      <Typography variant="body2" fontWeight={500}>
-                        {connectedUser.name}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'success.light', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}
-                      >
-                        <FiberManualRecordIcon sx={{ fontSize: 8 }} />
-                        En línea
-                      </Typography>
-                    </Box>
-                  }
-                  arrow
-                  placement="bottom"
-                >
-                  <Avatar
-                    src={connectedUser.avatar}
-                    sx={{ bgcolor: connectedUser.color }}
+                }}
+              >
+                {connectedUsers.map((connectedUser) => (
+                  <Tooltip
+                    key={connectedUser.id}
+                    title={
+                      <Box sx={{ textAlign: 'center', py: 0.5 }}>
+                        <Typography variant="body2" fontWeight={500}>
+                          {connectedUser.name}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'success.light',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <FiberManualRecordIcon sx={{ fontSize: 8 }} />
+                          En linea
+                        </Typography>
+                      </Box>
+                    }
+                    arrow
+                    placement="bottom"
                   >
-                    {getInitials(connectedUser.name)}
-                  </Avatar>
-                </Tooltip>
-              ))}
-            </AvatarGroup>
+                    <Avatar
+                      src={connectedUser.avatar}
+                      sx={{ bgcolor: connectedUser.color }}
+                    >
+                      {getInitials(connectedUser.name)}
+                    </Avatar>
+                  </Tooltip>
+                ))}
+              </AvatarGroup>
+            ) : (
+              !isConnected && (
+                <CircularProgress size={16} sx={{ color: isColored ? 'white' : 'primary.main' }} />
+              )
+            )}
           </Box>
 
           <Divider

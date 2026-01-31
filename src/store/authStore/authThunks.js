@@ -1,65 +1,100 @@
 import axios from "axios";
 import { setAuthenticated, loginFail } from "./authStore.js";
-import { showBackDropStore, hideBackDropStore, setAlert } from "../globalStore/globalStore.js";
-import { URL, TOKEN } from "../../constants/constantGlogal";
+import { showBackdrop, hideBackdrop } from '../uiStore/uiStore';
+import AlertService from '../../services/alertService';
+import { URL } from "../../constants/constantGlogal";
 
 
-export const getAuth = (email,password) => {
+export const getAuth = (email, password) => {
 
     return async (dispatch, getState) => {
-       
+
         // Iniciar la carga
-        await dispatch(showBackDropStore());
+        dispatch(showBackdrop('Iniciando sesion...'));
 
         const options = {
             method: 'POST',
-            url:    `${URL}/auth/`,
+            url:    `${URL}/api/token/`,
             headers: {
-                'Content-Type': 'multipart/form-data; boundary=---011000010111000001101001',
+                'Content-Type': 'application/json',
             },
             data: {
-                email:      email,
-                password:   password
+                email   : email,
+                password: password
             }
         };
 
         try {
-            // Hacer la solicitud
+            console.log('=== AUTH DEBUG ===');
+            console.log('1. Iniciando login...');
+            console.log('URL auth:', `${URL}/api/token/`);
+            console.log('Data enviada:', { email, password: '***' });
+
+            // Hacer la solicitud de token
             const response = await axios.request(options);
-            if(response.status === 200){
+            console.log('2. Respuesta login:', response.status, response.data);
+
+            if (response.status === 200) {
 
                 let data = response.data;
+                console.log('3. Token obtenido:', data.access ? 'SI' : 'NO');
 
-                // Obtener la información del usuario autenticado
-                const userResponse = await axios.get(`${URL}/users/api/user/`, {
+                // Obtener la informacion del usuario autenticado
+                console.log('4. Obteniendo datos del usuario...');
+                console.log('URL user:', `${URL}/api/user/me/`);
+
+                const userResponse = await axios.get(`${URL}/api/user/me/`, {
                     headers: {
                         Authorization: `Bearer ${data.access}`
                     }
                 });
 
+                console.log('5. Respuesta user:', userResponse.status, userResponse.data);
                 const userData = userResponse.data;
 
-                await dispatch(setAuthenticated({"access":data.access, "islogin":true, "idrol":userData.idrol}));
-                
-                await dispatch(hideBackDropStore());
+                // Construir nombre completo
+                const fullName = [userData.first_name, userData.last_name]
+                    .filter(Boolean)
+                    .join(' ') || userData.username;
 
-            }else{
+                console.log('6. Guardando en store:', {
+                    id_user: userData.id,
+                    name_user: fullName,
+                    email: userData.email,
+                });
 
-    
-                 await dispatch(setAlert({ message: "¡❌ Acción completada con éxito!", type: "error" }));
+                dispatch(setAuthenticated({
+                    "access"    : data.access,
+                    "islogin"   : true,
+                    "idrol"     : userData.role || 'user',
+                    "id_user"   : userData.id,
+                    "name_user" : fullName,
+                    "email"     : userData.email,
+                    "avatar"    : userData.avatar || null,
+                }));
 
+                console.log('7. Login completado!');
+                dispatch(hideBackdrop());
+
+                // Mostrar mensaje de exito
+                AlertService.success('Bienvenido', `Hola ${fullName}!`);
+
+            } else {
+                console.log('ERROR: Status no es 200:', response.status);
+                dispatch(hideBackdrop());
+                AlertService.error('Error', 'No se pudo iniciar sesion');
             }
 
-       
-            await dispatch(hideBackDropStore());
-            // Despachar la acción setAuthenticated con la respuesta de la solicitud
         } catch (error) {
-            // Manejar errores
-            await dispatch(hideBackDropStore());
-            await dispatch(setAlert({ message: `❌ ${error.response.data.detail}.`, type: "error" }));
+            console.log('=== AUTH ERROR ===');
+            console.log('Error:', error);
+            console.log('Response:', error.response);
 
+            // Manejar errores
+            dispatch(hideBackdrop());
+
+            const errorMessage = error.response?.data?.detail || error.message || 'Error de autenticacion';
+            AlertService.error('Error de autenticacion', errorMessage);
         }
     };
 };
-
-
