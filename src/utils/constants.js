@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tramitesbackend.movilidad2a.com' //'http://localhost:8000';
 
 export const ROUTES = {
   HOME: '/',
@@ -7,6 +7,7 @@ export const ROUTES = {
   VEHICULOS: '/vehiculos',
   CERTIFICADOS: '/certificados',
   USUARIOS: '/usuarios',
+  CLIENTES: '/clientes',
   REPORTES: '/reportes',
   CONFIGURACION: '/configuracion',
   LOGIN: '/login',
@@ -79,6 +80,7 @@ export const API_ENDPOINTS = {
     LOGOUT  : '/auth/logout/',
   },
   USERS: '/users/',
+  CLIENTS: '/clientes/',
   INSPECTIONS: '/inspecciones/',
   VEHICLES: '/vehiculos/',
   CERTIFICATES: '/certificados/',

@@ -10,10 +10,10 @@ import {
   selectPageSize,
   selectSortField,
   selectSortOrder,
-  selectPaginatedUsers,
+  selectPaginatedEtiquetas,
   selectFilteredTotalRows,
   selectOpenModal,
-  selectSelectedUser,
+  selectSelectedEtiqueta,
   selectForm,
   selectLoading,
   selectAppliedFilters,
@@ -27,7 +27,7 @@ import {
   openCreateModal,
   closeModal,
   updateForm,
-} from '../../store/usersStore/usersStore';
+} from '../../store/etiquetasStore/etiquetasStore';
 
 import {
   listAllThunk,
@@ -35,16 +35,15 @@ import {
   deleteThunk,
   viewThunk,
   showThunk,
-  toggleStatusThunk,
-} from '../../store/usersStore/usersThunks';
+} from '../../store/etiquetasStore/etiquetasThunks';
 
 import {
-  UsuariosFilters,
-  UsuariosDataTable,
-  UsuarioDialog,
+  EtiquetasFilters,
+  EtiquetasDataTable,
+  EtiquetaDialog,
 } from './Components';
 
-const Usuarios = () => {
+const Etiquetas = () => {
   const dispatch = useDispatch();
 
   // Selectores
@@ -55,10 +54,10 @@ const Usuarios = () => {
   const pageSize = useSelector(selectPageSize);
   const sortField = useSelector(selectSortField);
   const sortOrder = useSelector(selectSortOrder);
-  const paginatedData = useSelector(selectPaginatedUsers);
+  const paginatedData = useSelector(selectPaginatedEtiquetas);
   const totalRows = useSelector(selectFilteredTotalRows);
   const openModal = useSelector(selectOpenModal);
-  const selectedUser = useSelector(selectSelectedUser);
+  const selectedEtiqueta = useSelector(selectSelectedEtiqueta);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
 
@@ -76,16 +75,6 @@ const Usuarios = () => {
       params.search = appliedFilters.search;
     }
 
-    // Agregar filtro de role si existe
-    if (appliedFilters.role) {
-      params.role = appliedFilters.role;
-    }
-
-    // Agregar filtro de estado si existe
-    if (appliedFilters.is_active !== '') {
-      params.is_active = appliedFilters.is_active;
-    }
-
     // Agregar ordenamiento si existe
     if (sortField) {
       // El backend usa formato: 'field' para asc, '-field' para desc
@@ -96,17 +85,17 @@ const Usuarios = () => {
   }, [page, pageSize, appliedFilters, sortField, sortOrder]);
 
   /**
-   * Cargar usuarios del backend
+   * Cargar etiquetas del backend
    */
-  const fetchUsers = useCallback(() => {
+  const fetchEtiquetas = useCallback(() => {
     const params = buildQueryParams();
     dispatch(listAllThunk(params));
   }, [dispatch, buildQueryParams]);
 
-  // Cargar usuarios al montar y cuando cambian los parámetros
+  // Cargar etiquetas al montar y cuando cambian los parámetros
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchEtiquetas();
+  }, [fetchEtiquetas]);
 
   // Handlers de paginación
   // El componente Pagination usa base 0, pero el store/backend usa base 1
@@ -144,20 +133,16 @@ const Usuarios = () => {
   };
 
   // Handlers de CRUD
-  const handleView = (user) => {
-    dispatch(viewThunk(user));
+  const handleView = (etiqueta) => {
+    dispatch(viewThunk(etiqueta));
   };
 
-  const handleEdit = (user) => {
-    dispatch(showThunk(user.id));
+  const handleEdit = (etiqueta) => {
+    dispatch(showThunk(etiqueta.id));
   };
 
-  const handleDelete = (user) => {
-    dispatch(deleteThunk(user));
-  };
-
-  const handleToggleStatus = (user) => {
-    dispatch(toggleStatusThunk(user));
+  const handleDelete = (etiqueta) => {
+    dispatch(deleteThunk(etiqueta));
   };
 
   const handleCreate = () => {
@@ -191,19 +176,19 @@ const Usuarios = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight={600} gutterBottom>
-            Usuarios
+            Etiquetas
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gestión de usuarios del sistema
+            Gestión de etiquetas del sistema
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo usuario
+          Nueva etiqueta
         </Button>
       </Box>
 
       {/* Filters */}
-      <UsuariosFilters
+      <EtiquetasFilters
         filters={filters}
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
@@ -213,7 +198,7 @@ const Usuarios = () => {
       />
 
       {/* Data Table */}
-      <UsuariosDataTable
+      <EtiquetasDataTable
         data={paginatedData}
         loading={loading}
         page={pageForComponent}
@@ -227,15 +212,14 @@ const Usuarios = () => {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onToggleStatus={handleToggleStatus}
       />
 
       {/* Create/Edit Dialog */}
-      <UsuarioDialog
+      <EtiquetaDialog
         open={openModal}
         onClose={handleCloseModal}
         onSave={handleSave}
-        selectedUser={selectedUser}
+        selectedEtiqueta={selectedEtiqueta}
         form={form}
         onFormChange={handleFormChange}
       />
@@ -243,4 +227,4 @@ const Usuarios = () => {
   );
 };
 
-export default Usuarios;
+export default Etiquetas;

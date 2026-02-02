@@ -10,6 +10,7 @@ import { ROUTES } from '../utils/constants';
 // Lazy load pages
 const Dashboard       = lazy(() => import('../pages/Dashboard'));
 const Usuarios        = lazy(() => import('../pages/Usuarios'));
+const Clientes        = lazy(() => import('../pages/Clientes'));
 const Login           = lazy(() => import('../pages/Login'));
 const Configuraciones = lazy(() => import('../pages/Configuraciones/Configuraciones'));
 
@@ -51,10 +52,11 @@ const AppRouter = () => {
             <Route index element={<Navigate to={ROUTES.DASHBOARD} replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="inspecciones" element={<PlaceholderPage title="Inspecciones" />} />
-            <Route path="vehiculos" element={<PlaceholderPage title="Vehículos" />} />
-            <Route path="certificados" element={<PlaceholderPage title="Certificados" />} />
             <Route path="usuarios" element={<Usuarios />} />
-            <Route path="reportes" element={<PlaceholderPage title="Reportes" />} />
+            
+            <Route path="clientes" element={<Clientes />} />
+
+            <Route path="reportes" element={<PlaceholderPage title="Reportes" />} />  
             <Route path="configuracion" element={<Configuraciones />} />
             <Route path="profile" element={<PlaceholderPage title="Mi Perfil" />} />
           </Route>

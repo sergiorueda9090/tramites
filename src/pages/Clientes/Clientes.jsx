@@ -10,10 +10,10 @@ import {
   selectPageSize,
   selectSortField,
   selectSortOrder,
-  selectPaginatedUsers,
+  selectPaginatedClientes,
   selectFilteredTotalRows,
   selectOpenModal,
-  selectSelectedUser,
+  selectSelectedCliente,
   selectForm,
   selectLoading,
   selectAppliedFilters,
@@ -27,7 +27,10 @@ import {
   openCreateModal,
   closeModal,
   updateForm,
-} from '../../store/usersStore/usersStore';
+  addPrecio,
+  updatePrecio,
+  removePrecio,
+} from '../../store/clientesStore/clientesStore';
 
 import {
   listAllThunk,
@@ -35,16 +38,15 @@ import {
   deleteThunk,
   viewThunk,
   showThunk,
-  toggleStatusThunk,
-} from '../../store/usersStore/usersThunks';
+} from '../../store/clientesStore/clientesThunks';
 
 import {
-  UsuariosFilters,
-  UsuariosDataTable,
-  UsuarioDialog,
+  ClientesFilters,
+  ClientesDataTable,
+  ClienteDialog,
 } from './Components';
 
-const Usuarios = () => {
+const Clientes = () => {
   const dispatch = useDispatch();
 
   // Selectores
@@ -55,10 +57,10 @@ const Usuarios = () => {
   const pageSize = useSelector(selectPageSize);
   const sortField = useSelector(selectSortField);
   const sortOrder = useSelector(selectSortOrder);
-  const paginatedData = useSelector(selectPaginatedUsers);
+  const paginatedData = useSelector(selectPaginatedClientes);
   const totalRows = useSelector(selectFilteredTotalRows);
   const openModal = useSelector(selectOpenModal);
-  const selectedUser = useSelector(selectSelectedUser);
+  const selectedCliente = useSelector(selectSelectedCliente);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
 
@@ -76,14 +78,14 @@ const Usuarios = () => {
       params.search = appliedFilters.search;
     }
 
-    // Agregar filtro de role si existe
-    if (appliedFilters.role) {
-      params.role = appliedFilters.role;
+    // Agregar filtro de medio de comunicación si existe
+    if (appliedFilters.medio_comunicacion) {
+      params.medio_comunicacion = appliedFilters.medio_comunicacion;
     }
 
-    // Agregar filtro de estado si existe
-    if (appliedFilters.is_active !== '') {
-      params.is_active = appliedFilters.is_active;
+    // Agregar filtro de usuario si existe
+    if (appliedFilters.usuario) {
+      params.usuario = appliedFilters.usuario;
     }
 
     // Agregar ordenamiento si existe
@@ -96,17 +98,17 @@ const Usuarios = () => {
   }, [page, pageSize, appliedFilters, sortField, sortOrder]);
 
   /**
-   * Cargar usuarios del backend
+   * Cargar clientes del backend
    */
-  const fetchUsers = useCallback(() => {
+  const fetchClientes = useCallback(() => {
     const params = buildQueryParams();
     dispatch(listAllThunk(params));
   }, [dispatch, buildQueryParams]);
 
-  // Cargar usuarios al montar y cuando cambian los parámetros
+  // Cargar clientes al montar y cuando cambian los parámetros
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    fetchClientes();
+  }, [fetchClientes]);
 
   // Handlers de paginación
   // El componente Pagination usa base 0, pero el store/backend usa base 1
@@ -144,20 +146,16 @@ const Usuarios = () => {
   };
 
   // Handlers de CRUD
-  const handleView = (user) => {
-    dispatch(viewThunk(user));
+  const handleView = (cliente) => {
+    dispatch(viewThunk(cliente));
   };
 
-  const handleEdit = (user) => {
-    dispatch(showThunk(user.id));
+  const handleEdit = (cliente) => {
+    dispatch(showThunk(cliente.id));
   };
 
-  const handleDelete = (user) => {
-    dispatch(deleteThunk(user));
-  };
-
-  const handleToggleStatus = (user) => {
-    dispatch(toggleStatusThunk(user));
+  const handleDelete = (cliente) => {
+    dispatch(deleteThunk(cliente));
   };
 
   const handleCreate = () => {
@@ -176,6 +174,19 @@ const Usuarios = () => {
     dispatch(saveThunk(form));
   };
 
+  // Handlers de precios
+  const handleAddPrecio = (precioData) => {
+    dispatch(addPrecio(precioData));
+  };
+
+  const handleUpdatePrecio = (index, data) => {
+    dispatch(updatePrecio({ index, data }));
+  };
+
+  const handleRemovePrecio = (index) => {
+    dispatch(removePrecio(index));
+  };
+
   return (
     <Box>
       {/* Page Header */}
@@ -191,19 +202,19 @@ const Usuarios = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight={600} gutterBottom>
-            Usuarios
+            Clientes
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gestión de usuarios del sistema
+            Gestión de clientes del sistema
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo usuario
+          Nuevo cliente
         </Button>
       </Box>
 
       {/* Filters */}
-      <UsuariosFilters
+      <ClientesFilters
         filters={filters}
         activeFilters={activeFilters}
         onFilterChange={handleFilterChange}
@@ -213,7 +224,7 @@ const Usuarios = () => {
       />
 
       {/* Data Table */}
-      <UsuariosDataTable
+      <ClientesDataTable
         data={paginatedData}
         loading={loading}
         page={pageForComponent}
@@ -227,20 +238,22 @@ const Usuarios = () => {
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onToggleStatus={handleToggleStatus}
       />
 
       {/* Create/Edit Dialog */}
-      <UsuarioDialog
+      <ClienteDialog
         open={openModal}
         onClose={handleCloseModal}
         onSave={handleSave}
-        selectedUser={selectedUser}
+        selectedCliente={selectedCliente}
         form={form}
         onFormChange={handleFormChange}
+        onAddPrecio={handleAddPrecio}
+        onUpdatePrecio={handleUpdatePrecio}
+        onRemovePrecio={handleRemovePrecio}
       />
     </Box>
   );
 };
 
-export default Usuarios;
+export default Clientes;

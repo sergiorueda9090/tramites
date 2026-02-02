@@ -44,9 +44,10 @@ const menuItems = [
   {
     section: 'Operaciones',
     items: [
-      { text: 'Inspecciones', icon: AssignmentIcon, path: ROUTES.INSPECCIONES },
-      { text: 'Vehículos', icon: DirectionsCarIcon, path: ROUTES.VEHICULOS },
-      { text: 'Certificados', icon: VerifiedIcon, path: ROUTES.CERTIFICADOS },
+      { text: 'Clientes',        icon: AssignmentIcon,      path: ROUTES.CLIENTES },
+      { text: 'Inspecciones',    icon: AssignmentIcon,      path: ROUTES.INSPECCIONES },
+      { text: 'Vehículos',       icon: DirectionsCarIcon,   path: ROUTES.VEHICULOS },
+      { text: 'Certificados',    icon: VerifiedIcon,        path: ROUTES.CERTIFICADOS },
     ],
   },
   {
