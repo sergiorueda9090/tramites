@@ -1,2 +1,2 @@
 // Re-export from modular structure
-export { default } from './Clientes/Clientes';
+export { default } from './Etiquetas/Etiquetas';

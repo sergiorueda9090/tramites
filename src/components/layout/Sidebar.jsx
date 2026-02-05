@@ -20,11 +20,18 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import UndoIcon from '@mui/icons-material/Undo';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import BalanceIcon from '@mui/icons-material/Balance';
+
 import {
   selectSidebarOpen,
   selectSidebarCollapsed,
@@ -44,10 +51,16 @@ const menuItems = [
   {
     section: 'Operaciones',
     items: [
-      { text: 'Clientes',        icon: AssignmentIcon,      path: ROUTES.CLIENTES },
-      { text: 'Inspecciones',    icon: AssignmentIcon,      path: ROUTES.INSPECCIONES },
-      { text: 'Vehículos',       icon: DirectionsCarIcon,   path: ROUTES.VEHICULOS },
-      { text: 'Certificados',    icon: VerifiedIcon,        path: ROUTES.CERTIFICADOS },
+      { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES },
+      { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS },
+      { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS },
+      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS },
+      { text: 'Devoluciones',           icon: UndoIcon,             path: ROUTES.DEVOLUCIONES },
+      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS },
+      { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO },
+      { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES },
+      { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS },
+      { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS },
     ],
   },
   {
