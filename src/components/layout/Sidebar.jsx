@@ -31,6 +31,9 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import BalanceIcon from '@mui/icons-material/Balance';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+
+
 
 import {
   selectSidebarOpen,
@@ -58,6 +61,7 @@ const menuItems = [
       { text: 'Devoluciones',           icon: UndoIcon,             path: ROUTES.DEVOLUCIONES },
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS },
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO },
+      { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS },

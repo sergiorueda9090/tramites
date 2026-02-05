@@ -14,6 +14,7 @@ export const ROUTES = {
   DEVOLUCIONES: '/devoluciones',
   CARGOS_NO_REGISTRADOS: '/cargos-no-registrados',
   AJUSTE_SALDO: '/ajuste-saldo',
+  GASTOS: '/gastos',
   REPORTES: '/reportes',
   CONFIGURACION: '/configuracion',
   LOGIN: '/login',
@@ -97,4 +98,5 @@ export const API_ENDPOINTS = {
   DEVOLUCIONES: '/devoluciones/',
   CARGOS_NO_REGISTRADOS: '/cargos-no-registrados/',
   AJUSTE_SALDO: '/ajuste-saldo/',
+  GASTOS: '/gastos/',
 };

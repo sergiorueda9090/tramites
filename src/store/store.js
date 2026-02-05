@@ -9,6 +9,7 @@ import { recepcionPagoStore }       from './recepcionPago/recepcionPagoStore';
 import { devolucionesStore }        from './devolucionesStore/devolucionesStore';
 import { cargosNoRegistradosStore } from './cargosNoRegistradosStore/cargosNoRegistradosStore';
 import { ajusteSaldoStore }         from './ajusteSaldoStore/ajusteSaldoStore';
+import { gastosStore }              from './gastosStore/gastosStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 
@@ -25,5 +26,6 @@ export const store = configureStore({
     devolucionesStore: devolucionesStore.reducer,
     cargosNoRegistradosStore: cargosNoRegistradosStore.reducer,
     ajusteSaldoStore: ajusteSaldoStore.reducer,
+    gastosStore     : gastosStore.reducer,
   },
 });

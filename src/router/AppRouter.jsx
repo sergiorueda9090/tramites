@@ -19,6 +19,7 @@ const RecepcionPagos  = lazy(() => import('../pages/RecepcionPagos'));
 const Devoluciones     = lazy(() => import('../pages/Devoluciones'));
 const CargosNoRegistrados = lazy(() => import('../pages/CargosNoRegistrados'));
 const AjusteSaldo     = lazy(() => import('../pages/AjusteSaldo'));
+const Gastos          = lazy(() => import('../pages/Gastos'));
 
 // Placeholder pages for routes that are not yet implemented
 const PlaceholderPage = ({ title }) => (
@@ -67,6 +68,7 @@ const AppRouter = () => {
             <Route path="devoluciones"    element={<Devoluciones />} />
             <Route path="cargos-no-registrados" element={<CargosNoRegistrados />} />
             <Route path="ajuste-saldo"    element={<AjusteSaldo />} />
+            <Route path="gastos"          element={<Gastos />} />
 
             <Route path="reportes" element={<PlaceholderPage title="Reportes" />} />  
             <Route path="configuracion" element={<Configuraciones />} />
