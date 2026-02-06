@@ -5,8 +5,8 @@
 //export const URL = 'http://127.0.0.1:8000';
 //export const URLws = '127.0.0.1:8000';
 
-export const URL = 'http://127.0.0.1:8000';
-export const URLws = '127.0.0.1:8000';
+export const URL = 'https://tramitesbackend.movilidad2a.com'; //'http://127.0.0.1:8000';
+export const URLws = 'tramitesbackend.movilidad2a.com';//'127.0.0.1:8000';
 
 export const TOKEN = (() => {
     const token = localStorage.getItem("access"); // Obtener el valor almacenado
