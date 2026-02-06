@@ -24,8 +24,8 @@ class WebSocketService {
 
     this.userData = userData;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Usar la URL del API o el puerto 8000 por defecto para el backend
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    // Usar la URL del API o el puerto 8000 por defecto para el backend 
+    const apiUrl = 'https://tramitesbackend.movilidad2a.com' //process.env.REACT_APP_API_URL || 'http://localhost:8000';
     const wsHost = apiUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
     const wsUrl = `${protocol}//${wsHost}/ws/presence/`;
 

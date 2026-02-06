@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://tramitesbackend.movilidad2a.com'; //'https://tramitesbackend.movilidad2a.com' //'http://localhost:8000';
+export const API_BASE_URL = 'https://tramitesbackend.movilidad2a.com'; // || 'http://localhost:8000';//'https://tramitesbackend.movilidad2a.com' //'http://localhost:8000';
 
 export const ROUTES = {
   HOME: '/',
