@@ -11,6 +11,7 @@ import { cargosNoRegistradosStore } from './cargosNoRegistradosStore/cargosNoReg
 import { ajusteSaldoStore }         from './ajusteSaldoStore/ajusteSaldoStore';
 import { gastosMainStore }          from './gastosMainStore/gastosMainStore';
 import { gastosStore }              from './gastosStore/gastosStore';
+import { tarifarioSoatStore }       from './tarifarioSoatStore/tarifarioSoatStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 
@@ -29,5 +30,6 @@ export const store = configureStore({
     ajusteSaldoStore: ajusteSaldoStore.reducer,
     gastosStore     : gastosStore.reducer,
     gastosMainStore : gastosMainStore.reducer,
+    tarifarioSoatStore: tarifarioSoatStore.reducer,
   },
 });

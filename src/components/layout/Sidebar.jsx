@@ -32,6 +32,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import BalanceIcon from '@mui/icons-material/Balance';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 
 
@@ -62,6 +63,7 @@ const menuItems = [
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS },
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO },
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS },
+      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS },
