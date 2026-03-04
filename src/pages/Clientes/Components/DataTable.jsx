@@ -90,6 +90,33 @@ const columns = [
       </Box>
     ),
   },
+  {
+    field: 'tipo_cliente',
+    headerName: 'Tipo',
+    minWidth: 140,
+    renderCell: ({ row }) => {
+      const labels = {
+        cda: 'CDA',
+        concesionario: 'Concesionario',
+        particular: 'Particular',
+        punto_aliado: 'Punto aliado',
+      };
+      const colors = {
+        cda: 'error',
+        concesionario: 'warning',
+        particular: 'info',
+        punto_aliado: 'success',
+      };
+      return (
+        <Chip
+          label={labels[row.tipo_cliente] || row.tipo_cliente || '-'}
+          size="small"
+          color={colors[row.tipo_cliente] || 'default'}
+          variant="outlined"
+        />
+      );
+    },
+  },
   { field: 'telefono', headerName: 'Teléfono', minWidth: 130 },
   { field: 'direccion', headerName: 'Dirección', minWidth: 200 },
   {

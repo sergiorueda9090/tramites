@@ -7,12 +7,10 @@ import DashboardHome from '../components/dashboard/DashboardHome';
 const Dashboard = () => {
   const handleRefresh = () => {
     // TODO: Implement data refresh
-    console.log('Refreshing dashboard data...');
   };
 
   const handleNewInspection = () => {
     // TODO: Navigate to new inspection form
-    console.log('Creating new inspection...');
   };
 
   return (

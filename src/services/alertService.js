@@ -19,6 +19,9 @@ const colors = {
 
 // Configuración base para todos los alerts
 const baseConfig = {
+  // z-index alto para que las alertas siempre salgan por delante de modales MUI (z-index: 1300)
+  backdrop: `rgba(0,0,0,0.4)`,
+  target: document.body,
   customClass: {
     container: 'swal2-container-custom',
     popup: 'swal2-popup-custom',
@@ -45,6 +48,11 @@ const injectStyles = () => {
   styles.id = 'swal-custom-styles';
   styles.innerHTML = `
     @import url('https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css');
+
+    /* z-index superior a MUI Dialog (1300) para que las alertas siempre queden al frente */
+    .swal2-container {
+      z-index: 99999 !important;
+    }
 
     .swal2-popup-custom {
       font-family: 'Roboto', sans-serif !important;

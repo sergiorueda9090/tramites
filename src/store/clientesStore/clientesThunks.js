@@ -112,6 +112,7 @@ const formatFieldName = (field) => {
     telefono: 'Teléfono',
     direccion: 'Dirección',
     color: 'Color',
+    tipo_cliente: 'Tipo de cliente',
     medio_comunicacion: 'Medio de comunicación',
     usuario: 'Usuario asignado',
     precios: 'Precios',
@@ -414,10 +415,18 @@ export const viewThunk = (cliente) => {
       whatsapp: 'WhatsApp',
     };
 
+    const tipoClienteLabel = {
+      cda: 'CDA',
+      concesionario: 'Concesionario',
+      particular: 'Particular',
+      punto_aliado: 'Punto aliado',
+    };
+
     await AlertService.info(
       cliente.nombre || 'Cliente',
       `
         <div style="text-align: left;">
+          <p><strong>Tipo de cliente:</strong> ${tipoClienteLabel[cliente.tipo_cliente] || cliente.tipo_cliente || '-'}</p>
           <p><strong>Teléfono:</strong> ${cliente.telefono || '-'}</p>
           <p><strong>Dirección:</strong> ${cliente.direccion || '-'}</p>
           <p><strong>Medio de comunicación:</strong> ${medioComunicacionLabel[cliente.medio_comunicacion] || cliente.medio_comunicacion || '-'}</p>

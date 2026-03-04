@@ -1,6 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constants';
 
+const RANDOM_COLORS = [
+  '#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab',
+  '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047',
+  '#7cb342', '#c0ca33', '#fdd835', '#ffb300', '#fb8c00',
+  '#f4511e', '#6d4c41', '#546e7a', '#1976d2', '#388e3c',
+];
+
+const getRandomColor = () => RANDOM_COLORS[Math.floor(Math.random() * RANDOM_COLORS.length)];
+
 const initialState = {
   // Lista de clientes
   clientes: [],
@@ -23,11 +32,13 @@ const initialState = {
   // Filtros
   filters: {
     search: '',
+    tipo_cliente: '',
     medio_comunicacion: '',
     usuario: '',
   },
   appliedFilters: {
     search: '',
+    tipo_cliente: '',
     medio_comunicacion: '',
     usuario: '',
   },
@@ -39,10 +50,11 @@ const initialState = {
   // Formulario
   form: {
     id: null,
-    color: '#1976d2',
+    color: '',
     nombre: '',
     telefono: '',
     direccion: '',
+    tipo_cliente: 'particular',
     medio_comunicacion: 'email',
     precios: [],
   },
@@ -107,8 +119,8 @@ export const clientesStore = createSlice({
       state.pagination.page = 1;
     },
     clearFilters: (state) => {
-      state.filters = { search: '', medio_comunicacion: '', usuario: '' };
-      state.appliedFilters = { search: '', medio_comunicacion: '', usuario: '' };
+      state.filters = { search: '', tipo_cliente: '', medio_comunicacion: '', usuario: '' };
+      state.appliedFilters = { search: '', tipo_cliente: '', medio_comunicacion: '', usuario: '' };
       state.pagination.page = 1;
     },
     clearFilter: (state, action) => {
@@ -123,10 +135,11 @@ export const clientesStore = createSlice({
       state.selectedCliente = null;
       state.form = {
         id: null,
-        color: '#1976d2',
+        color: getRandomColor(),
         nombre: '',
         telefono: '',
         direccion: '',
+        tipo_cliente: 'particular',
         medio_comunicacion: 'email',
         precios: [],
       };
@@ -136,10 +149,11 @@ export const clientesStore = createSlice({
       state.selectedCliente = action.payload;
       state.form = {
         id: action.payload.id,
-        color: action.payload.color || '#1976d2',
+        color: action.payload.color || getRandomColor(),
         nombre: action.payload.nombre || '',
         telefono: action.payload.telefono || '',
         direccion: action.payload.direccion || '',
+        tipo_cliente: action.payload.tipo_cliente || 'particular',
         medio_comunicacion: action.payload.medio_comunicacion || 'email',
         precios: action.payload.precios || [],
       };
@@ -235,9 +249,9 @@ export const selectActiveFilters = (state) => {
 // Selector para filtrado local (dentro de la página actual)
 export const selectFilteredClientes = (state) => {
   const { clientes, appliedFilters } = state.clientesStore;
-  const { search, medio_comunicacion, usuario } = appliedFilters;
+  const { search, tipo_cliente, medio_comunicacion, usuario } = appliedFilters;
 
-  if (!search && !medio_comunicacion && !usuario) {
+  if (!search && !tipo_cliente && !medio_comunicacion && !usuario) {
     return clientes;
   }
 
@@ -251,6 +265,10 @@ export const selectFilteredClientes = (state) => {
       ) {
         return false;
       }
+    }
+
+    if (tipo_cliente && cliente.tipo_cliente !== tipo_cliente) {
+      return false;
     }
 
     if (medio_comunicacion && cliente.medio_comunicacion !== medio_comunicacion) {

@@ -56,6 +56,7 @@ const menuItems = [
     section: 'Operaciones',
     items: [
       { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES },
+      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT },
       { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS },
       { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS },
       { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS },
@@ -63,7 +64,6 @@ const menuItems = [
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS },
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO },
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS },
-      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS },

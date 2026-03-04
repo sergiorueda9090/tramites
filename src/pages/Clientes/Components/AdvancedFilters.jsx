@@ -32,6 +32,13 @@ import 'dayjs/locale/es';
 // ============================================
 // Constantes para medios de comunicación
 // ============================================
+const TIPO_CLIENTE_OPTIONS = [
+  { value: 'cda', label: 'CDA' },
+  { value: 'concesionario', label: 'Concesionario' },
+  { value: 'particular', label: 'Particular' },
+  { value: 'punto_aliado', label: 'Punto aliado' },
+];
+
 const MEDIO_COMUNICACION_OPTIONS = [
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
@@ -47,14 +54,21 @@ const filterConfig = [
     label: 'Buscar',
     placeholder: 'Nombre, teléfono o dirección...',
     showSearchIcon: true,
-    width: 6,
+    width: 4,
+  },
+  {
+    field: 'tipo_cliente',
+    type: 'select',
+    label: 'Tipo de cliente',
+    options: TIPO_CLIENTE_OPTIONS,
+    width: 4,
   },
   {
     field: 'medio_comunicacion',
     type: 'select',
     label: 'Medio de comunicación',
     options: MEDIO_COMUNICACION_OPTIONS,
-    width: 6,
+    width: 4,
   },
 ];
 
@@ -293,5 +307,5 @@ const ClientesFilters = ({
   );
 };
 
-export { filterConfig, MEDIO_COMUNICACION_OPTIONS };
+export { filterConfig, TIPO_CLIENTE_OPTIONS, MEDIO_COMUNICACION_OPTIONS };
 export default ClientesFilters;

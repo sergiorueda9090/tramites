@@ -80,7 +80,6 @@ const UsuariosFilters = ({
   const [isExpanded, setIsExpanded] = useState(expanded);
 
   const handleFilterChange = (key, value) => {
-    console.log('Filter change:', key, value);
     if (onFilterChange) {
       onFilterChange(key, value);
     }
