@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -48,6 +49,7 @@ import {
 
 const CargosNoRegistrados = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -203,9 +205,11 @@ const CargosNoRegistrados = () => {
             Gestión de cargos no registrados del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo cargo
-        </Button>
+        {canCreate('cargos_no_registrados') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nuevo cargo
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -233,8 +237,8 @@ const CargosNoRegistrados = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('cargos_no_registrados') ? handleEdit : undefined}
+        onDelete={canDelete('cargos_no_registrados') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

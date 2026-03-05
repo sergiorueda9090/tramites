@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -48,6 +49,7 @@ import {
 
 const Clientes = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -208,9 +210,11 @@ const Clientes = () => {
             Gestión de clientes del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo cliente
-        </Button>
+        {canCreate('clientes') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nuevo cliente
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -236,8 +240,8 @@ const Clientes = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('clientes') ? handleEdit : undefined}
+        onDelete={canDelete('clientes') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

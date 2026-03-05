@@ -52,6 +52,16 @@ export const getAuth = (email, password) => {
                 console.log('5. Respuesta user:', userResponse.status, userResponse.data);
                 const userData = userResponse.data;
 
+                // Obtener permisos del usuario
+                console.log('5.5. Obteniendo permisos del usuario...');
+                const permResponse = await axios.get(`${URL}/api/user/me/permissions/`, {
+                    headers: {
+                        Authorization: `Bearer ${data.access}`
+                    }
+                });
+                const permissions = permResponse.data;
+                console.log('5.6. Permisos obtenidos:', permissions);
+
                 // Construir nombre completo
                 const fullName = [userData.first_name, userData.last_name]
                     .filter(Boolean)
@@ -71,6 +81,7 @@ export const getAuth = (email, password) => {
                     "name_user" : fullName,
                     "email"     : userData.email,
                     "avatar"    : userData.avatar || null,
+                    "permissions": permissions || [],
                 }));
 
                 console.log('7. Login completado!');

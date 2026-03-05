@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -55,6 +56,7 @@ import {
 
 const TarifarioSoat = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -220,9 +222,11 @@ const TarifarioSoat = () => {
             Gestión de tarifarios SOAT del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo tarifario
-        </Button>
+        {canCreate('tarifario_soat') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nuevo tarifario
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -248,9 +252,9 @@ const TarifarioSoat = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
+        onEdit={canEdit('tarifario_soat') ? handleEdit : undefined}
         onHistory={handleHistory}
-        onDelete={handleDelete}
+        onDelete={canDelete('tarifario_soat') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

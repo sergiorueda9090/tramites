@@ -44,37 +44,38 @@ import {
   toggleSidebarCollapsed,
 } from '../../store/uiStore/uiStore';
 import { ROUTES, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '../../utils/constants';
+import usePermissions from '../../hooks/usePermissions';
 
 const menuItems = [
   {
     section: 'Principal',
     items: [
-      { text: 'Dashboard', icon: DashboardIcon, path: ROUTES.DASHBOARD },
+      { text: 'Dashboard', icon: DashboardIcon, path: ROUTES.DASHBOARD, moduleCode: 'dashboard' },
     ],
   },
   {
     section: 'Operaciones',
     items: [
-      { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES },
-      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT },
-      { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS },
-      { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS },
-      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS },
-      { text: 'Devoluciones',           icon: UndoIcon,             path: ROUTES.DEVOLUCIONES },
-      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS },
-      { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO },
-      { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS },
-      { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES },
-      { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS },
-      { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS },
+      { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES,               moduleCode: 'clientes' },
+      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat' },
+      { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
+      { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },
+      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos' },
+      { text: 'Devoluciones',           icon: UndoIcon,             path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones' },
+      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados' },
+      { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo' },
+      { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
+      { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
+      { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
+      { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },
     ],
   },
   {
     section: 'Administración',
     items: [
-      { text: 'Usuarios', icon: PeopleIcon, path: ROUTES.USUARIOS },
-      { text: 'Reportes', icon: BarChartIcon, path: ROUTES.REPORTES },
-      { text: 'Configuración', icon: SettingsIcon, path: ROUTES.CONFIGURACION },
+      { text: 'Usuarios', icon: PeopleIcon, path: ROUTES.USUARIOS, moduleCode: 'usuarios' },
+      { text: 'Reportes', icon: BarChartIcon, path: ROUTES.REPORTES, moduleCode: 'reportes' },
+      { text: 'Configuración', icon: SettingsIcon, path: ROUTES.CONFIGURACION, moduleCode: 'configuracion' },
     ],
   },
 ];
@@ -89,6 +90,15 @@ const Sidebar = () => {
   const sidebarOpen = useSelector(selectSidebarOpen);
   const sidebarCollapsed = useSelector(selectSidebarCollapsed);
   const layoutStyle = useSelector(selectLayoutStyle);
+  const { canView } = usePermissions();
+
+  // Filtrar secciones y items según permisos del usuario
+  const filteredMenuItems = menuItems
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => canView(item.moduleCode)),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const isColored = layoutStyle === 'colored';
 
@@ -225,7 +235,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', py: 1 }}>
-        {menuItems.map((section) => (
+        {filteredMenuItems.map((section) => (
           <Box key={section.section}>
             {(!sidebarCollapsed || isMobile) && (
               <Typography

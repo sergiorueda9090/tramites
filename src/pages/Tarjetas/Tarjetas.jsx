@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -45,6 +46,7 @@ import {
 
 const Tarjetas = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -187,9 +189,11 @@ const Tarjetas = () => {
             Gestión de tarjetas de pago del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nueva tarjeta
-        </Button>
+        {canCreate('tarjetas') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nueva tarjeta
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -215,8 +219,8 @@ const Tarjetas = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('tarjetas') ? handleEdit : undefined}
+        onDelete={canDelete('tarjetas') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

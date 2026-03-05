@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -51,6 +52,7 @@ import {
 
 const Usuarios = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -217,9 +219,11 @@ const Usuarios = () => {
             Gestión de usuarios del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo usuario
-        </Button>
+        {canCreate('usuarios') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nuevo usuario
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -245,8 +249,8 @@ const Usuarios = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('usuarios') ? handleEdit : undefined}
+        onDelete={canDelete('usuarios') ? handleDelete : undefined}
         onToggleStatus={handleToggleStatus}
       />
 

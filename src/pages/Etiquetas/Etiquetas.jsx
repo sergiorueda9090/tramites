@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -45,6 +46,7 @@ import {
 
 const Etiquetas = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -182,9 +184,11 @@ const Etiquetas = () => {
             Gestión de etiquetas del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nueva etiqueta
-        </Button>
+        {canCreate('etiquetas') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nueva etiqueta
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -210,8 +214,8 @@ const Etiquetas = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('etiquetas') ? handleEdit : undefined}
+        onDelete={canDelete('etiquetas') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

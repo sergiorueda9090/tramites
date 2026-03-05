@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -48,6 +49,7 @@ import {
 
 const RecepcionPagos = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -203,9 +205,11 @@ const RecepcionPagos = () => {
             Gestión de recepciones de pago del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nueva recepción
-        </Button>
+        {canCreate('recepcion_pagos') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nueva recepción
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -233,8 +237,8 @@ const RecepcionPagos = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('recepcion_pagos') ? handleEdit : undefined}
+        onDelete={canDelete('recepcion_pagos') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

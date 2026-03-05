@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -48,6 +49,7 @@ import {
 
 const Gastos = () => {
   const dispatch = useDispatch();
+  const { canCreate, canEdit, canDelete } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -203,9 +205,11 @@ const Gastos = () => {
             Gestión de gastos del sistema
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-          Nuevo gasto
-        </Button>
+        {canCreate('gastos') && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+            Nuevo gasto
+          </Button>
+        )}
       </Box>
 
       {/* Filters */}
@@ -233,8 +237,8 @@ const Gastos = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={canEdit('gastos') ? handleEdit : undefined}
+        onDelete={canDelete('gastos') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}

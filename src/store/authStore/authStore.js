@@ -13,6 +13,7 @@ export const authStore = createSlice({
     name_user : savedInfoUser.name_user || '',
     email     : savedInfoUser.email || '',
     avatar    : savedInfoUser.avatar || null,
+    permissions: savedInfoUser.permissions || [],
   },
   reducers: {
     loginSuccess:(state,action) => {
@@ -22,6 +23,7 @@ export const authStore = createSlice({
         state.email     = action.payload.email
         state.id_user   = action.payload.id_user
         state.avatar    = action.payload.avatar
+        state.permissions = action.payload.permissions || []
       },
       loginFail:(state,action) => {
         // Limpiar TODO el localStorage cuando expire el token
@@ -36,6 +38,7 @@ export const authStore = createSlice({
         state.idrol     = "";
         state.id_user   = null;
         state.avatar    = null;
+        state.permissions = [];
       },
       setAuthenticated:(state, action) => {
           state.token     = action.payload.access;
@@ -45,6 +48,7 @@ export const authStore = createSlice({
           state.name_user = action.payload.name_user;
           state.email     = action.payload.email;
           state.avatar    = action.payload.avatar;
+          state.permissions = action.payload.permissions || [];
 
           let local = {
             "access"    : action.payload.access,
@@ -54,6 +58,7 @@ export const authStore = createSlice({
             "name_user" : action.payload.name_user,
             "email"     : action.payload.email,
             "avatar"    : action.payload.avatar,
+            "permissions": action.payload.permissions || [],
           };
 
           localStorage.setItem("infoUser", JSON.stringify(local));
