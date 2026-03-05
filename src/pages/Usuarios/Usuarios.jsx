@@ -17,6 +17,8 @@ import {
   selectForm,
   selectLoading,
   selectAppliedFilters,
+  selectModules,
+  selectPermissions,
   setPage,
   setPageSize,
   setSort,
@@ -27,6 +29,8 @@ import {
   openCreateModal,
   closeModal,
   updateForm,
+  updatePermission,
+  toggleModule,
 } from '../../store/usersStore/usersStore';
 
 import {
@@ -36,6 +40,7 @@ import {
   viewThunk,
   showThunk,
   toggleStatusThunk,
+  fetchModulesThunk,
 } from '../../store/usersStore/usersThunks';
 
 import {
@@ -61,6 +66,8 @@ const Usuarios = () => {
   const selectedUser = useSelector(selectSelectedUser);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
+  const modules = useSelector(selectModules);
+  const permissions = useSelector(selectPermissions);
 
   /**
    * Construye los parámetros de consulta para el backend
@@ -102,6 +109,11 @@ const Usuarios = () => {
     const params = buildQueryParams();
     dispatch(listAllThunk(params));
   }, [dispatch, buildQueryParams]);
+
+  // Cargar módulos al montar
+  useEffect(() => {
+    dispatch(fetchModulesThunk());
+  }, [dispatch]);
 
   // Cargar usuarios al montar y cuando cambian los parámetros
   useEffect(() => {
@@ -172,6 +184,14 @@ const Usuarios = () => {
     dispatch(updateForm({ field, value }));
   };
 
+  const handlePermissionChange = (moduleCode, field, value) => {
+    dispatch(updatePermission({ moduleCode, field, value }));
+  };
+
+  const handleToggleModule = (moduleCode, enabled) => {
+    dispatch(toggleModule({ moduleCode, enabled }));
+  };
+
   const handleSave = () => {
     dispatch(saveThunk(form));
   };
@@ -238,6 +258,10 @@ const Usuarios = () => {
         selectedUser={selectedUser}
         form={form}
         onFormChange={handleFormChange}
+        modules={modules}
+        permissions={permissions}
+        onPermissionChange={handlePermissionChange}
+        onToggleModule={handleToggleModule}
       />
     </Box>
   );

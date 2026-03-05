@@ -8,6 +8,8 @@ import {
   setPagination,
   closeModal,
   openEditModal,
+  setModules,
+  setPermissions,
 } from './usersStore';
 
 /**
@@ -41,6 +43,9 @@ const API_URLS = {
   delete: (id) => `/api/user/${id}/delete/`,
   toggleStatus: (id) => `/api/user/${id}/toggle-status/`,
   resetPassword: (id) => `/api/user/${id}/reset-password/`,
+  modules: '/api/user/modules/',
+  permissions: (id) => `/api/user/${id}/permissions/`,
+  savePermissions: (id) => `/api/user/${id}/permissions/save/`,
 };
 
 /**
@@ -198,8 +203,10 @@ export const showThunk = (userId) => {
       // DRF devuelve el objeto directamente
       const response = await api.get(API_URLS.detail(userId));
 
-      dispatch(hideBackdrop());
       dispatch(openEditModal(response.data));
+      // Cargar permisos del usuario
+      await dispatch(fetchUserPermissionsThunk(userId));
+      dispatch(hideBackdrop());
 
     } catch (error) {
       dispatch(hideBackdrop());
@@ -215,7 +222,7 @@ export const showThunk = (userId) => {
  * Usa multipart/form-data porque el backend usa MultiPartParser
  */
 export const createThunk = (userData) => {
-  return async (dispatch) => {
+  return async (dispatch, getState) => {
     try {
       dispatch(showBackdrop('Creando usuario...'));
 
@@ -233,6 +240,12 @@ export const createThunk = (userData) => {
       const response = await api.post(API_URLS.create, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      // Guardar permisos del usuario creado
+      const { permissions } = getState().usersStore;
+      if (response.data?.id && permissions.length > 0) {
+        await dispatch(saveUserPermissionsThunk(response.data.id, permissions));
+      }
 
       dispatch(closeModal());
       dispatch(listAllThunk());
@@ -260,7 +273,7 @@ export const createThunk = (userData) => {
  * Usa multipart/form-data porque el backend usa MultiPartParser
  */
 export const updateThunk = (userId, userData) => {
-  return async (dispatch) => {
+  return async (dispatch, getState) => {
     try {
       dispatch(showBackdrop('Actualizando usuario...'));
 
@@ -277,6 +290,12 @@ export const updateThunk = (userId, userData) => {
       const response = await api.put(API_URLS.update(userId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+
+      // Guardar permisos del usuario actualizado
+      const { permissions } = getState().usersStore;
+      if (permissions.length > 0) {
+        await dispatch(saveUserPermissionsThunk(userId, permissions));
+      }
 
       dispatch(listAllThunk());
       dispatch(closeModal());
@@ -440,6 +459,68 @@ export const resetPasswordThunk = (userId, newPassword) => {
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
       return false;
+    }
+  };
+};
+
+/**
+ * Obtener todos los módulos disponibles
+ */
+export const fetchModulesThunk = () => {
+  return async (dispatch) => {
+    try {
+      const response = await api.get(API_URLS.modules);
+      dispatch(setModules(response.data));
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+      return [];
+    }
+  };
+};
+
+/**
+ * Obtener permisos de un usuario
+ */
+export const fetchUserPermissionsThunk = (userId) => {
+  return async (dispatch, getState) => {
+    try {
+      const response = await api.get(API_URLS.permissions(userId));
+      const { modules } = getState().usersStore;
+
+      // Crear permisos para todos los módulos, marcando los que tienen permisos
+      const permMap = {};
+      response.data.forEach((p) => { permMap[p.module] = p; });
+
+      const fullPermissions = modules.map((m) => ({
+        module: m.code,
+        can_view: permMap[m.code]?.can_view || false,
+        can_create: permMap[m.code]?.can_create || false,
+        can_edit: permMap[m.code]?.can_edit || false,
+        can_delete: permMap[m.code]?.can_delete || false,
+      }));
+
+      dispatch(setPermissions(fullPermissions));
+      return fullPermissions;
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
+      return [];
+    }
+  };
+};
+
+/**
+ * Guardar permisos de un usuario
+ */
+export const saveUserPermissionsThunk = (userId, permissions) => {
+  return async () => {
+    try {
+      const response = await api.post(API_URLS.savePermissions(userId), permissions);
+      return response.data;
+    } catch (error) {
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
     }
   };
 };

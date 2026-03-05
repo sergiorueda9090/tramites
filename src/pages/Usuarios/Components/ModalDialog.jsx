@@ -13,6 +13,16 @@ import {
   Box,
   FormControlLabel,
   Switch,
+  Typography,
+  Checkbox,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Divider,
 } from '@mui/material';
 import { USER_ROLE_LABELS } from '../../../utils/constants';
 
@@ -23,6 +33,10 @@ const UsuarioDialog = ({
   selectedUser,
   form,
   onFormChange,
+  modules = [],
+  permissions = [],
+  onPermissionChange,
+  onToggleModule,
 }) => {
   const isEditing = !!selectedUser;
 
@@ -33,8 +47,24 @@ const UsuarioDialog = ({
     onFormChange(field, value);
   };
 
+  const getPermission = (moduleCode) => {
+    return permissions.find((p) => p.module === moduleCode) || {
+      can_view: false, can_create: false, can_edit: false, can_delete: false,
+    };
+  };
+
+  const isModuleEnabled = (moduleCode) => {
+    const perm = getPermission(moduleCode);
+    return perm.can_view || perm.can_create || perm.can_edit || perm.can_delete;
+  };
+
+  const areAllSelected = (moduleCode) => {
+    const perm = getPermission(moduleCode);
+    return perm.can_view && perm.can_create && perm.can_edit && perm.can_delete;
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         {isEditing ? 'Editar usuario' : 'Nuevo usuario'}
       </DialogTitle>
@@ -91,6 +121,79 @@ const UsuarioDialog = ({
             }
             label="Usuario activo"
           />
+
+          {/* Sección de Permisos por Módulo */}
+          {modules.length > 0 && (
+            <>
+              <Divider sx={{ mt: 1 }} />
+              <Typography variant="h6" sx={{ mt: 1 }}>
+                Permisos por Módulo
+              </Typography>
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Módulo</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Todos</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Ver</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Crear</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Editar</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Eliminar</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {modules.map((mod) => {
+                      const perm = getPermission(mod.code);
+                      const enabled = isModuleEnabled(mod.code);
+                      const allChecked = areAllSelected(mod.code);
+
+                      return (
+                        <TableRow key={mod.code} hover>
+                          <TableCell>{mod.name}</TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={allChecked}
+                              indeterminate={enabled && !allChecked}
+                              onChange={(e) => onToggleModule(mod.code, e.target.checked)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={perm.can_view}
+                              onChange={(e) => onPermissionChange(mod.code, 'can_view', e.target.checked)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={perm.can_create}
+                              onChange={(e) => onPermissionChange(mod.code, 'can_create', e.target.checked)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={perm.can_edit}
+                              onChange={(e) => onPermissionChange(mod.code, 'can_edit', e.target.checked)}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Checkbox
+                              checked={perm.can_delete}
+                              onChange={(e) => onPermissionChange(mod.code, 'can_delete', e.target.checked)}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>

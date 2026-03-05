@@ -50,6 +50,10 @@ const initialState = {
     is_active: false,
     image: null,
   },
+
+  // Módulos y permisos
+  modules: [],
+  permissions: [],
 };
 
 export const usersStore = createSlice({
@@ -135,6 +139,14 @@ export const usersStore = createSlice({
         is_active: false,
         image: null,
       };
+      // Inicializar permisos vacíos para todos los módulos
+      state.permissions = state.modules.map((m) => ({
+        module: m.code,
+        can_view: false,
+        can_create: false,
+        can_edit: false,
+        can_delete: false,
+      }));
     },
     openEditModal: (state, action) => {
       state.openModal = true;
@@ -165,6 +177,31 @@ export const usersStore = createSlice({
     resetForm: (state) => {
       state.form = initialState.form;
     },
+    // Módulos y permisos
+    setModules: (state, action) => {
+      state.modules = action.payload;
+    },
+    setPermissions: (state, action) => {
+      state.permissions = action.payload;
+    },
+    updatePermission: (state, action) => {
+      const { moduleCode, field, value } = action.payload;
+      const idx = state.permissions.findIndex((p) => p.module === moduleCode);
+      if (idx !== -1) {
+        state.permissions[idx][field] = value;
+      }
+    },
+    toggleModule: (state, action) => {
+      const { moduleCode, enabled } = action.payload;
+      const idx = state.permissions.findIndex((p) => p.module === moduleCode);
+      if (idx !== -1) {
+        state.permissions[idx].can_view = enabled;
+        state.permissions[idx].can_create = enabled;
+        state.permissions[idx].can_edit = enabled;
+        state.permissions[idx].can_delete = enabled;
+      }
+    },
+
     // Reset
     resetStore: () => initialState,
   },
@@ -187,6 +224,10 @@ export const {
   closeModal,
   updateForm,
   resetForm,
+  setModules,
+  setPermissions,
+  updatePermission,
+  toggleModule,
   resetStore,
 } = usersStore.actions;
 
@@ -293,5 +334,9 @@ export const selectPaginatedUsers = (state) => {
 export const selectFilteredTotalRows = (state) => {
   return state.usersStore.pagination.count;
 };
+
+// Selectores de módulos y permisos
+export const selectModules = (state) => state.usersStore.modules;
+export const selectPermissions = (state) => state.usersStore.permissions;
 
 export default usersStore.reducer;
