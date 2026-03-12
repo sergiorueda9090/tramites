@@ -12,6 +12,8 @@ import { ajusteSaldoStore }         from './ajusteSaldoStore/ajusteSaldoStore';
 import { gastosMainStore }          from './gastosMainStore/gastosMainStore';
 import { gastosStore }              from './gastosStore/gastosStore';
 import { tarifarioSoatStore }       from './tarifarioSoatStore/tarifarioSoatStore';
+import { cotizadorStore }            from './cotizadorStore/cotizadorStore';
+import { apisExternasRuntStore }    from './apisExternasStore/apisExternasRuntStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 
@@ -31,5 +33,7 @@ export const store = configureStore({
     gastosStore     : gastosStore.reducer,
     gastosMainStore : gastosMainStore.reducer,
     tarifarioSoatStore: tarifarioSoatStore.reducer,
+    cotizadorStore: cotizadorStore.reducer,
+    apisExternasRuntStore: apisExternasRuntStore.reducer,
   },
 });

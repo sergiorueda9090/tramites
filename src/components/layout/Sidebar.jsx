@@ -33,6 +33,7 @@ import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import BalanceIcon from '@mui/icons-material/Balance';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import CalculateIcon from '@mui/icons-material/Calculate';
 
 
 
@@ -65,6 +66,7 @@ const menuItems = [
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados' },
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo' },
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
+      { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },
