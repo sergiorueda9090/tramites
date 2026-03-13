@@ -59,6 +59,7 @@ const menuItems = [
     items: [
       { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES,               moduleCode: 'clientes' },
       { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat' },
+      { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
       { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
       { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },
       { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos' },
@@ -66,7 +67,6 @@ const menuItems = [
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados' },
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo' },
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
-      { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },

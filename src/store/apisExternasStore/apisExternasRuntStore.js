@@ -15,7 +15,7 @@ const initialState = {
   num_chasis: null,
   vin: null,
   cilindraje: null,
-  tipo_carroceria: null,
+  tipo_carroceria: null, 
   fecha_registro: null,
   gravamenes: null,
   organismo_transito: null,
@@ -159,6 +159,21 @@ const initialState = {
   // Permisos PCR
   permisos_pcr: [],
 
+  // Datos de persona/conductor (del endpoint runt_vin)
+  id_persona: null,
+  tipo_documento_persona: null,
+  numero_documento_persona: null,
+  nombres: null,
+  apellidos: null,
+  fecha_inscripcion: null,
+  estado_conductor: null,
+  estado_persona: null,
+  mostrar_solicitudes: null,
+  no_inscrito: null,
+  tiene_licencias: null,
+  tiene_multas: null,
+  nro_paz_y_salvo: null,
+
   // Estado de la consulta
   loading: false,
   error: null,
@@ -229,6 +244,25 @@ export const apisExternasRuntStore = createSlice({
       state.loading = false;
       state.error = null;
     },
+    setVinExtraido: (state, action) => {
+      state.vin = action.payload;
+    },
+    setPersona: (state, action) => {
+      const data = action.payload;
+      state.id_persona = data.id_persona;
+      state.tipo_documento_persona = data.tipo_documento;
+      state.numero_documento_persona = data.numero_documento;
+      state.nombres = data.nombres;
+      state.apellidos = data.apellidos;
+      state.fecha_inscripcion = data.fecha_inscripcion;
+      state.estado_conductor = data.estado_conductor;
+      state.estado_persona = data.estado_persona;
+      state.mostrar_solicitudes = data.mostrar_solicitudes;
+      state.no_inscrito = data.no_inscrito;
+      state.tiene_licencias = data.tiene_licencias;
+      state.tiene_multas = data.tiene_multas;
+      state.nro_paz_y_salvo = data.nro_paz_y_salvo;
+    },
     clearVehiculo: () => initialState,
     resetStore: () => initialState,
   },
@@ -238,6 +272,8 @@ export const {
   setLoading,
   setError,
   setVehiculo,
+  setVinExtraido,
+  setPersona,
   clearVehiculo,
   resetStore,
 } = apisExternasRuntStore.actions;
@@ -295,5 +331,20 @@ export const selectCertificadoDesintegracion = (state) => state.apisExternasRunt
 export const selectNormalizacion = (state) => state.apisExternasRuntStore.normalizacion;
 export const selectDesintegracion = (state) => state.apisExternasRuntStore.desintegracion;
 export const selectPermisosPcr = (state) => state.apisExternasRuntStore.permisos_pcr;
+
+// Selectores - Datos de persona/conductor
+export const selectIdPersona = (state) => state.apisExternasRuntStore.id_persona;
+export const selectTipoDocumentoPersona = (state) => state.apisExternasRuntStore.tipo_documento_persona;
+export const selectNumeroDocumentoPersona = (state) => state.apisExternasRuntStore.numero_documento_persona;
+export const selectNombres = (state) => state.apisExternasRuntStore.nombres;
+export const selectApellidos = (state) => state.apisExternasRuntStore.apellidos;
+export const selectFechaInscripcion = (state) => state.apisExternasRuntStore.fecha_inscripcion;
+export const selectEstadoConductor = (state) => state.apisExternasRuntStore.estado_conductor;
+export const selectEstadoPersona = (state) => state.apisExternasRuntStore.estado_persona;
+export const selectMostrarSolicitudes = (state) => state.apisExternasRuntStore.mostrar_solicitudes;
+export const selectNoInscrito = (state) => state.apisExternasRuntStore.no_inscrito;
+export const selectTieneLicencias = (state) => state.apisExternasRuntStore.tiene_licencias;
+export const selectTieneMultas = (state) => state.apisExternasRuntStore.tiene_multas;
+export const selectNroPazYSalvo = (state) => state.apisExternasRuntStore.nro_paz_y_salvo;
 
 export default apisExternasRuntStore.reducer;

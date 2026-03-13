@@ -19,6 +19,9 @@ import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ScaleIcon from '@mui/icons-material/Scale';
 
+import PersonIcon from '@mui/icons-material/Person';
+import GavelIcon from '@mui/icons-material/Gavel';
+
 import {
   selectPlaca,
   selectNumLicencia,
@@ -47,6 +50,17 @@ import {
   selectRepotenciado,
   selectDiasMatriculado,
   selectFechaRegistro,
+  selectIdPersona,
+  selectTipoDocumentoPersona,
+  selectNumeroDocumentoPersona,
+  selectNombres,
+  selectApellidos,
+  selectFechaInscripcion,
+  selectEstadoConductor,
+  selectEstadoPersona,
+  selectTieneLicencias,
+  selectTieneMultas,
+  selectNroPazYSalvo,
 } from '../../../store/apisExternasStore/apisExternasRuntStore';
 
 const ReadOnlyField = ({ label, value, icon, endText }) => (
@@ -100,6 +114,19 @@ const Step5_DatosVehiculo = () => {
   const repotenciado = useSelector(selectRepotenciado);
   const diasMatriculado = useSelector(selectDiasMatriculado);
   const fechaRegistro = useSelector(selectFechaRegistro);
+
+  // Datos de persona/conductor
+  const idPersona = useSelector(selectIdPersona);
+  const tipoDocumentoPersona = useSelector(selectTipoDocumentoPersona);
+  const numeroDocumentoPersona = useSelector(selectNumeroDocumentoPersona);
+  const nombres = useSelector(selectNombres);
+  const apellidos = useSelector(selectApellidos);
+  const fechaInscripcion = useSelector(selectFechaInscripcion);
+  const estadoConductor = useSelector(selectEstadoConductor);
+  const estadoPersona = useSelector(selectEstadoPersona);
+  const tieneLicencias = useSelector(selectTieneLicencias);
+  const tieneMultas = useSelector(selectTieneMultas);
+  const nroPazYSalvo = useSelector(selectNroPazYSalvo);
 
   return (
     <Box>
@@ -253,6 +280,54 @@ const Step5_DatosVehiculo = () => {
               </Grid>
             </Grid>
           </Paper>
+
+          {/* Datos del conductor/propietario */}
+          {nombres && (
+            <Paper variant="outlined" sx={{ p: 3, mt: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <PersonIcon color="primary" fontSize="small" />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Datos del conductor / propietario
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2.5 }} />
+              <Grid container spacing={2.5}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Nombres" value={nombres} icon={<PersonIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Apellidos" value={apellidos} icon={<PersonIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Tipo Documento" value={tipoDocumentoPersona} icon={<BadgeIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="No. Documento" value={numeroDocumentoPersona} icon={<BadgeIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="ID Persona" value={idPersona} icon={<PinIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Fecha Inscripción" value={formatFecha(fechaInscripcion)} icon={<CalendarMonthIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Estado Conductor" value={estadoConductor} icon={<BadgeIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Estado Persona" value={estadoPersona} icon={<BadgeIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Tiene Licencias" value={tieneLicencias ? 'Sí' : 'No'} icon={<GavelIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="Tiene Multas" value={tieneMultas} icon={<GavelIcon fontSize="small" color="action" />} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <ReadOnlyField label="No. Paz y Salvo" value={nroPazYSalvo} icon={<PinIcon fontSize="small" color="action" />} />
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
         </>
       )}
     </Box>

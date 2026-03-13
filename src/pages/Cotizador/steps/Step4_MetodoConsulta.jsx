@@ -32,7 +32,7 @@ import {
   setTipoDocumento,
 } from '../../../store/cotizadorStore/cotizadorSlice';
 import MetodoConsultaCard from '../Components/MetodoConsultaCard';
-import { consultarRuntThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
+import { consultarRuntThunk, extraerDatosRuntThunk, extraerDatosFotoVinThunk, extraerDatosAPIFalabellaThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
 
 const TIPOS_DOCUMENTO = [
   { codigo: 'C', nombre: 'Cédula de Ciudadanía' },
@@ -131,13 +131,16 @@ const Step4_MetodoConsulta = () => {
   };
 
   const handleAplicarFotoTarjeta = () => {
-    // TODO: Llamar al thunk de IA con la imagen de la tarjeta
-    console.log('Aplicar IA_FOTO_TARJETA:', { imagen: imagenFile });
+    dispatch(extraerDatosRuntThunk({ imagen: imagenFile }));
   };
 
-  const handleAplicarFotoRunt = () => {
+  const handleFotoVin = () => {
     // TODO: Llamar al thunk de IA + RUNT con imagen y documento
-    console.log('Aplicar IA_VIN_RUNT:', { imagen: imagenFile, documento: consultaDocumento });
+    dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile, numero_documento: consultaDocumento }));
+  };
+
+  const handleAplicarFalabella = () => {
+    dispatch(extraerDatosAPIFalabellaThunk({ placa: consultaPlaca }));
   };
 
   return (
@@ -394,8 +397,48 @@ const Step4_MetodoConsulta = () => {
             <Button
               variant="contained"
               startIcon={<SendIcon />}
-              onClick={handleAplicarFotoRunt}
+              onClick={handleFotoVin}
               disabled={!imagenFile || !consultaDocumento}
+            >
+              Aplicar
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
+      {/* ===== PLACA FALABELLA + DOCUMENTO RUNT ===== */}
+      {metodoConsulta === 'PLACA_FALABELLA' && (
+        <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Consultar placa en Falabella y verificar en RUNT
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Placa"
+                value={consultaPlaca}
+                onChange={(e) => dispatch(setConsultaPlaca(e.target.value.toUpperCase()))}
+                placeholder="ABC123"
+                inputProps={{ style: { textTransform: 'uppercase' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Documento RUNT"
+                value={consultaDocumento}
+                onChange={(e) => dispatch(setConsultaDocumento(e.target.value))}
+                placeholder="Ej: 1098765432"
+              />
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 2, textAlign: 'right' }}>
+            <Button
+              variant="contained"
+              startIcon={<SendIcon />}
+              onClick={handleAplicarFalabella}
+              disabled={!consultaPlaca || !consultaDocumento}
             >
               Aplicar
             </Button>
