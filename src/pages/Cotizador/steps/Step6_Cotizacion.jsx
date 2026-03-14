@@ -49,6 +49,17 @@ import {
   selectOrganismoTransito,
   selectSoat,
   selectRtms,
+  selectIdPersona,
+  selectTipoDocumentoPersona,
+  selectNumeroDocumentoPersona,
+  selectNombres,
+  selectApellidos,
+  selectFechaInscripcion,
+  selectEstadoConductor,
+  selectEstadoPersona,
+  selectTieneLicencias,
+  selectTieneMultas,
+  selectNroPazYSalvo,
 } from '../../../store/apisExternasStore/apisExternasRuntStore';
 import { guardarCotizacionThunk } from '../../../store/cotizadorStore/cotizadorThunks';
 import CotizacionResumen from '../Components/CotizacionResumen';
@@ -122,6 +133,19 @@ const Step6_Cotizacion = ({ onReset }) => {
   const organismoTransito = useSelector(selectOrganismoTransito);
   const soat = useSelector(selectSoat);
   const rtms = useSelector(selectRtms);
+
+  // Datos de persona/conductor RUNT
+  const idPersona = useSelector(selectIdPersona);
+  const tipoDocumentoPersona = useSelector(selectTipoDocumentoPersona);
+  const numeroDocumentoPersona = useSelector(selectNumeroDocumentoPersona);
+  const nombres = useSelector(selectNombres);
+  const apellidos = useSelector(selectApellidos);
+  const fechaInscripcion = useSelector(selectFechaInscripcion);
+  const estadoConductor = useSelector(selectEstadoConductor);
+  const estadoPersona = useSelector(selectEstadoPersona);
+  const tieneLicencias = useSelector(selectTieneLicencias);
+  const tieneMultas = useSelector(selectTieneMultas);
+  const nroPazYSalvo = useSelector(selectNroPazYSalvo);
 
   // Cliente a mostrar (seleccionado o nuevo)
   const cliente = modoCliente === 'seleccionado' ? clienteSeleccionado : nuevoCliente;
@@ -324,6 +348,65 @@ const Step6_Cotizacion = ({ onReset }) => {
                     </Grid>
                   </>
                 )}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Card Información del Conductor */}
+        {esFlujoSoat && idPersona && (
+          <Grid item xs={12}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <TwoWheelerIcon color="primary" />
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Información del Conductor
+                  </Typography>
+                  <Chip
+                    label={estadoConductor || 'Sin estado'}
+                    size="small"
+                    color={estadoConductor === 'ACTIVO' ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`Persona: ${estadoPersona || 'Sin estado'}`}
+                    size="small"
+                    color={estadoPersona === 'ACTIVA' ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                </Box>
+                <Divider sx={{ mb: 1.5 }} />
+
+                <Grid container spacing={1}>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="ID Persona" value={idPersona} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Tipo Documento" value={tipoDocumentoPersona} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="No. Documento" value={numeroDocumentoPersona} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Nombres" value={nombres} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Apellidos" value={apellidos} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Fecha Inscripción" value={formatFecha(fechaInscripcion)} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Tiene Licencias" value={tieneLicencias ? 'SÍ' : 'NO'} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Tiene Multas" value={tieneMultas} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="No. Paz y Salvo" value={nroPazYSalvo} />
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
           </Grid>

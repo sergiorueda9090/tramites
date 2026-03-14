@@ -1,11 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Typography,
   Grid,
   TextField,
-  Button,
   Paper,
   IconButton,
   FormControl,
@@ -18,7 +17,6 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SendIcon from '@mui/icons-material/Send';
 
 import {
   selectTipoVehiculo,
@@ -30,6 +28,7 @@ import {
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
+  setImagenLista,
 } from '../../../store/cotizadorStore/cotizadorSlice';
 import MetodoConsultaCard from '../Components/MetodoConsultaCard';
 import { consultarRuntThunk, extraerDatosRuntThunk, extraerDatosFotoVinThunk, extraerDatosAPIFalabellaThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
@@ -84,7 +83,7 @@ const METODOS_CERO_KM = [
   },
 ];
 
-const Step4_MetodoConsulta = () => {
+const Step4_MetodoConsulta = ({ consultarRef }) => {
   const dispatch = useDispatch();
   const tipoVehiculo = useSelector(selectTipoVehiculo);
   const metodoConsulta = useSelector(selectMetodoConsulta);
@@ -111,6 +110,7 @@ const Step4_MetodoConsulta = () => {
     if (!file) return;
 
     setImagenFile(file);
+    dispatch(setImagenLista(true));
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagenPreview(e.target.result);
@@ -123,25 +123,27 @@ const Step4_MetodoConsulta = () => {
   const handleRemoveImage = () => {
     setImagenPreview(null);
     setImagenFile(null);
+    dispatch(setImagenLista(false));
   };
 
-  const handleAplicarPlacaRunt = () => {
-    // TODO: Llamar al thunk de consulta RUNT con placa + documento
-    dispatch(consultarRuntThunk({ placa: consultaPlaca, tipo_documento: tipoDocumento, numero_documento: consultaDocumento }));
-  };
-
-  const handleAplicarFotoTarjeta = () => {
-    dispatch(extraerDatosRuntThunk({ imagen: imagenFile }));
-  };
-
-  const handleFotoVin = () => {
-    // TODO: Llamar al thunk de IA + RUNT con imagen y documento
-    dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile, numero_documento: consultaDocumento }));
-  };
-
-  const handleAplicarFalabella = () => {
-    dispatch(extraerDatosAPIFalabellaThunk({ placa: consultaPlaca }));
-  };
+  // Exponer función de consulta al componente padre via ref
+  useEffect(() => {
+    if (!consultarRef) return;
+    consultarRef.current = () => {
+      switch (metodoConsulta) {
+        case 'PLACA_RUNT':
+          return dispatch(consultarRuntThunk({ placa: consultaPlaca, tipo_documento: tipoDocumento, numero_documento: consultaDocumento }));
+        case 'IA_FOTO_TARJETA':
+          return dispatch(extraerDatosRuntThunk({ imagen: imagenFile }));
+        case 'IA_VIN_RUNT':
+          return dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile, numero_documento: consultaDocumento }));
+        case 'PLACA_FALABELLA':
+          return dispatch(extraerDatosAPIFalabellaThunk({ placa: consultaPlaca }));
+        default:
+          return Promise.resolve(null);
+      }
+    };
+  }, [consultarRef, metodoConsulta, consultaPlaca, consultaDocumento, tipoDocumento, imagenFile, dispatch]);
 
   return (
     <Box>
@@ -210,16 +212,6 @@ const Step4_MetodoConsulta = () => {
               />
             </Grid>
           </Grid>
-          <Box sx={{ mt: 2, textAlign: 'right' }}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={handleAplicarPlacaRunt}
-              disabled={!consultaPlaca || !consultaDocumento}
-            >
-              Aplicar
-            </Button>
-          </Box>
         </Paper>
       )}
 
@@ -296,17 +288,6 @@ const Step4_MetodoConsulta = () => {
               </IconButton>
             </Box>
           )}
-
-          <Box sx={{ mt: 2, textAlign: 'right' }}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={handleAplicarFotoTarjeta}
-              disabled={!imagenFile}
-            >
-              Aplicar
-            </Button>
-          </Box>
         </Paper>
       )}
 
@@ -392,17 +373,6 @@ const Step4_MetodoConsulta = () => {
             placeholder="Ej: 1098765432"
             sx={{ mt: 2 }}
           />
-
-          <Box sx={{ mt: 2, textAlign: 'right' }}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={handleFotoVin}
-              disabled={!imagenFile || !consultaDocumento}
-            >
-              Aplicar
-            </Button>
-          </Box>
         </Paper>
       )}
 
@@ -433,16 +403,6 @@ const Step4_MetodoConsulta = () => {
               />
             </Grid>
           </Grid>
-          <Box sx={{ mt: 2, textAlign: 'right' }}>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={handleAplicarFalabella}
-              disabled={!consultaPlaca || !consultaDocumento}
-            >
-              Aplicar
-            </Button>
-          </Box>
         </Paper>
       )}
     </Box>

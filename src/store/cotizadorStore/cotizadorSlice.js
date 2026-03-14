@@ -22,6 +22,7 @@ const initialState = {
   consultaPlaca: '',
   consultaDocumento: '',
   tipoDocumento: 'C',
+  imagenLista: false,
 
   // Step 5 - Datos del vehículo
   datosVehiculo: {
@@ -110,6 +111,10 @@ export const cotizadorStore = createSlice({
       state.consultaPlaca = '';
       state.consultaDocumento = '';
       state.tipoDocumento = 'C';
+      state.imagenLista = false;
+    },
+    setImagenLista: (state, action) => {
+      state.imagenLista = action.payload;
     },
     setConsultaPlaca: (state, action) => {
       state.consultaPlaca = action.payload;
@@ -165,6 +170,7 @@ export const {
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
+  setImagenLista,
   setDatosVehiculo,
   setVehiculoValidado,
   setCotizacion,
@@ -187,6 +193,7 @@ export const selectMetodoConsulta = (state) => state.cotizadorStore.metodoConsul
 export const selectConsultaPlaca = (state) => state.cotizadorStore.consultaPlaca;
 export const selectConsultaDocumento = (state) => state.cotizadorStore.consultaDocumento;
 export const selectTipoDocumento = (state) => state.cotizadorStore.tipoDocumento;
+export const selectImagenLista = (state) => state.cotizadorStore.imagenLista;
 export const selectDatosVehiculo = (state) => state.cotizadorStore.datosVehiculo;
 export const selectVehiculoValidado = (state) => state.cotizadorStore.vehiculoValidado;
 export const selectCotizacion = (state) => state.cotizadorStore.cotizacion;

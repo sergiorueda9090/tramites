@@ -10,12 +10,13 @@ import {
 } from './apisExternasRuntStore';
 
 // URL del endpoint RUNT
-const API_URL = '/api/cotizador/external/runt/';  
-const API_URL_DATOS = '/api/cotizador/tarjeta_propiedad/';
+const API_URL = '/api/cotizador/external/runt/';
+const API_GET_INFO_EXTERNAL = '/api/cotizador/get_user_info_external/';
 
+
+const API_URL_DATOS = '/api/cotizador/tarjeta_propiedad/';
 const API_URL_VIN = '/api/cotizador/vin/';
 const API_URL_RUNT_VIN = '/api/cotizador/runt_vin/';
-
 const API_URL_FALABELLA = '/api/cotizador/api_falabella/';
 
 /**
@@ -36,6 +37,10 @@ export const consultarRuntThunk = ({ placa, tipo_documento, numero_documento }) 
       });
 
       dispatch(setVehiculo(response.data));
+
+      // Consultar información del usuario enseguida
+      await dispatch(consultarInformacionUsuarioThunk({ numero_documento }));
+
       dispatch(hideBackdrop());
 
       return response.data;
@@ -61,6 +66,47 @@ export const consultarRuntThunk = ({ placa, tipo_documento, numero_documento }) 
     }
   };
 };
+
+
+export const consultarInformacionUsuarioThunk = ({ numero_documento }) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoading(true));
+      dispatch(showBackdrop('Consultando información del usuario...'));
+
+      const response = await api.get(API_GET_INFO_EXTERNAL, {
+        params: { numero_documento },
+      });
+
+      dispatch(setPersona(response.data));
+      dispatch(hideBackdrop());
+
+      return response.data;
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+
+      const status = error.response?.status;
+      const response = error.response?.data;
+
+      let title = 'Error';
+      if (status === 400) title = 'Error de validación';
+      else if (status === 401) title = 'No autorizado';
+      else if (status === 404) title = 'No encontrado';
+      else if (status === 500) title = 'Error del servidor';
+
+      const message = response?.error || response?.detail || error.message || 'No se pudo consultar la información del usuario';
+
+      dispatch(setError(message));
+      AlertService.error(title, message);
+
+      return null;
+    }
+  };
+};
+
+
+
 
 /**
  * Extraer datos de tarjeta de propiedad con IA y luego consultar RUNT
@@ -102,6 +148,10 @@ export const extraerDatosRuntThunk = ({ imagen }) => {
       });
 
       dispatch(setVehiculo(runtResponse.data));
+
+      // Consultar información del usuario enseguida
+      await dispatch(consultarInformacionUsuarioThunk({ numero_documento: nro_documento }));
+
       dispatch(hideBackdrop());
       dispatch(setLoading(false));
 
@@ -214,7 +264,6 @@ export const extraerDatosFotoVinThunk = ({ imagen, numero_documento }) => {
     }
   };
 };
-
 
 export const extraerDatosAPIFalabellaThunk = ({ placa }) => {
   return async (dispatch) => {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -25,6 +25,9 @@ import {
   selectTipoTramite,
   selectTipoVehiculo,
   selectMetodoConsulta,
+  selectConsultaPlaca,
+  selectConsultaDocumento,
+  selectImagenLista,
   setActiveStep,
   resetCotizador,
 } from '../../store/cotizadorStore/cotizadorSlice';
@@ -51,7 +54,13 @@ const CotizadorPage = () => {
   const tipoTramite = useSelector(selectTipoTramite);
   const tipoVehiculo = useSelector(selectTipoVehiculo);
   const metodoConsulta = useSelector(selectMetodoConsulta);
+  const consultaPlaca = useSelector(selectConsultaPlaca);
+  const consultaDocumento = useSelector(selectConsultaDocumento);
+  const imagenLista = useSelector(selectImagenLista);
   const runtPlaca = useSelector(selectPlaca);
+
+  // Ref para la función de consulta de Step4
+  const consultarRef = useRef(null);
 
   // Resetear todo al desmontar (cambio de módulo)
   useEffect(() => {
@@ -76,7 +85,12 @@ const CotizadorPage = () => {
         case 2: // Tipo vehículo
           return !!tipoVehiculo;
         case 3: // Método consulta
-          return !!metodoConsulta;
+          if (!metodoConsulta) return false;
+          if (metodoConsulta === 'PLACA_RUNT') return !!consultaPlaca && !!consultaDocumento;
+          if (metodoConsulta === 'IA_FOTO_TARJETA') return !!imagenLista;
+          if (metodoConsulta === 'IA_VIN_RUNT') return !!imagenLista && !!consultaDocumento;
+          if (metodoConsulta === 'PLACA_FALABELLA') return !!consultaPlaca && !!consultaDocumento;
+          return false;
         case 4: // Datos vehículo
           return !!runtPlaca;
         case 5: // Cotización
@@ -98,12 +112,18 @@ const CotizadorPage = () => {
           return false;
       }
     }
-  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, runtPlaca]);
+  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca]);
 
-  const handleNext = () => {
-    if (activeStep < steps.length - 1) {
-      dispatch(setActiveStep(activeStep + 1));
+  const handleNext = async () => {
+    if (activeStep >= steps.length - 1) return;
+
+    // En el paso 4 (case 3), ejecutar los endpoints antes de avanzar
+    if (esFlujoSoat && activeStep === 3 && consultarRef.current) {
+      const result = await consultarRef.current();
+      if (!result) return; // Si falla, no avanza
     }
+
+    dispatch(setActiveStep(activeStep + 1));
   };
 
   const handleBack = () => {
@@ -126,7 +146,7 @@ const CotizadorPage = () => {
         case 0: return <Step1_Cliente />;
         case 1: return <Step2_TipoTramite />;
         case 2: return <Step3_TipoVehiculo />;
-        case 3: return <Step4_MetodoConsulta />;
+        case 3: return <Step4_MetodoConsulta consultarRef={consultarRef} />;
         case 4: return <Step5_DatosVehiculo />;
         case 5: return <Step6_Cotizacion onReset={handleReset} />;
         default: return null;
