@@ -30,6 +30,7 @@ import {
   selectImagenLista,
   selectGrupoSoat,
   selectGrupoRequiereRevision,
+  selectTarifaCodigo,
   setActiveStep,
   resetCotizador,
 } from '../../store/cotizadorStore/cotizadorSlice';
@@ -63,6 +64,7 @@ const CotizadorPage = () => {
   const runtPlaca = useSelector(selectPlaca);
   const grupoSoat = useSelector(selectGrupoSoat);
   const grupoRequiereRevision = useSelector(selectGrupoRequiereRevision);
+  const tarifaCodigo = useSelector(selectTarifaCodigo);
 
   // Ref para la función de consulta de Step4
   const consultarRef = useRef(null);
@@ -100,8 +102,8 @@ const CotizadorPage = () => {
           return !!runtPlaca;
         case 5: // Cotización
           return true;
-        case 6: // Grupo SOAT
-          return !!grupoSoat && !grupoRequiereRevision;
+        case 6: // Grupo SOAT + Módulo tarifa
+          return !!grupoSoat && !grupoRequiereRevision && !!tarifaCodigo;
         default:
           return false;
       }
@@ -119,7 +121,7 @@ const CotizadorPage = () => {
           return false;
       }
     }
-  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca, grupoSoat, grupoRequiereRevision]);
+  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca, grupoSoat, grupoRequiereRevision, tarifaCodigo]);
 
   const handleNext = async () => {
     if (activeStep >= steps.length - 1) return;
@@ -226,16 +228,16 @@ const CotizadorPage = () => {
       </Paper>
 
       {/* Navigation Buttons */}
-      {!isLastStep && (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-            disabled={activeStep === 0}
-          >
-            Anterior
-          </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+          disabled={activeStep === 0}
+        >
+          Anterior
+        </Button>
+        {!isLastStep && (
           <Button
             variant="contained"
             endIcon={<ArrowForwardIcon />}
@@ -244,8 +246,8 @@ const CotizadorPage = () => {
           >
             Siguiente
           </Button>
-        </Box>
-      )}
+        )}
+      </Box>
     </Box>
   );
 };
