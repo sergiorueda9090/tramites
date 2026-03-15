@@ -28,6 +28,8 @@ import {
   selectConsultaPlaca,
   selectConsultaDocumento,
   selectImagenLista,
+  selectGrupoSoat,
+  selectGrupoRequiereRevision,
   setActiveStep,
   resetCotizador,
 } from '../../store/cotizadorStore/cotizadorSlice';
@@ -39,6 +41,7 @@ import Step3_TipoVehiculo from './steps/Step3_TipoVehiculo';
 import Step4_MetodoConsulta from './steps/Step4_MetodoConsulta';
 import Step5_DatosVehiculo from './steps/Step5_DatosVehiculo';
 import Step6_Cotizacion from './steps/Step6_Cotizacion';
+import Step7_GrupoSoat from './steps/Step7_GrupoSoat';
 
 const CotizadorPage = () => {
   const dispatch = useDispatch();
@@ -58,6 +61,8 @@ const CotizadorPage = () => {
   const consultaDocumento = useSelector(selectConsultaDocumento);
   const imagenLista = useSelector(selectImagenLista);
   const runtPlaca = useSelector(selectPlaca);
+  const grupoSoat = useSelector(selectGrupoSoat);
+  const grupoRequiereRevision = useSelector(selectGrupoRequiereRevision);
 
   // Ref para la función de consulta de Step4
   const consultarRef = useRef(null);
@@ -95,6 +100,8 @@ const CotizadorPage = () => {
           return !!runtPlaca;
         case 5: // Cotización
           return true;
+        case 6: // Grupo SOAT
+          return !!grupoSoat && !grupoRequiereRevision;
         default:
           return false;
       }
@@ -112,7 +119,7 @@ const CotizadorPage = () => {
           return false;
       }
     }
-  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca]);
+  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca, grupoSoat, grupoRequiereRevision]);
 
   const handleNext = async () => {
     if (activeStep >= steps.length - 1) return;
@@ -149,6 +156,7 @@ const CotizadorPage = () => {
         case 3: return <Step4_MetodoConsulta consultarRef={consultarRef} />;
         case 4: return <Step5_DatosVehiculo />;
         case 5: return <Step6_Cotizacion onReset={handleReset} />;
+        case 6: return <Step7_GrupoSoat />;
         default: return null;
       }
     } else {

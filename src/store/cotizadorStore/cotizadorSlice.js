@@ -45,6 +45,13 @@ const initialState = {
     total: 0,
   },
 
+  // Step 7 - Grupo SOAT (selección manual)
+  grupoClaseRunt: null,      // Clase RUNT seleccionada manualmente
+  grupoSubcriterio: null,    // Subcriterio seleccionado (tipo servicio o clasificación)
+  grupoSoat: null,           // 'MOTOS' | 'CARGA' | 'CAMPEROS' | 'FAMILIAR_5P' | 'INTERMUNICIPAL' | 'TAXI' | 'BUS_URBANO'
+  grupoRequiereRevision: false,
+  grupoMotivo: null,
+
   // UI States
   loading: false,
   error: null,
@@ -95,6 +102,11 @@ export const cotizadorStore = createSlice({
       state.metodoConsulta = null;
       state.datosVehiculo  = initialState.datosVehiculo;
       state.vehiculoValidado = false;
+      state.grupoClaseRunt = null;
+      state.grupoSubcriterio = null;
+      state.grupoSoat = null;
+      state.grupoRequiereRevision = false;
+      state.grupoMotivo = null;
     },
 
     // Step 3 - Tipo de vehículo
@@ -143,6 +155,25 @@ export const cotizadorStore = createSlice({
       state.cotizacionGuardada = action.payload;
     },
 
+    // Step 7 - Grupo SOAT (selección manual)
+    setGrupoClaseRunt: (state, action) => {
+      state.grupoClaseRunt = action.payload;
+      // Resetear subcriterio y grupo al cambiar clase
+      state.grupoSubcriterio = null;
+      state.grupoSoat = null;
+      state.grupoRequiereRevision = false;
+      state.grupoMotivo = null;
+    },
+    setGrupoSubcriterio: (state, action) => {
+      state.grupoSubcriterio = action.payload;
+    },
+    setGrupoSoat: (state, action) => {
+      const { grupo, requiereRevision, motivo } = action.payload;
+      state.grupoSoat = grupo;
+      state.grupoRequiereRevision = requiereRevision;
+      state.grupoMotivo = motivo || null;
+    },
+
     // UI
     setLoading: (state, action) => {
       state.loading = action.payload;
@@ -175,6 +206,9 @@ export const {
   setVehiculoValidado,
   setCotizacion,
   setCotizacionGuardada,
+  setGrupoClaseRunt,
+  setGrupoSubcriterio,
+  setGrupoSoat,
   setLoading,
   setError,
   resetCotizador,
@@ -198,6 +232,11 @@ export const selectDatosVehiculo = (state) => state.cotizadorStore.datosVehiculo
 export const selectVehiculoValidado = (state) => state.cotizadorStore.vehiculoValidado;
 export const selectCotizacion = (state) => state.cotizadorStore.cotizacion;
 export const selectCotizacionGuardada = (state) => state.cotizadorStore.cotizacionGuardada;
+export const selectGrupoClaseRunt = (state) => state.cotizadorStore.grupoClaseRunt;
+export const selectGrupoSubcriterio = (state) => state.cotizadorStore.grupoSubcriterio;
+export const selectGrupoSoat = (state) => state.cotizadorStore.grupoSoat;
+export const selectGrupoRequiereRevision = (state) => state.cotizadorStore.grupoRequiereRevision;
+export const selectGrupoMotivo = (state) => state.cotizadorStore.grupoMotivo;
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;
 
@@ -218,6 +257,7 @@ export const selectSteps = (state) => {
       'Método de Consulta',
       'Datos del Vehículo',
       'Cotización',
+      'Grupo SOAT',
     ];
   }
   return ['Cliente', 'Tipo de Trámite', 'Cotización'];
