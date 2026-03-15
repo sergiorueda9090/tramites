@@ -88,6 +88,16 @@ const Step1_Cliente = () => {
   // ClienteDialog handlers
   const handleOpenModal = () => {
     dispatch(openCreateModal());
+    // Pre-llenar el formulario con lo que el usuario buscó
+    if (clienteQuery.trim()) {
+      const query = clienteQuery.trim();
+      const isPhone = /^\d+$/.test(query);
+      if (isPhone) {
+        dispatch(updateForm({ field: 'telefono', value: query }));
+      } else {
+        dispatch(updateForm({ field: 'nombre', value: query }));
+      }
+    }
   };
 
   const handleCloseModal = () => {
