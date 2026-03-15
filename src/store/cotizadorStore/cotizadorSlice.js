@@ -52,6 +52,11 @@ const initialState = {
   grupoRequiereRevision: false,
   grupoMotivo: null,
 
+  // Step 7 - Módulo tarifa (segunda parte del árbol)
+  moduloPregunta1: null,     // Respuesta a la primera pregunta del módulo (cilindraje, modelo, toneladas, pasajeros)
+  moduloPregunta2: null,     // Respuesta a la segunda pregunta del módulo (cilindraje después de modelo)
+  tarifaCodigo: null,        // Código de tarifa resultante (100, 110, 211, 810, etc.)
+
   // UI States
   loading: false,
   error: null,
@@ -107,6 +112,9 @@ export const cotizadorStore = createSlice({
       state.grupoSoat = null;
       state.grupoRequiereRevision = false;
       state.grupoMotivo = null;
+      state.moduloPregunta1 = null;
+      state.moduloPregunta2 = null;
+      state.tarifaCodigo = null;
     },
 
     // Step 3 - Tipo de vehículo
@@ -158,20 +166,42 @@ export const cotizadorStore = createSlice({
     // Step 7 - Grupo SOAT (selección manual)
     setGrupoClaseRunt: (state, action) => {
       state.grupoClaseRunt = action.payload;
-      // Resetear subcriterio y grupo al cambiar clase
+      // Resetear subcriterio, grupo y módulo al cambiar clase
       state.grupoSubcriterio = null;
       state.grupoSoat = null;
       state.grupoRequiereRevision = false;
       state.grupoMotivo = null;
+      state.moduloPregunta1 = null;
+      state.moduloPregunta2 = null;
+      state.tarifaCodigo = null;
     },
     setGrupoSubcriterio: (state, action) => {
       state.grupoSubcriterio = action.payload;
+      // Resetear módulo al cambiar subcriterio (el grupo cambia)
+      state.moduloPregunta1 = null;
+      state.moduloPregunta2 = null;
+      state.tarifaCodigo = null;
     },
     setGrupoSoat: (state, action) => {
       const { grupo, requiereRevision, motivo } = action.payload;
       state.grupoSoat = grupo;
       state.grupoRequiereRevision = requiereRevision;
       state.grupoMotivo = motivo || null;
+    },
+
+    // Módulo tarifa
+    setModuloPregunta1: (state, action) => {
+      state.moduloPregunta1 = action.payload;
+      // Resetear pregunta 2 y tarifa al cambiar pregunta 1
+      state.moduloPregunta2 = null;
+      state.tarifaCodigo = null;
+    },
+    setModuloPregunta2: (state, action) => {
+      state.moduloPregunta2 = action.payload;
+      state.tarifaCodigo = null;
+    },
+    setTarifaCodigo: (state, action) => {
+      state.tarifaCodigo = action.payload;
     },
 
     // UI
@@ -209,6 +239,9 @@ export const {
   setGrupoClaseRunt,
   setGrupoSubcriterio,
   setGrupoSoat,
+  setModuloPregunta1,
+  setModuloPregunta2,
+  setTarifaCodigo,
   setLoading,
   setError,
   resetCotizador,
@@ -237,6 +270,9 @@ export const selectGrupoSubcriterio = (state) => state.cotizadorStore.grupoSubcr
 export const selectGrupoSoat = (state) => state.cotizadorStore.grupoSoat;
 export const selectGrupoRequiereRevision = (state) => state.cotizadorStore.grupoRequiereRevision;
 export const selectGrupoMotivo = (state) => state.cotizadorStore.grupoMotivo;
+export const selectModuloPregunta1 = (state) => state.cotizadorStore.moduloPregunta1;
+export const selectModuloPregunta2 = (state) => state.cotizadorStore.moduloPregunta2;
+export const selectTarifaCodigo = (state) => state.cotizadorStore.tarifaCodigo;
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;
 
