@@ -28,12 +28,13 @@ const TIPOS_TRAMITE = [
   { codigo: 'IMPRONTAS', nombre: 'Toma de Improntas', icono: FingerprintIcon, descripcion: 'Servicio de toma de improntas vehiculares' },
 ];
 
-const Step2_TipoTramite = () => {
+const Step2_TipoTramite = ({ onAutoAdvance }) => {
   const dispatch = useDispatch();
   const tipoTramite = useSelector(selectTipoTramite);
 
   const handleSelect = (codigo) => {
     dispatch(setTipoTramite(codigo));
+    if (onAutoAdvance) setTimeout(onAutoAdvance, 300);
   };
 
   return (

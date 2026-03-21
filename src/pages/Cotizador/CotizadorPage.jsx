@@ -152,9 +152,9 @@ const CotizadorPage = () => {
   const renderStep = () => {
     if (esFlujoSoat) {
       switch (activeStep) {
-        case 0: return <Step1_Cliente />;
-        case 1: return <Step2_TipoTramite />;
-        case 2: return <Step3_TipoVehiculo />;
+        case 0: return <Step1_Cliente onAutoAdvance={handleNext} />;
+        case 1: return <Step2_TipoTramite onAutoAdvance={handleNext} />;
+        case 2: return <Step3_TipoVehiculo onAutoAdvance={handleNext} />;
         case 3: return <Step4_MetodoConsulta consultarRef={consultarRef} />;
         case 4: return <Step5_DatosVehiculo />;
         case 5: return <Step6_Cotizacion onReset={handleReset} />;
@@ -163,8 +163,8 @@ const CotizadorPage = () => {
       }
     } else {
       switch (activeStep) {
-        case 0: return <Step1_Cliente />;
-        case 1: return <Step2_TipoTramite />;
+        case 0: return <Step1_Cliente onAutoAdvance={handleNext} />;
+        case 1: return <Step2_TipoTramite onAutoAdvance={handleNext} />;
         case 2: return <Step6_Cotizacion onReset={handleReset} />;
         default: return null;
       }
@@ -172,6 +172,11 @@ const CotizadorPage = () => {
   };
 
   const isLastStep = activeStep === steps.length - 1;
+
+  // Ocultar "Siguiente" en pasos con auto-avance (selección directa)
+  const isAutoAdvanceStep = esFlujoSoat
+    ? activeStep <= 2  // Steps 0,1,2: Cliente, Trámite, Tipo Vehículo
+    : activeStep <= 1; // Steps 0,1: Cliente, Trámite
 
   return (
     <Box>
@@ -237,7 +242,7 @@ const CotizadorPage = () => {
         >
           Anterior
         </Button>
-        {!isLastStep && (
+        {!isLastStep && !isAutoAdvanceStep && (
           <Button
             variant="contained"
             endIcon={<ArrowForwardIcon />}

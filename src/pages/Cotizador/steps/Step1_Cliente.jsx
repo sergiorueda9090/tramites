@@ -51,7 +51,7 @@ import { listAllThunk as get_search_clients, saveThunk } from '../../../store/cl
 
 import { ClienteDialog } from '../../Clientes/Components';
 
-const Step1_Cliente = () => {
+const Step1_Cliente = ({ onAutoAdvance }) => {
   const dispatch = useDispatch();
 
   const clientesEncontrados = useSelector(selectClientes);
@@ -77,6 +77,7 @@ const Step1_Cliente = () => {
   const handleSelectCliente = (cliente) => {
     dispatch(setClienteSeleccionado(cliente));
     dispatch(setModoCliente('seleccionado'));
+    if (onAutoAdvance) setTimeout(onAutoAdvance, 300);
   };
 
   const handleClearCliente = () => {
@@ -125,6 +126,7 @@ const Step1_Cliente = () => {
     if (result) {
       dispatch(setClienteSeleccionado(result));
       dispatch(setModoCliente('seleccionado'));
+      if (onAutoAdvance) setTimeout(onAutoAdvance, 300);
     }
   };
 

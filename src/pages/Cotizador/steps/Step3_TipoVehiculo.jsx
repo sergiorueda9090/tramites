@@ -21,12 +21,13 @@ const TIPOS_VEHICULO = [
   },
 ];
 
-const Step3_TipoVehiculo = () => {
+const Step3_TipoVehiculo = ({ onAutoAdvance }) => {
   const dispatch = useDispatch();
   const tipoVehiculo = useSelector(selectTipoVehiculo);
 
   const handleSelect = (codigo) => {
     dispatch(setTipoVehiculo(codigo));
+    if (onAutoAdvance) setTimeout(onAutoAdvance, 300);
   };
 
   return (
