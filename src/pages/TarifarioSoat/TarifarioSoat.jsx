@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import usePermissions from '../../hooks/usePermissions';
 
 import {
@@ -45,18 +46,21 @@ import {
   viewThunk,
   showThunk,
   getHistoryThunk,
+  bulkCreateThunk,
 } from '../../store/tarifarioSoatStore/tarifarioSoatThunks';
 
 import {
   TarifarioSoatFilters,
   TarifarioSoatDataTable,
   TarifarioSoatDialog,
+  ExcelUploadDialog,
   HistoryDialog,
 } from './Components';
 
 const TarifarioSoat = () => {
   const dispatch = useDispatch();
   const { canCreate, canEdit, canDelete } = usePermissions();
+  const [openExcelDialog, setOpenExcelDialog] = useState(false);
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -201,6 +205,11 @@ const TarifarioSoat = () => {
     dispatch(saveThunk(form));
   };
 
+  const handleBulkUpload = async (registros) => {
+    const result = await dispatch(bulkCreateThunk(registros));
+    return result;
+  };
+
   return (
     <Box>
       {/* Page Header */}
@@ -223,9 +232,20 @@ const TarifarioSoat = () => {
           </Typography>
         </Box>
         {canCreate('tarifario_soat') && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo tarifario
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Nuevo tarifario
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="success"
+              startIcon={<UploadFileIcon />}
+              onClick={() => setOpenExcelDialog(true)}
+            >
+              Cargar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -265,6 +285,13 @@ const TarifarioSoat = () => {
         selectedTarifario={selectedTarifario}
         form={form}
         onFormChange={handleFormChange}
+      />
+
+      {/* Excel Upload Dialog */}
+      <ExcelUploadDialog
+        open={openExcelDialog}
+        onClose={() => setOpenExcelDialog(false)}
+        onUpload={handleBulkUpload}
       />
 
       {/* History Dialog */}

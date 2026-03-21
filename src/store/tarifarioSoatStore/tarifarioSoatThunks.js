@@ -16,6 +16,7 @@ const API_URLS = {
   list: '/api/tarifario_soat/list/',
   detail: (id) => `/api/tarifario_soat/${id}/`,
   create: '/api/tarifario_soat/create/',
+  bulkCreate: '/api/tarifario_soat/bulk-create/',
   update: (id) => `/api/tarifario_soat/${id}/update/`,
   delete: (id) => `/api/tarifario_soat/${id}/delete/`,
   restore: (id) => `/api/tarifario_soat/${id}/restore/`,
@@ -211,6 +212,42 @@ export const createThunk = (tarifarioData) => {
 
     } catch (error) {
       dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};
+
+/**
+ * Crear múltiples tarifarios SOAT desde carga masiva (Excel)
+ */
+export const bulkCreateThunk = (registros) => {
+  return async (dispatch) => {
+    try {
+      dispatch(showBackdrop('Creando tarifarios masivamente...'));
+
+      const response = await api.post(API_URLS.bulkCreate, { registros });
+
+      dispatch(listAllThunk());
+      dispatch(hideBackdrop());
+
+      await AlertService.success(
+        '¡Carga masiva exitosa!',
+        response.data.message || `Se crearon ${response.data.total_creados} tarifarios correctamente.`,
+        { timer: 3000 }
+      );
+
+      return response.data;
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+
+      // Si el backend devuelve errores por fila, retornarlos para mostrar en el diálogo
+      if (error.response?.status === 400 && error.response?.data?.errores) {
+        return { errores: error.response.data.errores };
+      }
+
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
       return null;
