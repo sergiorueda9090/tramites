@@ -11,10 +11,6 @@ import {
   Alert,
   AlertTitle,
   Avatar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -25,6 +21,7 @@ import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import {
   selectGrupoClaseRunt,
@@ -43,30 +40,23 @@ import {
   setTarifaCodigo,
 } from '../../../store/cotizadorStore/cotizadorSlice';
 
+import {
+  selectClase,
+  selectTipoServicio,
+  selectClasificacion,
+  selectModelo,
+  selectCilindraje,
+  selectPesoBruto,
+  selectPasajerosSentados,
+  selectColor,
+  selectPlaca,
+  selectMarca,
+  selectLinea,
+} from '../../../store/apisExternasStore/apisExternasRuntStore';
+
 // ═══════════════════════════════════════════════════════════
 // PARTE 1: Árbol Clase RUNT → Grupo
 // ═══════════════════════════════════════════════════════════
-
-const CLASES_RUNT = [
-  { codigo: 'AUTOMOVIL', nombre: 'Automóvil' },
-  { codigo: 'STATION WAGON', nombre: 'Station Wagon' },
-  { codigo: 'CAMIONETA', nombre: 'Camioneta' },
-  { codigo: 'BUS', nombre: 'Bus' },
-  { codigo: 'MICROBUS', nombre: 'Microbús' },
-  { codigo: 'BUSETA', nombre: 'Buseta' },
-  { codigo: 'MOTOCICLETA', nombre: 'Motocicleta' },
-  { codigo: 'MOTOCARRO', nombre: 'Motocarro' },
-  { codigo: 'MOTOTRICICLO', nombre: 'Mototriciclo' },
-  { codigo: 'CICLOMOTOR', nombre: 'Ciclomotor' },
-  { codigo: 'CUATRIMOTO', nombre: 'Cuatrimoto' },
-  { codigo: 'CAMION', nombre: 'Camión' },
-  { codigo: 'TRACTOCAMION', nombre: 'Tractocamión' },
-  { codigo: 'VOLQUETA', nombre: 'Volqueta' },
-  { codigo: 'FURGON', nombre: 'Furgón' },
-  { codigo: 'CARROTANQUE', nombre: 'Carrotanque' },
-  { codigo: 'REMOLQUE', nombre: 'Remolque' },
-  { codigo: 'SEMIRREMOLQUE', nombre: 'Semirremolque' },
-];
 
 const CLASES_MOTOS = ['MOTOCICLETA', 'MOTOCARRO', 'MOTOTRICICLO', 'CICLOMOTOR', 'CUATRIMOTO'];
 const CLASES_CARGA = ['CAMION', 'TRACTOCAMION', 'VOLQUETA', 'FURGON', 'CARROTANQUE', 'REMOLQUE', 'SEMIRREMOLQUE'];
@@ -82,28 +72,6 @@ function obtenerTipoSubcriterio(clase) {
   if (CLASES_BUS.includes(clase)) return 'TIPO_SERVICIO_BUS';
   return 'NO_MAPEADA';
 }
-
-const OPCIONES_SUBCRITERIO = {
-  TIPO_SERVICIO: [
-    { codigo: 'PARTICULAR', nombre: 'Particular' },
-    { codigo: 'PUBLICO', nombre: 'Público' },
-  ],
-  CLASIFICACION: [
-    { codigo: 'PARTICULAR', nombre: 'Particular' },
-    { codigo: 'PUBLICO', nombre: 'Público' },
-    { codigo: 'COLOR AMARILLO', nombre: 'Color Amarillo' },
-  ],
-  TIPO_SERVICIO_BUS: [
-    { codigo: 'URBANO', nombre: 'Urbano' },
-    { codigo: 'INTERMUNICIPAL', nombre: 'Intermunicipal' },
-  ],
-};
-
-const LABEL_SUBCRITERIO = {
-  TIPO_SERVICIO: 'Tipo de Servicio',
-  CLASIFICACION: 'Clasificación',
-  TIPO_SERVICIO_BUS: 'Tipo de Servicio',
-};
 
 function resolverGrupo(clase, subcriterio) {
   if (!clase) return null;
@@ -130,7 +98,6 @@ function resolverGrupo(clase, subcriterio) {
 // PARTE 2: Módulos → Tarifa (segundo nivel del árbol)
 // ═══════════════════════════════════════════════════════════
 
-// Configuración de cada módulo: preguntas y resolución de tarifa
 const MODULOS = {
   MOTOS: {
     nombre: 'Módulo Motos',
@@ -143,7 +110,7 @@ const MODULOS = {
         { codigo: 'MAS_200', nombre: 'Más de 200 cc' },
       ],
     },
-    pregunta2: null, // No tiene segunda pregunta
+    pregunta2: null,
     resolverTarifa: (p1) => {
       const mapa = { CICLOMOTOR: 100, MENOS_100: 110, '100_200': 120, MAS_200: 130 };
       return mapa[p1] || null;
@@ -247,7 +214,7 @@ const MODULOS = {
 
   BUS_URBANO: {
     nombre: 'Módulo Bus Urbano',
-    pregunta1: null, // Tarifa directa
+    pregunta1: null,
     pregunta2: null,
     resolverTarifa: () => 810,
   },
@@ -310,12 +277,143 @@ const GRUPO_CONFIG = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// Helpers para auto-resolución
+// ═══════════════════════════════════════════════════════════
+
+function resolverSubcriterioAuto(clase, tipoServicio, clasificacion, color) {
+  const tipo = obtenerTipoSubcriterio(clase);
+  if (!tipo || tipo === 'DIRECTO' || tipo === 'NO_MAPEADA') return null;
+
+  const servicio = (tipoServicio || '').toUpperCase();
+  const esPublico = servicio.includes('PÚBLIC') || servicio.includes('PUBLIC');
+
+  if (tipo === 'TIPO_SERVICIO') {
+    return esPublico ? 'PUBLICO' : 'PARTICULAR';
+  }
+
+  if (tipo === 'CLASIFICACION') {
+    const colorUpper = (color || '').toUpperCase();
+    const clasifUpper = (clasificacion || '').toUpperCase();
+    if (colorUpper === 'AMARILLO' || clasifUpper.includes('TAXI')) {
+      return 'COLOR AMARILLO';
+    }
+    return esPublico ? 'PUBLICO' : 'PARTICULAR';
+  }
+
+  if (tipo === 'TIPO_SERVICIO_BUS') {
+    const clasifUpper = (clasificacion || '').toUpperCase();
+    if (clasifUpper.includes('URBANO')) return 'URBANO';
+    if (clasifUpper.includes('INTERMUNICIPAL')) return 'INTERMUNICIPAL';
+    return 'URBANO';
+  }
+
+  return null;
+}
+
+function resolverPreguntasAuto(grupo, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados) {
+  const currentYear = new Date().getFullYear();
+  const modeloNum = parseInt(runtModelo) || 0;
+  const vehicleAge = modeloNum > 0 ? currentYear - modeloNum : 0;
+  const cc = parseInt(runtCilindraje) || 0;
+  const peso = parseFloat(runtPesoBruto) || 0;
+  const pasajeros = parseInt(runtPasajerosSentados) || 0;
+
+  switch (grupo) {
+    case 'MOTOS': {
+      if (claseRunt === 'CICLOMOTOR') return { p1: 'CICLOMOTOR', p2: null };
+      if (cc < 100) return { p1: 'MENOS_100', p2: null };
+      if (cc <= 200) return { p1: '100_200', p2: null };
+      return { p1: 'MAS_200', p2: null };
+    }
+    case 'CAMPEROS':
+    case 'FAMILIAR_5P':
+    case 'TAXI': {
+      const p1 = vehicleAge <= 9 ? 'HASTA_9' : '10_O_MAS';
+      let p2;
+      if (cc < 1500) p2 = 'MENOS_1500';
+      else if (cc <= 2500) p2 = '1500_2500';
+      else p2 = 'MAS_2500';
+      return { p1, p2 };
+    }
+    case 'CARGA': {
+      const toneladas = peso / 1000;
+      if (toneladas < 5) return { p1: 'MENOS_5', p2: null };
+      if (toneladas <= 15) return { p1: '5_15', p2: null };
+      return { p1: 'MAS_15', p2: null };
+    }
+    case 'BUS_URBANO':
+      return { p1: null, p2: null };
+    case 'INTERMUNICIPAL':
+      return { p1: pasajeros < 10 ? 'MENOS_10' : '10_O_MAS', p2: null };
+    case '6_PASAJEROS': {
+      const p1 = vehicleAge <= 9 ? 'HASTA_9' : '10_O_MAS';
+      const p2 = cc < 2500 ? 'MENOS_2500' : '2500_O_MAS';
+      return { p1, p2 };
+    }
+    default:
+      return { p1: null, p2: null };
+  }
+}
+
+function getOpcionLabel(modulo, preguntaKey, value) {
+  if (!modulo || !modulo[preguntaKey] || !value) return null;
+  const opcion = modulo[preguntaKey].opciones.find((o) => o.codigo === value);
+  return opcion ? opcion.nombre : value;
+}
+
+const LABEL_SUBCRITERIO = {
+  TIPO_SERVICIO: 'Tipo de Servicio',
+  CLASIFICACION: 'Clasificación',
+  TIPO_SERVICIO_BUS: 'Tipo de Servicio',
+};
+
+const OPCIONES_SUBCRITERIO = {
+  TIPO_SERVICIO: [
+    { codigo: 'PARTICULAR', nombre: 'Particular' },
+    { codigo: 'PUBLICO', nombre: 'Público' },
+  ],
+  CLASIFICACION: [
+    { codigo: 'PARTICULAR', nombre: 'Particular' },
+    { codigo: 'PUBLICO', nombre: 'Público' },
+    { codigo: 'COLOR AMARILLO', nombre: 'Color Amarillo' },
+  ],
+  TIPO_SERVICIO_BUS: [
+    { codigo: 'URBANO', nombre: 'Urbano' },
+    { codigo: 'INTERMUNICIPAL', nombre: 'Intermunicipal' },
+  ],
+};
+
+function getSubcriterioLabel(tipo, value) {
+  if (!tipo || !value) return null;
+  const opciones = OPCIONES_SUBCRITERIO[tipo];
+  if (!opciones) return value;
+  const opcion = opciones.find((o) => o.codigo === value);
+  return opcion ? opcion.nombre : value;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Componente de fila informativa
+// ═══════════════════════════════════════════════════════════
+
+const InfoRow = ({ label, value, highlight }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
+    <Typography variant="body2" color="text.secondary">
+      {label}
+    </Typography>
+    <Typography variant="body2" fontWeight={highlight ? 700 : 500} color={highlight ? 'primary.main' : 'text.primary'}>
+      {value || '-'}
+    </Typography>
+  </Box>
+);
+
+// ═══════════════════════════════════════════════════════════
 // Componente
 // ═══════════════════════════════════════════════════════════
 
 const Step7_GrupoSoat = () => {
   const dispatch = useDispatch();
 
+  // Selectores del cotizador (grupo/tarifa)
   const claseRunt = useSelector(selectGrupoClaseRunt);
   const subcriterio = useSelector(selectGrupoSubcriterio);
   const grupoSoat = useSelector(selectGrupoSoat);
@@ -325,6 +423,19 @@ const Step7_GrupoSoat = () => {
   const pregunta2 = useSelector(selectModuloPregunta2);
   const tarifaCodigo = useSelector(selectTarifaCodigo);
 
+  // Datos RUNT del vehículo
+  const runtPlaca = useSelector(selectPlaca);
+  const runtClase = useSelector(selectClase);
+  const runtTipoServicio = useSelector(selectTipoServicio);
+  const runtClasificacion = useSelector(selectClasificacion);
+  const runtModelo = useSelector(selectModelo);
+  const runtCilindraje = useSelector(selectCilindraje);
+  const runtPesoBruto = useSelector(selectPesoBruto);
+  const runtPasajerosSentados = useSelector(selectPasajerosSentados);
+  const runtColor = useSelector(selectColor);
+  const runtMarca = useSelector(selectMarca);
+  const runtLinea = useSelector(selectLinea);
+
   const tipoSubcriterio = obtenerTipoSubcriterio(claseRunt);
   const necesitaSubcriterio = tipoSubcriterio && tipoSubcriterio !== 'DIRECTO' && tipoSubcriterio !== 'NO_MAPEADA';
 
@@ -333,7 +444,23 @@ const Step7_GrupoSoat = () => {
   const necesitaPregunta1 = modulo?.pregunta1 != null;
   const necesitaPregunta2 = modulo?.pregunta2 != null;
 
-  // Resolver grupo cuando cambian clase o subcriterio
+  // ── Auto-resolver clase RUNT desde datos del vehículo ──
+  useEffect(() => {
+    if (runtClase) {
+      dispatch(setGrupoClaseRunt(runtClase.toUpperCase()));
+    }
+  }, [runtClase, dispatch]);
+
+  // ── Auto-resolver subcriterio desde datos del vehículo ──
+  useEffect(() => {
+    if (!claseRunt) return;
+    const sub = resolverSubcriterioAuto(claseRunt, runtTipoServicio, runtClasificacion, runtColor);
+    if (sub) {
+      dispatch(setGrupoSubcriterio(sub));
+    }
+  }, [claseRunt, runtTipoServicio, runtClasificacion, runtColor, dispatch]);
+
+  // ── Resolver grupo cuando cambian clase o subcriterio ──
   useEffect(() => {
     if (!claseRunt) return;
     if (tipoSubcriterio === 'NO_MAPEADA') {
@@ -348,36 +475,35 @@ const Step7_GrupoSoat = () => {
     }
   }, [dispatch, claseRunt, subcriterio, tipoSubcriterio]);
 
-  // Resolver tarifa cuando cambian grupo o preguntas del módulo
+  // ── Auto-resolver preguntas del módulo desde datos del vehículo ──
+  useEffect(() => {
+    if (!grupoSoat || !modulo || requiereRevision) return;
+    const { p1, p2 } = resolverPreguntasAuto(grupoSoat, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados);
+    if (p1 !== undefined) dispatch(setModuloPregunta1(p1));
+    if (p2 !== undefined) dispatch(setModuloPregunta2(p2));
+  }, [grupoSoat, modulo, requiereRevision, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados, dispatch]);
+
+  // ── Resolver tarifa cuando cambian grupo o preguntas del módulo ──
   useEffect(() => {
     if (!grupoSoat || !modulo) return;
 
-    // Módulos con tarifa directa (sin preguntas)
     if (!necesitaPregunta1) {
       dispatch(setTarifaCodigo(modulo.resolverTarifa()));
       return;
     }
 
-    // Solo pregunta 1
     if (!necesitaPregunta2 && pregunta1) {
       dispatch(setTarifaCodigo(modulo.resolverTarifa(pregunta1)));
       return;
     }
 
-    // Pregunta 1 + Pregunta 2
     if (necesitaPregunta2 && pregunta1 && pregunta2) {
       dispatch(setTarifaCodigo(modulo.resolverTarifa(pregunta1, pregunta2)));
       return;
     }
 
-    // Aún no hay suficiente info
     dispatch(setTarifaCodigo(null));
   }, [dispatch, grupoSoat, modulo, pregunta1, pregunta2, necesitaPregunta1, necesitaPregunta2]);
-
-  const handleClaseChange = (e) => dispatch(setGrupoClaseRunt(e.target.value));
-  const handleSubcriterioChange = (e) => dispatch(setGrupoSubcriterio(e.target.value));
-  const handlePregunta1Change = (e) => dispatch(setModuloPregunta1(e.target.value));
-  const handlePregunta2Change = (e) => dispatch(setModuloPregunta2(e.target.value));
 
   return (
     <Box>
@@ -385,107 +511,85 @@ const Step7_GrupoSoat = () => {
         Grupo SOAT y Tarifa
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Selecciona la clase RUNT y sigue el árbol de decisión para determinar el grupo y la tarifa.
+        Determinación automática del grupo y tarifa a partir de los datos del vehículo consultado.
       </Typography>
 
       <Grid container spacing={3}>
-        {/* ── Columna izquierda: Selects del árbol de decisión ── */}
+        {/* ── Columna izquierda: Datos utilizados y resolución ── */}
         <Grid item xs={12} md={5}>
-          <Card variant="outlined" sx={{ height: '100%' }}>
+          {/* Card datos del vehículo utilizados */}
+          <Card variant="outlined" sx={{ mb: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <CategoryIcon color="primary" />
+                <DirectionsCarIcon color="primary" />
                 <Typography variant="subtitle1" fontWeight={600}>
-                  Clasificación del vehículo
+                  Datos del vehículo
+                </Typography>
+                {runtPlaca && (
+                  <Chip label={runtPlaca} size="small" color="primary" variant="outlined" />
+                )}
+              </Box>
+              <Divider sx={{ mb: 1.5 }} />
+              <InfoRow label="Clase RUNT" value={runtClase} highlight />
+              <InfoRow label="Servicio" value={runtTipoServicio} />
+              <InfoRow label="Clasificación" value={runtClasificacion} />
+              <InfoRow label="Marca / Línea" value={runtMarca && runtLinea ? `${runtMarca} ${runtLinea}` : runtMarca} />
+              <InfoRow label="Modelo" value={runtModelo} />
+              <InfoRow label="Cilindraje" value={runtCilindraje ? `${runtCilindraje} cc` : null} />
+              <InfoRow label="Color" value={runtColor} />
+              {runtPesoBruto && <InfoRow label="Peso Bruto" value={`${runtPesoBruto} kg`} />}
+              {runtPasajerosSentados && <InfoRow label="Pasajeros" value={runtPasajerosSentados} />}
+            </CardContent>
+          </Card>
+
+          {/* Card resolución automática */}
+          <Card variant="outlined">
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <AutoFixHighIcon color="secondary" />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Resolución automática
                 </Typography>
               </Box>
-              <Divider sx={{ mb: 2.5 }} />
+              <Divider sx={{ mb: 1.5 }} />
 
-              {/* Select 1: Clase RUNT */}
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>Clase RUNT</InputLabel>
-                <Select
-                  value={claseRunt || ''}
-                  onChange={handleClaseChange}
-                  label="Clase RUNT"
-                >
-                  {CLASES_RUNT.map((c) => (
-                    <MenuItem key={c.codigo} value={c.codigo}>{c.nombre}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              {/* Select 2: Subcriterio (tipo servicio / clasificación) */}
-              {necesitaSubcriterio && (
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>{LABEL_SUBCRITERIO[tipoSubcriterio]}</InputLabel>
-                  <Select
-                    value={subcriterio || ''}
-                    onChange={handleSubcriterioChange}
-                    label={LABEL_SUBCRITERIO[tipoSubcriterio]}
-                  >
-                    {OPCIONES_SUBCRITERIO[tipoSubcriterio].map((op) => (
-                      <MenuItem key={op.codigo} value={op.codigo}>{op.nombre}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              {/* Clase → Tipo de mapeo */}
+              <InfoRow label="Clase detectada" value={claseRunt} highlight />
+              {tipoSubcriterio === 'DIRECTO' && (
+                <InfoRow label="Tipo mapeo" value="Directo (sin criterio adicional)" />
               )}
 
-              {/* Indicador de mapeo directo de clase */}
-              {claseRunt && tipoSubcriterio === 'DIRECTO' && (
-                <Alert severity="info" variant="outlined" sx={{ mb: 3 }}>
-                  Esta clase se mapea directamente al grupo sin criterios adicionales.
-                </Alert>
+              {/* Subcriterio (si aplica) */}
+              {necesitaSubcriterio && subcriterio && (
+                <InfoRow
+                  label={LABEL_SUBCRITERIO[tipoSubcriterio]}
+                  value={getSubcriterioLabel(tipoSubcriterio, subcriterio)}
+                  highlight
+                />
               )}
 
-              {/* ── Sección Módulo (aparece cuando el grupo está determinado) ── */}
+              {/* Módulo y preguntas resueltas */}
               {grupoSoat && !requiereRevision && modulo && (
                 <>
-                  <Divider sx={{ mb: 2.5 }} />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <ReceiptLongIcon color="secondary" />
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {modulo.nombre}
-                    </Typography>
-                  </Box>
+                  <Divider sx={{ my: 1.5 }} />
+                  <InfoRow label="Módulo" value={modulo.nombre} highlight />
 
-                  {/* Módulo sin preguntas (tarifa directa) */}
                   {!necesitaPregunta1 && (
-                    <Alert severity="info" variant="outlined">
-                      Este módulo asigna la tarifa directamente sin criterios adicionales.
-                    </Alert>
+                    <InfoRow label="Resolución" value="Tarifa directa" />
                   )}
 
-                  {/* Pregunta 1 del módulo */}
-                  {necesitaPregunta1 && (
-                    <FormControl fullWidth sx={{ mb: 3 }}>
-                      <InputLabel>{modulo.pregunta1.label}</InputLabel>
-                      <Select
-                        value={pregunta1 || ''}
-                        onChange={handlePregunta1Change}
-                        label={modulo.pregunta1.label}
-                      >
-                        {modulo.pregunta1.opciones.map((op) => (
-                          <MenuItem key={op.codigo} value={op.codigo}>{op.nombre}</MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                  {necesitaPregunta1 && pregunta1 && (
+                    <InfoRow
+                      label={modulo.pregunta1.label.replace('¿', '').replace('?', '')}
+                      value={getOpcionLabel(modulo, 'pregunta1', pregunta1)}
+                    />
                   )}
 
-                  {/* Pregunta 2 del módulo (solo si pregunta 1 fue respondida) */}
-                  {necesitaPregunta2 && pregunta1 && (
-                    <FormControl fullWidth>
-                      <InputLabel>{modulo.pregunta2.label}</InputLabel>
-                      <Select
-                        value={pregunta2 || ''}
-                        onChange={handlePregunta2Change}
-                        label={modulo.pregunta2.label}
-                      >
-                        {modulo.pregunta2.opciones.map((op) => (
-                          <MenuItem key={op.codigo} value={op.codigo}>{op.nombre}</MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                  {necesitaPregunta2 && pregunta2 && (
+                    <InfoRow
+                      label={modulo.pregunta2.label.replace('¿', '').replace('?', '')}
+                      value={getOpcionLabel(modulo, 'pregunta2', pregunta2)}
+                    />
                   )}
                 </>
               )}
@@ -506,26 +610,26 @@ const Step7_GrupoSoat = () => {
                 }}
               >
                 <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  {/* Sin selección */}
-                  {!claseRunt && (
+                  {/* Sin datos del vehículo */}
+                  {!runtClase && (
                     <>
                       <Avatar sx={{ bgcolor: 'grey.300', width: 56, height: 56, mx: 'auto', mb: 1 }}>
                         <CategoryIcon sx={{ fontSize: 32 }} />
                       </Avatar>
                       <Typography variant="subtitle1" color="text.secondary">
-                        Selecciona una clase RUNT
+                        No hay datos del vehículo para determinar el grupo
                       </Typography>
                     </>
                   )}
 
-                  {/* Esperando subcriterio */}
-                  {claseRunt && necesitaSubcriterio && !subcriterio && !requiereRevision && (
+                  {/* Procesando */}
+                  {runtClase && !grupoSoat && !requiereRevision && (
                     <>
                       <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56, mx: 'auto', mb: 1 }}>
                         <CategoryIcon sx={{ fontSize: 32 }} />
                       </Avatar>
                       <Typography variant="subtitle1" color="info.main">
-                        Selecciona {LABEL_SUBCRITERIO[tipoSubcriterio]?.toLowerCase()}
+                        Determinando grupo...
                       </Typography>
                     </>
                   )}
@@ -587,7 +691,7 @@ const Step7_GrupoSoat = () => {
                           <ReceiptLongIcon sx={{ fontSize: 32 }} />
                         </Avatar>
                         <Typography variant="subtitle1" color="text.secondary">
-                          Completa las preguntas del módulo para determinar la tarifa
+                          Determinando tarifa...
                         </Typography>
                       </>
                     )}
@@ -611,6 +715,7 @@ const Step7_GrupoSoat = () => {
       {tarifaCodigo && (
         <Alert severity="success" sx={{ mt: 3 }}>
           <strong>{config?.nombre || grupoSoat}</strong> → <strong>Tarifa {tarifaCodigo}</strong>
+          {' — '}Determinada automáticamente desde los datos RUNT del vehículo {runtPlaca}.
         </Alert>
       )}
     </Box>
