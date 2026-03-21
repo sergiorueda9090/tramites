@@ -96,6 +96,28 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
   const [imagenFile, setImagenFile] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Listener para pegar imágenes con Ctrl+V
+  useEffect(() => {
+    if (metodoConsulta !== 'IA_FOTO_TARJETA' && metodoConsulta !== 'IA_VIN_RUNT') return;
+
+    const handlePaste = (event) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          event.preventDefault();
+          const file = item.getAsFile();
+          if (file) processImageFile(file);
+          return;
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [metodoConsulta, dispatch]);
+
   const metodos = tipoVehiculo === 'CERO_KM' ? METODOS_CERO_KM : METODOS_USADO;
 
   const handleSelect = (codigo) => {
@@ -105,10 +127,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
     setImagenFile(null);
   };
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processImageFile = (file) => {
     setImagenFile(file);
     dispatch(setImagenLista(true));
     const reader = new FileReader();
@@ -116,6 +135,12 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
       setImagenPreview(e.target.result);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    processImageFile(file);
     // Reset para permitir subir el mismo archivo
     event.target.value = '';
   };
@@ -253,7 +278,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                 Haz clic para cargar una imagen
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                JPG, PNG o WEBP
+                JPG, PNG o WEBP — o pega una imagen con Ctrl+V
               </Typography>
             </Box>
           ) : (
@@ -329,7 +354,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                 Haz clic para cargar una imagen
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                JPG, PNG o WEBP
+                JPG, PNG o WEBP — o pega una imagen con Ctrl+V
               </Typography>
             </Box>
           ) : (
