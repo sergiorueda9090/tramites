@@ -17,12 +17,28 @@ const initialState = {
   // Step 3 - Tipo de vehículo (solo SOAT)
   tipoVehiculo: null, // 'USADO' | 'CERO_KM'
 
+  // Step 3b - Titular cotización (solo vehículo usado)
+  titularCotizacion: null, // 'PROPIETARIO' | 'TERCERO'
+  terceroTipoDocumento: 'C',
+  terceroDocumento: '',
+
   // Step 4 - Método de consulta
-  metodoConsulta: null,
+  metodoConsulta: null, // 'PLACA_RUNT' | 'IA_FOTO_TARJETA' | 'IA_VIN_RUNT' | 'PLACA_FALABELLA' | 'MANUAL'
   consultaPlaca: '',
   consultaDocumento: '',
   tipoDocumento: 'C',
   imagenLista: false,
+
+  // Step 4 - Datos manuales (solo método MANUAL)
+  datosManual: {
+    placa: '',
+    clase: '',
+    tipoServicio: '',
+    cilindraje: '',
+    modelo: '',
+    marca: '',
+    linea: '',
+  },
 
   // Step 5 - Datos del vehículo
   datosVehiculo: {
@@ -104,6 +120,9 @@ export const cotizadorStore = createSlice({
       state.tipoTramite = action.payload;
       // Resetear steps dependientes
       state.tipoVehiculo   = null;
+      state.titularCotizacion = null;
+      state.terceroTipoDocumento = 'C';
+      state.terceroDocumento = '';
       state.metodoConsulta = null;
       state.datosVehiculo  = initialState.datosVehiculo;
       state.vehiculoValidado = false;
@@ -120,8 +139,24 @@ export const cotizadorStore = createSlice({
     // Step 3 - Tipo de vehículo
     setTipoVehiculo: (state, action) => {
       state.tipoVehiculo = action.payload;
-      // Resetear método de consulta al cambiar tipo
+      // Resetear titular y método de consulta al cambiar tipo
+      state.titularCotizacion = null;
+      state.terceroTipoDocumento = 'C';
+      state.terceroDocumento = '';
       state.metodoConsulta = null;
+    },
+
+    // Step 3b - Titular cotización
+    setTitularCotizacion: (state, action) => {
+      state.titularCotizacion = action.payload;
+      state.terceroTipoDocumento = 'C';
+      state.terceroDocumento = '';
+    },
+    setTerceroTipoDocumento: (state, action) => {
+      state.terceroTipoDocumento = action.payload;
+    },
+    setTerceroDocumento: (state, action) => {
+      state.terceroDocumento = action.payload;
     },
 
     // Step 4 - Método de consulta
@@ -132,6 +167,7 @@ export const cotizadorStore = createSlice({
       state.consultaDocumento = '';
       state.tipoDocumento = 'C';
       state.imagenLista = false;
+      state.datosManual = initialState.datosManual;
     },
     setImagenLista: (state, action) => {
       state.imagenLista = action.payload;
@@ -144,6 +180,9 @@ export const cotizadorStore = createSlice({
     },
     setTipoDocumento: (state, action) => {
       state.tipoDocumento = action.payload;
+    },
+    setDatosManual: (state, action) => {
+      state.datosManual = { ...state.datosManual, ...action.payload };
     },
 
 
@@ -227,11 +266,15 @@ export const {
   setModoCliente,
   setTipoTramite,
   setTipoVehiculo,
+  setTitularCotizacion,
+  setTerceroTipoDocumento,
+  setTerceroDocumento,
   setMetodoConsulta,
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
   setImagenLista,
+  setDatosManual,
   setDatosVehiculo,
   setVehiculoValidado,
   setCotizacion,
@@ -256,11 +299,15 @@ export const selectNuevoCliente = (state) => state.cotizadorStore.nuevoCliente;
 export const selectModoCliente = (state) => state.cotizadorStore.modoCliente;
 export const selectTipoTramite = (state) => state.cotizadorStore.tipoTramite;
 export const selectTipoVehiculo = (state) => state.cotizadorStore.tipoVehiculo;
+export const selectTitularCotizacion = (state) => state.cotizadorStore.titularCotizacion;
+export const selectTerceroTipoDocumento = (state) => state.cotizadorStore.terceroTipoDocumento;
+export const selectTerceroDocumento = (state) => state.cotizadorStore.terceroDocumento;
 export const selectMetodoConsulta = (state) => state.cotizadorStore.metodoConsulta;
 export const selectConsultaPlaca = (state) => state.cotizadorStore.consultaPlaca;
 export const selectConsultaDocumento = (state) => state.cotizadorStore.consultaDocumento;
 export const selectTipoDocumento = (state) => state.cotizadorStore.tipoDocumento;
 export const selectImagenLista = (state) => state.cotizadorStore.imagenLista;
+export const selectDatosManual = (state) => state.cotizadorStore.datosManual;
 export const selectDatosVehiculo = (state) => state.cotizadorStore.datosVehiculo;
 export const selectVehiculoValidado = (state) => state.cotizadorStore.vehiculoValidado;
 export const selectCotizacion = (state) => state.cotizadorStore.cotizacion;

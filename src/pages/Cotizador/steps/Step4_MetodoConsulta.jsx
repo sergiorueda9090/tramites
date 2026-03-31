@@ -17,19 +17,24 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 
 import {
   selectTipoVehiculo,
+  selectTitularCotizacion,
   selectMetodoConsulta,
   selectConsultaPlaca,
   selectConsultaDocumento,
   selectTipoDocumento,
+  selectDatosManual,
   setMetodoConsulta,
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
   setImagenLista,
+  setDatosManual,
 } from '../../../store/cotizadorStore/cotizadorSlice';
+import { setVehiculo } from '../../../store/apisExternasStore/apisExternasRuntStore';
 import MetodoConsultaCard from '../Components/MetodoConsultaCard';
 import { consultarRuntThunk, extraerDatosRuntThunk, extraerDatosFotoVinThunk, extraerDatosAPIFalabellaThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
 
@@ -66,6 +71,12 @@ const METODOS_USADO = [
     descripcion: 'Escanear foto con IA y verificar en RUNT con documento',
     Icono: PhotoCameraIcon,
   },
+  {
+    codigo: 'MANUAL',
+    nombre: 'Ingreso datos manuales',
+    descripcion: 'Ingresar los datos del vehículo manualmente',
+    Icono: EditNoteIcon,
+  },
 ];
 
 const METODOS_CERO_KM = [
@@ -81,15 +92,38 @@ const METODOS_CERO_KM = [
     descripcion: 'Consultar placa en Falabella y verificar en RUNT',
     Icono: StorefrontIcon,
   },
+  {
+    codigo: 'MANUAL',
+    nombre: 'Ingreso datos manuales',
+    descripcion: 'Ingresar los datos del vehículo manualmente',
+    Icono: EditNoteIcon,
+  },
+];
+
+const METODOS_TERCERO = [
+  {
+    codigo: 'IA_FOTO_TARJETA',
+    nombre: 'IA Foto Tarjeta de Propiedad',
+    descripcion: 'Escanear tarjeta de propiedad con inteligencia artificial',
+    Icono: PhotoCameraIcon,
+  },
+  {
+    codigo: 'MANUAL',
+    nombre: 'Ingreso datos manuales',
+    descripcion: 'Ingresar los datos del vehículo manualmente',
+    Icono: EditNoteIcon,
+  },
 ];
 
 const Step4_MetodoConsulta = ({ consultarRef }) => {
   const dispatch = useDispatch();
   const tipoVehiculo = useSelector(selectTipoVehiculo);
+  const titularCotizacion = useSelector(selectTitularCotizacion);
   const metodoConsulta = useSelector(selectMetodoConsulta);
   const consultaPlaca = useSelector(selectConsultaPlaca);
   const consultaDocumento = useSelector(selectConsultaDocumento);
   const tipoDocumento = useSelector(selectTipoDocumento);
+  const datosManual = useSelector(selectDatosManual);
 
   // Estado local para la imagen (File objects no se pueden serializar en Redux)
   const [imagenPreview, setImagenPreview] = useState(null);
@@ -118,7 +152,14 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
     return () => document.removeEventListener('paste', handlePaste);
   }, [metodoConsulta, dispatch]);
 
-  const metodos = tipoVehiculo === 'CERO_KM' ? METODOS_CERO_KM : METODOS_USADO;
+  // Determinar métodos disponibles según tipo de vehículo y titular
+  const getMetodos = () => {
+    if (tipoVehiculo === 'USADO' && titularCotizacion === 'TERCERO') return METODOS_TERCERO;
+    if (tipoVehiculo === 'CERO_KM') return METODOS_CERO_KM;
+    return METODOS_USADO;
+  };
+
+  const metodos = getMetodos();
 
   const handleSelect = (codigo) => {
     dispatch(setMetodoConsulta(codigo));
@@ -164,11 +205,23 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
           return dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile, numero_documento: consultaDocumento }));
         case 'PLACA_FALABELLA':
           return dispatch(extraerDatosAPIFalabellaThunk({ placa: consultaPlaca }));
+        case 'MANUAL':
+          // Poblar el runtStore con los datos manuales y avanzar
+          dispatch(setVehiculo({
+            placa: datosManual.placa,
+            clase: datosManual.clase,
+            tipo_servicio: datosManual.tipoServicio,
+            cilindraje: datosManual.cilindraje,
+            modelo: datosManual.modelo,
+            marca: datosManual.marca,
+            linea: datosManual.linea,
+          }));
+          return Promise.resolve(true);
         default:
           return Promise.resolve(null);
       }
     };
-  }, [consultarRef, metodoConsulta, consultaPlaca, consultaDocumento, tipoDocumento, imagenFile, dispatch]);
+  }, [consultarRef, metodoConsulta, consultaPlaca, consultaDocumento, tipoDocumento, imagenFile, datosManual, dispatch]);
 
   return (
     <Box>
@@ -425,6 +478,81 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                 value={consultaDocumento}
                 onChange={(e) => dispatch(setConsultaDocumento(e.target.value))}
                 placeholder="Ej: 1098765432"
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {/* ===== INGRESO DATOS MANUALES ===== */}
+      {metodoConsulta === 'MANUAL' && (
+        <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Ingrese los datos del vehículo manualmente
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Placa"
+                value={datosManual.placa}
+                onChange={(e) => dispatch(setDatosManual({ placa: e.target.value.toUpperCase() }))}
+                placeholder="ABC123"
+                inputProps={{ style: { textTransform: 'uppercase' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Clase"
+                value={datosManual.clase}
+                onChange={(e) => dispatch(setDatosManual({ clase: e.target.value }))}
+                placeholder="Ej: Automóvil, Motocicleta"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Tipo de servicio"
+                value={datosManual.tipoServicio}
+                onChange={(e) => dispatch(setDatosManual({ tipoServicio: e.target.value }))}
+                placeholder="Ej: Particular, Público"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Cilindraje"
+                value={datosManual.cilindraje}
+                onChange={(e) => dispatch(setDatosManual({ cilindraje: e.target.value }))}
+                placeholder="Ej: 1600"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Modelo (año)"
+                value={datosManual.modelo}
+                onChange={(e) => dispatch(setDatosManual({ modelo: e.target.value }))}
+                placeholder="Ej: 2023"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Marca"
+                value={datosManual.marca}
+                onChange={(e) => dispatch(setDatosManual({ marca: e.target.value }))}
+                placeholder="Ej: Chevrolet"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Línea"
+                value={datosManual.linea}
+                onChange={(e) => dispatch(setDatosManual({ linea: e.target.value }))}
+                placeholder="Ej: Onix"
               />
             </Grid>
           </Grid>

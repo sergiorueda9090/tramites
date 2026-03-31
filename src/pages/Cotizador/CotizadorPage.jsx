@@ -24,10 +24,13 @@ import {
   selectNuevoCliente,
   selectTipoTramite,
   selectTipoVehiculo,
+  selectTitularCotizacion,
+  selectTerceroDocumento,
   selectMetodoConsulta,
   selectConsultaPlaca,
   selectConsultaDocumento,
   selectImagenLista,
+  selectDatosManual,
   selectGrupoSoat,
   selectGrupoRequiereRevision,
   selectTarifaCodigo,
@@ -57,10 +60,13 @@ const CotizadorPage = () => {
   const nuevoCliente = useSelector(selectNuevoCliente);
   const tipoTramite = useSelector(selectTipoTramite);
   const tipoVehiculo = useSelector(selectTipoVehiculo);
+  const titularCotizacion = useSelector(selectTitularCotizacion);
+  const terceroDocumento = useSelector(selectTerceroDocumento);
   const metodoConsulta = useSelector(selectMetodoConsulta);
   const consultaPlaca = useSelector(selectConsultaPlaca);
   const consultaDocumento = useSelector(selectConsultaDocumento);
   const imagenLista = useSelector(selectImagenLista);
+  const datosManual = useSelector(selectDatosManual);
   const runtPlaca = useSelector(selectPlaca);
   const grupoSoat = useSelector(selectGrupoSoat);
   const grupoRequiereRevision = useSelector(selectGrupoRequiereRevision);
@@ -89,14 +95,21 @@ const CotizadorPage = () => {
           return false;
         case 1: // Tipo trámite
           return !!tipoTramite;
-        case 2: // Tipo vehículo
-          return !!tipoVehiculo;
+        case 2: // Tipo vehículo + titular
+          if (!tipoVehiculo) return false;
+          if (tipoVehiculo === 'CERO_KM') return true;
+          // Vehículo usado: requiere selección de titular
+          if (!titularCotizacion) return false;
+          if (titularCotizacion === 'PROPIETARIO') return true;
+          // Tercero: requiere documento
+          return !!terceroDocumento;
         case 3: // Método consulta
           if (!metodoConsulta) return false;
           if (metodoConsulta === 'PLACA_RUNT') return !!consultaPlaca && !!consultaDocumento;
           if (metodoConsulta === 'IA_FOTO_TARJETA') return !!imagenLista;
           if (metodoConsulta === 'IA_VIN_RUNT') return !!imagenLista && !!consultaDocumento;
           if (metodoConsulta === 'PLACA_FALABELLA') return !!consultaPlaca && !!consultaDocumento;
+          if (metodoConsulta === 'MANUAL') return !!datosManual.placa && !!datosManual.clase && !!datosManual.tipoServicio && !!datosManual.cilindraje && !!datosManual.modelo && !!datosManual.marca && !!datosManual.linea;
           return false;
         case 4: // Datos vehículo
           return !!runtPlaca;
@@ -121,7 +134,7 @@ const CotizadorPage = () => {
           return false;
       }
     }
-  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, runtPlaca, grupoSoat, grupoRequiereRevision, tarifaCodigo]);
+  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, titularCotizacion, terceroDocumento, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, datosManual, runtPlaca, grupoSoat, grupoRequiereRevision, tarifaCodigo]);
 
   const handleNext = async () => {
     if (activeStep >= steps.length - 1) return;
@@ -174,8 +187,10 @@ const CotizadorPage = () => {
   const isLastStep = activeStep === steps.length - 1;
 
   // Ocultar "Siguiente" en pasos con auto-avance (selección directa)
+  // Step 2 (Tipo Vehículo) solo auto-avanza si es CERO_KM o PROPIETARIO;
+  // si es USADO+TERCERO, se necesita el botón "Siguiente" tras llenar el documento
   const isAutoAdvanceStep = esFlujoSoat
-    ? activeStep <= 2  // Steps 0,1,2: Cliente, Trámite, Tipo Vehículo
+    ? activeStep <= 1 || (activeStep === 2 && (!tipoVehiculo || tipoVehiculo === 'CERO_KM' || titularCotizacion === 'PROPIETARIO'))
     : activeStep <= 1; // Steps 0,1: Cliente, Trámite
 
   return (
