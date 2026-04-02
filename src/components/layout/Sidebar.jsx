@@ -34,6 +34,7 @@ import BalanceIcon from '@mui/icons-material/Balance';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import StorageIcon from '@mui/icons-material/Storage';
 
 
 
@@ -60,6 +61,7 @@ const menuItems = [
       { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES,               moduleCode: 'clientes' },
       { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat' },
       { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
+      { text: 'Base de Datos',          icon: StorageIcon,          path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos' },
       { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
       { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },
       { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos' },

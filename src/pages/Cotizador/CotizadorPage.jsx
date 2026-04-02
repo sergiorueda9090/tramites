@@ -38,6 +38,7 @@ import {
   resetCotizador,
 } from '../../store/cotizadorStore/cotizadorSlice';
 import { selectPlaca, resetStore as resetRuntStore } from '../../store/apisExternasStore/apisExternasRuntStore';
+import { guardarRegistroDesdeCotizadorThunk } from '../../store/baseDeDatosStore/baseDeDatosThunks';
 
 import Step1_Cliente from './steps/Step1_Cliente';
 import Step2_TipoTramite from './steps/Step2_TipoTramite';
@@ -143,6 +144,9 @@ const CotizadorPage = () => {
     if (esFlujoSoat && activeStep === 3 && consultarRef.current) {
       const result = await consultarRef.current();
       if (!result) return; // Si falla, no avanza
+
+      // Guardar automáticamente en Base de Datos después de obtener datos del vehículo
+      dispatch(guardarRegistroDesdeCotizadorThunk());
     }
 
     dispatch(setActiveStep(activeStep + 1));

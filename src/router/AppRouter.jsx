@@ -23,6 +23,7 @@ const AjusteSaldo     = lazy(() => import('../pages/AjusteSaldo'));
 const Gastos          = lazy(() => import('../pages/Gastos'));
 const TarifarioSoat   = lazy(() => import('../pages/TarifarioSoat'));
 const Cotizador       = lazy(() => import('../pages/Cotizador'));
+const BaseDeDatos     = lazy(() => import('../pages/BaseDeDatos'));
 
 // Placeholder pages for routes that are not yet implemented
 const PlaceholderPage = ({ title }) => (
@@ -74,6 +75,7 @@ const AppRouter = () => {
             <Route path="gastos"          element={<ProtectedModule moduleCode="gastos"><Gastos /></ProtectedModule>} />
             <Route path="tarifario-soat"  element={<ProtectedModule moduleCode="tarifario_soat"><TarifarioSoat /></ProtectedModule>} />
             <Route path="cotizador"      element={<ProtectedModule moduleCode="cotizador"><Cotizador /></ProtectedModule>} />
+            <Route path="base-de-datos"  element={<ProtectedModule moduleCode="base_de_datos"><BaseDeDatos /></ProtectedModule>} />
 
             <Route path="reportes" element={<ProtectedModule moduleCode="reportes"><PlaceholderPage title="Reportes" /></ProtectedModule>} />
             <Route path="configuracion" element={<ProtectedModule moduleCode="configuracion"><Configuraciones /></ProtectedModule>} />

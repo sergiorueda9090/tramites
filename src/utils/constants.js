@@ -18,6 +18,7 @@ export const ROUTES = {
   GASTOS: '/gastos',
   TARIFARIO_SOAT: '/tarifario-soat',
   COTIZADOR: '/cotizador',
+  BASE_DE_DATOS: '/base-de-datos',
   REPORTES: '/reportes',
   CONFIGURACION: '/configuracion',
   LOGIN: '/login',

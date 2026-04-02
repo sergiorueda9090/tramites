@@ -14,6 +14,7 @@ import { gastosStore }              from './gastosStore/gastosStore';
 import { tarifarioSoatStore }       from './tarifarioSoatStore/tarifarioSoatStore';
 import { cotizadorStore }            from './cotizadorStore/cotizadorStore';
 import { apisExternasRuntStore }    from './apisExternasStore/apisExternasRuntStore';
+import { baseDeDatosStore }        from './baseDeDatosStore/baseDeDatosStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 
@@ -35,5 +36,6 @@ export const store = configureStore({
     tarifarioSoatStore: tarifarioSoatStore.reducer,
     cotizadorStore: cotizadorStore.reducer,
     apisExternasRuntStore: apisExternasRuntStore.reducer,
+    baseDeDatosStore: baseDeDatosStore.reducer,
   },
 });
