@@ -10,14 +10,64 @@ import {
 } from './apisExternasRuntStore';
 
 // URL del endpoint RUNT
-const API_URL = '/api/cotizador/external/runt/';
+const API_URL               = '/api/cotizador/external/runt/';
 const API_GET_INFO_EXTERNAL = '/api/cotizador/get_user_info_external/';
 
 
-const API_URL_DATOS = '/api/cotizador/tarjeta_propiedad/';
-const API_URL_VIN = '/api/cotizador/vin/';
-const API_URL_RUNT_VIN = '/api/cotizador/runt_vin/';
-const API_URL_FALABELLA = '/api/cotizador/api_falabella/';
+const API_URL_DATOS          = '/api/cotizador/tarjeta_propiedad/';
+const API_URL_VIN            = '/api/cotizador/vin/';
+const API_URL_RUNT_VIN       = '/api/cotizador/runt_vin/';
+const API_URL_RUNT_VEHICULO_VIN = '/api/cotizador/runt_vehiculo_vin/';
+const API_URL_FALABELLA      = '/api/cotizador/api_falabella/';
+
+
+// API CEDULAS
+const API_URL_CEDULAS = '/api/cotizador/get_nombre_cliente/';
+
+
+/**
+ * Consultar nombre de persona por número de documento
+ * Primero consulta RUNT, si no existe cae a API judicial
+ * @param {Object} params
+ * @param {string} params.numero_documento - Número de documento
+ */
+export const consultarNombreClienteThunk = ({ numero_documento }) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoading(true));
+      dispatch(showBackdrop('Consultando datos de la persona...'));
+
+      const response = await api.get(API_URL_CEDULAS, {
+        params: { numero_documento },
+      });
+
+      dispatch(setPersona(response.data));
+      dispatch(hideBackdrop());
+
+      return response.data;
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+
+      const status = error.response?.status;
+      const response = error.response?.data;
+
+      let title = 'Error';
+      if (status === 400) title = 'Error de validación';
+      else if (status === 401) title = 'No autorizado';
+      else if (status === 404) title = 'No encontrado';
+      else if (status === 502) title = 'Servicio no disponible';
+      else if (status === 500) title = 'Error del servidor';
+
+      const message = response?.error || response?.detail || error.message || 'No se pudo consultar los datos de la persona';
+
+      dispatch(setError(message));
+      AlertService.error(title, message);
+
+      return null;
+    }
+  };
+};
 
 /**
  * Consultar información de un vehículo en el RUNT
@@ -106,10 +156,11 @@ export const consultarInformacionUsuarioThunk = ({ numero_documento }) => {
 };
 
 
-
-
 /**
  * Extraer datos de tarjeta de propiedad con IA y luego consultar RUNT
+ * Paso 1: Envía imagen a /api/tarjeta_propiedad → extrae placa, tipo_documento, nro_documento
+ * Paso 2: Consulta RUNT vehículo con placa + documento
+ * Paso 3: Consulta información del usuario con el documento
  * @param {Object} params
  * @param {File} params.imagen - Imagen de la tarjeta de propiedad
  */
@@ -149,7 +200,7 @@ export const extraerDatosRuntThunk = ({ imagen }) => {
 
       dispatch(setVehiculo(runtResponse.data));
 
-      // Consultar información del usuario enseguida
+      // Paso 3: Consultar información del usuario
       await dispatch(consultarInformacionUsuarioThunk({ numero_documento: nro_documento }));
 
       dispatch(hideBackdrop());

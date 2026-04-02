@@ -86,7 +86,7 @@ const NOMBRES_TIPO_VEHICULO = {
 const NOMBRES_METODO_CONSULTA = {
   PLACA_RUNT: 'Placa + Documento en RUNT',
   IA_FOTO_TARJETA: 'IA Foto Tarjeta de Propiedad',
-  IA_VIN_RUNT: 'IA Foto + Documento en RUNT',
+  IA_VIN_RUNT: 'IA Foto VIN+ Documento en RUNT',
   PLACA_FALABELLA: 'Placa en Falabella + Documento en RUNT',
 };
 
@@ -412,7 +412,7 @@ const Step6_Cotizacion = ({ onReset }) => {
           </Grid>
         )}
 
-        {/* Card Cotización */}
+        {/* Card Cotización 
         <Grid item xs={12}>
           <CotizacionResumen
             cotizacion={cotizacion}
@@ -421,36 +421,8 @@ const Step6_Cotizacion = ({ onReset }) => {
             formatCurrency={formatCurrency}
           />
         </Grid>
+        */}
       </Grid>
-
-      {/* Botones de acción */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 3, flexWrap: 'wrap' }}>
-        <Button
-          variant="contained"
-          startIcon={<SaveIcon />}
-          onClick={handleGuardar}
-          disabled={loading || cotizacionGuardada}
-          size="large"
-        >
-          {cotizacionGuardada ? 'Cotización guardada' : 'Guardar cotización'}
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<RestartAltIcon />}
-          onClick={onReset}
-          size="large"
-        >
-          Nueva cotización
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<PrintIcon />}
-          onClick={handleImprimir}
-          size="large"
-        >
-          Imprimir
-        </Button>
-      </Box>
     </Box>
   );
 };
