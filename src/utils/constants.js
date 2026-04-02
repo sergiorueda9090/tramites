@@ -19,6 +19,7 @@ export const ROUTES = {
   TARIFARIO_SOAT: '/tarifario-soat',
   COTIZADOR: '/cotizador',
   BASE_DE_DATOS: '/base-de-datos',
+  API_ENDPOINTS: '/api-endpoints',
   REPORTES: '/reportes',
   CONFIGURACION: '/configuracion',
   LOGIN: '/login',

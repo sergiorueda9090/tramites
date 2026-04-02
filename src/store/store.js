@@ -12,9 +12,10 @@ import { ajusteSaldoStore }         from './ajusteSaldoStore/ajusteSaldoStore';
 import { gastosMainStore }          from './gastosMainStore/gastosMainStore';
 import { gastosStore }              from './gastosStore/gastosStore';
 import { tarifarioSoatStore }       from './tarifarioSoatStore/tarifarioSoatStore';
-import { cotizadorStore }            from './cotizadorStore/cotizadorStore';
+import { cotizadorStore }           from './cotizadorStore/cotizadorStore';
 import { apisExternasRuntStore }    from './apisExternasStore/apisExternasRuntStore';
-import { baseDeDatosStore }        from './baseDeDatosStore/baseDeDatosStore';
+import { baseDeDatosStore }         from './baseDeDatosStore/baseDeDatosStore';
+import {apiAppStore}                from './apiAppStore/apiAppStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 
@@ -37,5 +38,6 @@ export const store = configureStore({
     cotizadorStore: cotizadorStore.reducer,
     apisExternasRuntStore: apisExternasRuntStore.reducer,
     baseDeDatosStore: baseDeDatosStore.reducer,
+    apiAppStore: apiAppStore.reducer,
   },
 });
