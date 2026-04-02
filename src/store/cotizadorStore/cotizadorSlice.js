@@ -27,6 +27,7 @@ const initialState = {
   consultaPlaca: '',
   consultaDocumento: '',
   tipoDocumento: 'C',
+  consultaTelefono: '',
   imagenLista: false,
 
   // Step 4 - Datos manuales (solo método MANUAL)
@@ -166,6 +167,7 @@ export const cotizadorStore = createSlice({
       state.consultaPlaca = '';
       state.consultaDocumento = '';
       state.tipoDocumento = 'C';
+      state.consultaTelefono = '';
       state.imagenLista = false;
       state.datosManual = initialState.datosManual;
     },
@@ -180,6 +182,9 @@ export const cotizadorStore = createSlice({
     },
     setTipoDocumento: (state, action) => {
       state.tipoDocumento = action.payload;
+    },
+    setConsultaTelefono: (state, action) => {
+      state.consultaTelefono = action.payload;
     },
     setDatosManual: (state, action) => {
       state.datosManual = { ...state.datosManual, ...action.payload };
@@ -273,6 +278,7 @@ export const {
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
+  setConsultaTelefono,
   setImagenLista,
   setDatosManual,
   setDatosVehiculo,
@@ -306,6 +312,7 @@ export const selectMetodoConsulta = (state) => state.cotizadorStore.metodoConsul
 export const selectConsultaPlaca = (state) => state.cotizadorStore.consultaPlaca;
 export const selectConsultaDocumento = (state) => state.cotizadorStore.consultaDocumento;
 export const selectTipoDocumento = (state) => state.cotizadorStore.tipoDocumento;
+export const selectConsultaTelefono = (state) => state.cotizadorStore.consultaTelefono;
 export const selectImagenLista = (state) => state.cotizadorStore.imagenLista;
 export const selectDatosManual = (state) => state.cotizadorStore.datosManual;
 export const selectDatosVehiculo = (state) => state.cotizadorStore.datosVehiculo;

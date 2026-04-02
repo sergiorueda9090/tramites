@@ -232,16 +232,15 @@ export const extraerDatosRuntThunk = ({ imagen }) => {
   };
 };
 
-export const extraerDatosFotoVinThunk = ({ imagen, numero_documento }) => {
+export const extraerDatosFotoVinThunk = ({ imagen }) => {
   return async (dispatch) => {
     try {
       dispatch(setLoading(true));
-      dispatch(showBackdrop('Extrayendo datos de la foto VIN...'));
+      dispatch(showBackdrop('Extrayendo VIN de la foto...'));
 
-      // Paso 1: Enviar imagen al backend para extraer datos con IA
+      // Paso 1: Enviar imagen al backend para extraer VIN con IA
       const formData = new FormData();
       formData.append('imagen', imagen);
-
 
       const extractResponse = await api.post(API_URL_VIN, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -259,38 +258,17 @@ export const extraerDatosFotoVinThunk = ({ imagen, numero_documento }) => {
       // Guardar VIN extraído en el store
       dispatch(setVinExtraido(vin));
 
-      // Paso 2: Consultar datos de persona con el documento
-      dispatch(showBackdrop('Consultando datos del conductor...'));
+      // Paso 2: Consultar RUNT con el VIN de 17 dígitos
+      dispatch(showBackdrop('Consultando vehículo en RUNT por VIN...'));
 
-      const vinRuntResponse = await api.post(API_URL_RUNT_VIN, { runt: numero_documento });
+      const runtVinResponse = await api.get(API_URL_RUNT_VEHICULO_VIN, { params: { vin } });
 
-      // Guardar datos de persona en el store
-      dispatch(setPersona(vinRuntResponse.data));
-
-      let { placa, tipo_documento } = vinRuntResponse.data;
-
-      if (!placa || !tipo_documento) {
-        dispatch(hideBackdrop());
-        dispatch(setLoading(false));
-        AlertService.error('Error', 'No se pudieron extraer los datos del RUNT con el VIN proporcionado.');
-        return null;
-      }
-
-      if(tipo_documento == 'C.C.'){
-         tipo_documento = 'C';
-      }
-
-      // Paso 3: Consultar RUNT con los datos extraídos
-      dispatch(showBackdrop('Consultando RUNT...'));
-
-      const runtResponse = await api.get(API_URL, {params: { placa, tipo_documento, numero_documento },});
-
-      dispatch(setVehiculo(runtResponse.data));
+      dispatch(setVehiculo(runtVinResponse.data));
 
       dispatch(hideBackdrop());
       dispatch(setLoading(false));
 
-      return extractResponse.data;
+      return runtVinResponse.data;
 
     } catch (error) {
       dispatch(hideBackdrop());
@@ -306,7 +284,7 @@ export const extraerDatosFotoVinThunk = ({ imagen, numero_documento }) => {
       else if (status === 500) title = 'Error del servidor';
       else if (status === 502) title = 'Servicio no disponible';
 
-      const message = response?.error || response?.detail || error.message || 'No se pudo procesar la tarjeta de propiedad';
+      const message = response?.error || response?.detail || error.message || 'No se pudo procesar la foto del VIN';
 
       dispatch(setError(message));
       AlertService.error(title, message);

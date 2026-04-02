@@ -21,6 +21,9 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditNoteIcon from '@mui/icons-material/EditNote';
+import ShuffleIcon from '@mui/icons-material/Shuffle';
+import PhoneIcon from '@mui/icons-material/Phone';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import {
   selectTipoVehiculo,
@@ -29,11 +32,13 @@ import {
   selectConsultaPlaca,
   selectConsultaDocumento,
   selectTipoDocumento,
+  selectConsultaTelefono,
   selectDatosManual,
   setMetodoConsulta,
   setConsultaPlaca,
   setConsultaDocumento,
   setTipoDocumento,
+  setConsultaTelefono,
   setImagenLista,
   setDatosManual,
 } from '../../../store/cotizadorStore/cotizadorSlice';
@@ -126,6 +131,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
   const consultaPlaca = useSelector(selectConsultaPlaca);
   const consultaDocumento = useSelector(selectConsultaDocumento);
   const tipoDocumento = useSelector(selectTipoDocumento);
+  const consultaTelefono = useSelector(selectConsultaTelefono);
   const datosManual = useSelector(selectDatosManual);
   const nombres = useSelector(selectNombres);
   const apellidos = useSelector(selectApellidos);
@@ -213,6 +219,13 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
     dispatch(setImagenLista(false));
   };
 
+  const generarTelefonoColombia = () => {
+    const prefijos = ['300', '301', '302', '303', '304', '305', '310', '311', '312', '313', '314', '315', '316', '317', '318', '319', '320', '321', '322', '323', '324', '325', '350', '351'];
+    const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
+    const numero = String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
+    dispatch(setConsultaTelefono(prefijo + numero));
+  };
+
   // Exponer función de consulta al componente padre via ref
   useEffect(() => {
     if (!consultarRef) return;
@@ -223,7 +236,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
         case 'IA_FOTO_TARJETA':
           return dispatch(extraerDatosRuntThunk({ imagen: imagenFile }));
         case 'IA_VIN_RUNT':
-          return dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile, numero_documento: consultaDocumento }));
+          return dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile }));
         case 'PLACA_FALABELLA':
           return dispatch(extraerDatosAPIFalabellaThunk({ placa: consultaPlaca }));
         case 'MANUAL':
@@ -242,7 +255,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
           return Promise.resolve(null);
       }
     };
-  }, [consultarRef, metodoConsulta, consultaPlaca, consultaDocumento, tipoDocumento, imagenFile, datosManual, dispatch]);
+  }, [consultarRef, metodoConsulta, consultaPlaca, consultaDocumento, tipoDocumento, consultaTelefono, imagenFile, datosManual, dispatch]);
 
   return (
     <Box>
@@ -390,11 +403,11 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
         </Paper>
       )}
 
-      {/* ===== IA FOTO + DOCUMENTO RUNT ===== */}
+      {/* ===== IA FOTO VIN + DOCUMENTO RUNT ===== */}
       {metodoConsulta === 'IA_VIN_RUNT' && (
         <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Sube una imagen y proporciona el documento RUNT
+            Sube la foto del VIN e ingresa los datos del propietario
           </Typography>
 
           <input
@@ -425,7 +438,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
             >
               <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
               <Typography variant="body1" color="text.secondary">
-                Haz clic para cargar una imagen
+                Haz clic para cargar una imagen del VIN
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 JPG, PNG o WEBP — o pega una imagen con Ctrl+V
@@ -436,7 +449,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
               <Box
                 component="img"
                 src={imagenPreview}
-                alt="Imagen del vehículo"
+                alt="Imagen del VIN"
                 sx={{
                   maxWidth: '100%',
                   maxHeight: 350,
@@ -464,14 +477,61 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
             </Box>
           )}
 
-          <TextField
-            fullWidth
-            label="Documento RUNT"
-            value={consultaDocumento}
-            onChange={(e) => dispatch(setConsultaDocumento(e.target.value))}
-            placeholder="Ej: 1098765432"
-            sx={{ mt: 2 }}
-          />
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth>
+                <InputLabel>Tipo de documento</InputLabel>
+                <Select
+                  value={tipoDocumento}
+                  label="Tipo de documento"
+                  onChange={(e) => dispatch(setTipoDocumento(e.target.value))}
+                >
+                  {TIPOS_DOCUMENTO.map((tipo) => (
+                    <MenuItem key={tipo.codigo} value={tipo.codigo}>
+                      {tipo.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Número de documento"
+                value={consultaDocumento}
+                onChange={(e) => dispatch(setConsultaDocumento(e.target.value))}
+                placeholder="Ej: 1098765432"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Teléfono"
+                value={consultaTelefono}
+                onChange={(e) => dispatch(setConsultaTelefono(e.target.value))}
+                placeholder="Ej: 3001234567"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={generarTelefonoColombia}
+                        size="small"
+                        title="Generar teléfono aleatorio"
+                        color="primary"
+                      >
+                        <ShuffleIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+          </Grid>
         </Paper>
       )}
 
