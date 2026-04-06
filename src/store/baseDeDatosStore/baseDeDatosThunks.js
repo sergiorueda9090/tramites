@@ -14,6 +14,7 @@ import {
 // URLs del módulo base de datos
 const API_URLS = {
   list: '/api/base_de_datos/list/',
+  exportExcel: '/api/base_de_datos/export-excel/',
   detail: (id) => `/api/base_de_datos/${id}/`,
   create: '/api/base_de_datos/create/',
   update: (id) => `/api/base_de_datos/${id}/update/`,
@@ -449,6 +450,56 @@ export const getHistoryThunk = (registroId) => {
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
       return null;
+    }
+  };
+};
+
+/**
+ * Exportar registros a Excel con los filtros actuales aplicados
+ */
+export const exportExcelThunk = (params = {}) => {
+  return async (dispatch) => {
+    try {
+      dispatch(showBackdrop('Generando archivo Excel...'));
+
+      const response = await api.get(API_URLS.exportExcel, {
+        params,
+        responseType: 'blob',
+      });
+
+      // Extraer nombre del archivo del header Content-Disposition
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'base_de_datos_registros.xlsx';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        if (match) filename = match[1];
+      }
+
+      // Crear descarga del archivo
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      dispatch(hideBackdrop());
+
+      await AlertService.success(
+        '¡Excel generado!',
+        'El archivo se ha descargado correctamente.',
+        { timer: 3000 }
+      );
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
     }
   };
 };

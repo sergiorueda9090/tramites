@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import usePermissions from '../../hooks/usePermissions';
 
 import {
@@ -38,6 +39,7 @@ import {
   viewThunk,
   showThunk,
   loadAuxDataThunk,
+  exportExcelThunk,
 } from '../../store/baseDeDatosStore/baseDeDatosThunks';
 
 import {
@@ -190,6 +192,13 @@ const BaseDeDatos = () => {
     dispatch(saveThunk(form));
   };
 
+  const handleExportExcel = () => {
+    const params = buildQueryParams();
+    delete params.page;
+    delete params.page_size;
+    dispatch(exportExcelThunk(params));
+  };
+
   return (
     <Box>
       {/* Page Header */}
@@ -211,11 +220,21 @@ const BaseDeDatos = () => {
             Registros de vehiculos cotizados y titulares
           </Typography>
         </Box>
-        {canCreate('base_de_datos') && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo registro
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="success"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportExcel}
+          >
+            Exportar Excel
           </Button>
-        )}
+          {canCreate('base_de_datos') && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
+              Nuevo registro
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Filters */}
