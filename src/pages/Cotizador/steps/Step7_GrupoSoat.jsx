@@ -22,6 +22,8 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PersonIcon from '@mui/icons-material/Person';
 
 import {
   selectGrupoClaseRunt,
@@ -32,6 +34,11 @@ import {
   selectModuloPregunta1,
   selectModuloPregunta2,
   selectTarifaCodigo,
+  selectTarifaDetalle,
+  selectPreciosCliente,
+  selectClienteSeleccionado,
+  selectModoCliente,
+  selectNuevoCliente,
   setGrupoClaseRunt,
   setGrupoSubcriterio,
   setGrupoSoat,
@@ -39,6 +46,11 @@ import {
   setModuloPregunta2,
   setTarifaCodigo,
 } from '../../../store/cotizadorStore/cotizadorSlice';
+
+import {
+  buscarTarifaPorCodigoThunk,
+  obtenerPreciosClienteThunk,
+} from '../../../store/cotizadorStore/cotizadorThunks';
 
 import {
   selectClase,
@@ -392,17 +404,51 @@ function getSubcriterioLabel(tipo, value) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// Componente de fila informativa
+// Componentes de UI reutilizables
 // ═══════════════════════════════════════════════════════════
 
-const InfoRow = ({ label, value, highlight }) => (
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
-    <Typography variant="body2" color="text.secondary">
+const InfoRow = ({ label, value, highlight, bold }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.6, px: 0.5 }}>
+    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
       {label}
     </Typography>
-    <Typography variant="body2" fontWeight={highlight ? 700 : 500} color={highlight ? 'primary.main' : 'text.primary'}>
+    <Typography
+      variant="body2"
+      fontWeight={highlight || bold ? 700 : 500}
+      color={highlight ? 'primary.main' : 'text.primary'}
+      sx={{ textAlign: 'right' }}
+    >
       {value || '-'}
     </Typography>
+  </Box>
+);
+
+const SectionHeader = ({ icon, title, chip, color = 'primary' }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+    {React.cloneElement(icon, { color, fontSize: 'small' })}
+    <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.75rem' }}>
+      {title}
+    </Typography>
+    {chip}
+  </Box>
+);
+
+const ResultCard = ({ icon, label, value, color, subtitle }) => (
+  <Box sx={{ textAlign: 'center', py: 2 }}>
+    <Avatar sx={{ bgcolor: `${color}.main`, width: 48, height: 48, mx: 'auto', mb: 1 }}>
+      {icon}
+    </Avatar>
+    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25, textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.65rem' }}>
+      {label}
+    </Typography>
+    <Typography variant="h6" fontWeight={700} color={`${color}.main`}>
+      {value}
+    </Typography>
+    {subtitle && (
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+        {subtitle}
+      </Typography>
+    )}
   </Box>
 );
 
@@ -422,6 +468,14 @@ const Step7_GrupoSoat = () => {
   const pregunta1 = useSelector(selectModuloPregunta1);
   const pregunta2 = useSelector(selectModuloPregunta2);
   const tarifaCodigo = useSelector(selectTarifaCodigo);
+  const tarifaDetalle = useSelector(selectTarifaDetalle);
+  const preciosCliente = useSelector(selectPreciosCliente);
+
+  // Datos del cliente
+  const clienteSeleccionado = useSelector(selectClienteSeleccionado);
+  const modoCliente = useSelector(selectModoCliente);
+  const nuevoCliente = useSelector(selectNuevoCliente);
+  const cliente = modoCliente === 'seleccionado' ? clienteSeleccionado : nuevoCliente;
 
   // Datos RUNT del vehículo
   const runtPlaca = useSelector(selectPlaca);
@@ -505,31 +559,147 @@ const Step7_GrupoSoat = () => {
     dispatch(setTarifaCodigo(null));
   }, [dispatch, grupoSoat, modulo, pregunta1, pregunta2, necesitaPregunta1, necesitaPregunta2]);
 
+  // ── Buscar detalle de tarifa cuando se determina el código ──
+  useEffect(() => {
+    if (tarifaCodigo) {
+      dispatch(buscarTarifaPorCodigoThunk(tarifaCodigo));
+    }
+  }, [tarifaCodigo, dispatch]);
+
+  // ── Obtener precios del cliente seleccionado ──
+  useEffect(() => {
+    if (cliente?.id) {
+      dispatch(obtenerPreciosClienteThunk(cliente.id));
+    }
+  }, [cliente?.id, dispatch]);
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
+      {/* ═══ Encabezado ═══ */}
+      <Typography variant="h6" fontWeight={700} gutterBottom>
         Grupo SOAT y Tarifa
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Determinación automática del grupo y tarifa a partir de los datos del vehículo consultado.
       </Typography>
 
-      <Grid container spacing={3}>
-        {/* ── Columna izquierda: Datos utilizados y resolución ── */}
-        <Grid item xs={12} md={5}>
-          {/* Card datos del vehículo utilizados */}
-          <Card variant="outlined" sx={{ mb: 2 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <DirectionsCarIcon color="primary" />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Datos del vehículo
-                </Typography>
-                {runtPlaca && (
-                  <Chip label={runtPlaca} size="small" color="primary" variant="outlined" />
-                )}
-              </Box>
-              <Divider sx={{ mb: 1.5 }} />
+      {/* ═══ Alerta de revisión manual (arriba, visible de inmediato) ═══ */}
+      {requiereRevision && motivo && (
+        <Alert severity="warning" variant="outlined" sx={{ mb: 3 }}>
+          <AlertTitle>Revisión manual requerida</AlertTitle>
+          {motivo}. Este vehículo requiere revisión manual para asignar el grupo tarifario correcto.
+        </Alert>
+      )}
+
+      {/* ═══ SECCIÓN 1: Resumen de resultados (banner horizontal) ═══ */}
+      {(grupoSoat || requiereRevision) && !requiereRevision && (
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 3,
+            borderColor: tarifaCodigo ? 'success.main' : 'divider',
+            borderWidth: tarifaCodigo ? 2 : 1,
+            background: (theme) =>
+              theme.palette.mode === 'light'
+                ? 'linear-gradient(135deg, #f8fffe 0%, #f0f7ff 100%)'
+                : 'linear-gradient(135deg, #1a2a1a 0%, #1a1a2a 100%)',
+          }}
+        >
+          <CardContent sx={{ py: 2.5 }}>
+            <Grid container spacing={0} alignItems="center" justifyContent="center">
+              {/* Grupo */}
+              <Grid item xs={12} sm={4}>
+                <ResultCard
+                  icon={config ? <config.Icono sx={{ fontSize: 28 }} /> : <CategoryIcon sx={{ fontSize: 28 }} />}
+                  label="Grupo SOAT"
+                  value={config?.nombre || grupoSoat || 'Determinando...'}
+                  color={config?.color || 'info'}
+                />
+              </Grid>
+
+              {/* Separador visual */}
+              <Grid item xs={12} sm={0} sx={{ display: { xs: 'block', sm: 'none' } }}>
+                <Divider />
+              </Grid>
+
+              {/* Tarifa */}
+              <Grid item xs={12} sm={4} sx={{ borderLeft: { sm: 1 }, borderRight: { sm: 1 }, borderColor: { sm: 'divider' } }}>
+                <ResultCard
+                  icon={<ReceiptLongIcon sx={{ fontSize: 28 }} />}
+                  label="Tarifa"
+                  value={tarifaCodigo ? `Tarifa ${tarifaCodigo}` : 'Determinando...'}
+                  color="secondary"
+                  subtitle={tarifaDetalle?.descripcion || null}
+                />
+              </Grid>
+
+              {/* Separador visual */}
+              <Grid item xs={12} sm={0} sx={{ display: { xs: 'block', sm: 'none' } }}>
+                <Divider />
+              </Grid>
+
+              {/* Valor */}
+              <Grid item xs={12} sm={4}>
+                <ResultCard
+                  icon={<AttachMoneyIcon sx={{ fontSize: 28 }} />}
+                  label="Valor de Tarifa"
+                  value={tarifaDetalle ? formatCurrency(tarifaDetalle.valor) : '—'}
+                  color="primary"
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══ Sin datos del vehículo ═══ */}
+      {!runtClase && !requiereRevision && (
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardContent sx={{ textAlign: 'center', py: 5 }}>
+            <Avatar sx={{ bgcolor: 'grey.200', width: 56, height: 56, mx: 'auto', mb: 2 }}>
+              <CategoryIcon sx={{ fontSize: 32, color: 'grey.500' }} />
+            </Avatar>
+            <Typography variant="subtitle1" color="text.secondary">
+              No hay datos del vehículo para determinar el grupo
+            </Typography>
+            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
+              Regresa al paso anterior para consultar los datos del vehículo.
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══ SECCIÓN 2: Detalle (dos columnas) ═══ */}
+      <Grid container spacing={2.5}>
+
+        {/* ── Columna izquierda: Datos del vehículo y resolución ── */}
+        <Grid item xs={12} md={6}>
+          {/* Card: Datos del vehículo */}
+          <Card
+            variant="outlined"
+            sx={{
+              mb: 2,
+              borderLeft: 4,
+              borderLeftColor: 'primary.main',
+            }}
+          >
+            <CardContent sx={{ pb: 2 }}>
+              <SectionHeader
+                icon={<DirectionsCarIcon />}
+                title="Datos del vehículo"
+                color="primary"
+                chip={runtPlaca ? <Chip label={runtPlaca} size="small" color="primary" variant="outlined" sx={{ fontWeight: 600 }} /> : null}
+              />
+              <Divider sx={{ mb: 1 }} />
               <InfoRow label="Clase RUNT" value={runtClase} highlight />
               <InfoRow label="Servicio" value={runtTipoServicio} />
               <InfoRow label="Clasificación" value={runtClasificacion} />
@@ -542,24 +712,27 @@ const Step7_GrupoSoat = () => {
             </CardContent>
           </Card>
 
-          {/* Card resolución automática */}
-          <Card variant="outlined">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <AutoFixHighIcon color="secondary" />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Resolución automática
-                </Typography>
-              </Box>
-              <Divider sx={{ mb: 1.5 }} />
+          {/* Card: Resolución automática */}
+          <Card
+            variant="outlined"
+            sx={{
+              borderLeft: 4,
+              borderLeftColor: 'secondary.main',
+            }}
+          >
+            <CardContent sx={{ pb: 2 }}>
+              <SectionHeader
+                icon={<AutoFixHighIcon />}
+                title="Resolución automática"
+                color="secondary"
+              />
+              <Divider sx={{ mb: 1 }} />
 
-              {/* Clase → Tipo de mapeo */}
               <InfoRow label="Clase detectada" value={claseRunt} highlight />
               {tipoSubcriterio === 'DIRECTO' && (
                 <InfoRow label="Tipo mapeo" value="Directo (sin criterio adicional)" />
               )}
 
-              {/* Subcriterio (si aplica) */}
               {necesitaSubcriterio && subcriterio && (
                 <InfoRow
                   label={LABEL_SUBCRITERIO[tipoSubcriterio]}
@@ -568,10 +741,9 @@ const Step7_GrupoSoat = () => {
                 />
               )}
 
-              {/* Módulo y preguntas resueltas */}
               {grupoSoat && !requiereRevision && modulo && (
                 <>
-                  <Divider sx={{ my: 1.5 }} />
+                  <Divider sx={{ my: 1 }} />
                   <InfoRow label="Módulo" value={modulo.nombre} highlight />
 
                   {!necesitaPregunta1 && (
@@ -597,125 +769,142 @@ const Step7_GrupoSoat = () => {
           </Card>
         </Grid>
 
-        {/* ── Columna derecha: Resultado ── */}
-        <Grid item xs={12} md={7}>
-          <Grid container spacing={2}>
-            {/* Card Grupo */}
-            <Grid item xs={12}>
-              <Card
-                variant="outlined"
-                sx={{
-                  borderColor: requiereRevision ? 'warning.main' : grupoSoat ? 'success.main' : 'divider',
-                  borderWidth: grupoSoat || requiereRevision ? 2 : 1,
-                }}
-              >
-                <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                  {/* Sin datos del vehículo */}
-                  {!runtClase && (
-                    <>
-                      <Avatar sx={{ bgcolor: 'grey.300', width: 56, height: 56, mx: 'auto', mb: 1 }}>
-                        <CategoryIcon sx={{ fontSize: 32 }} />
-                      </Avatar>
-                      <Typography variant="subtitle1" color="text.secondary">
-                        No hay datos del vehículo para determinar el grupo
-                      </Typography>
-                    </>
-                  )}
+        {/* ── Columna derecha: Detalle de tarifa y precios del cliente ── */}
+        <Grid item xs={12} md={6}>
+          {/* Card: Detalle de la tarifa */}
+          {tarifaCodigo && tarifaDetalle && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'info.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<ReceiptLongIcon />}
+                  title="Detalle de la tarifa"
+                  color="info"
+                  chip={<Chip icon={<CheckCircleIcon />} label={`Tarifa ${tarifaDetalle.codigo_tarifa}`} size="small" color="info" variant="outlined" sx={{ fontWeight: 600 }} />}
+                />
+                <Divider sx={{ mb: 1 }} />
+                <InfoRow label="Código" value={tarifaDetalle.codigo_tarifa} highlight />
+                <InfoRow label="Descripción" value={tarifaDetalle.descripcion} />
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 0.5 }}>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Valor de Tarifa
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {formatCurrency(tarifaDetalle.valor)}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
 
-                  {/* Procesando */}
-                  {runtClase && !grupoSoat && !requiereRevision && (
-                    <>
-                      <Avatar sx={{ bgcolor: 'info.main', width: 56, height: 56, mx: 'auto', mb: 1 }}>
-                        <CategoryIcon sx={{ fontSize: 32 }} />
-                      </Avatar>
-                      <Typography variant="subtitle1" color="info.main">
-                        Determinando grupo...
-                      </Typography>
-                    </>
-                  )}
+          {/* Card: Tarifa no encontrada */}
+          {tarifaCodigo && !tarifaDetalle && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'warning.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<ReceiptLongIcon />}
+                  title="Detalle de la tarifa"
+                  color="warning"
+                />
+                <Divider sx={{ mb: 1 }} />
+                <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
+                  Buscando información de la Tarifa {tarifaCodigo} en el tarifario...
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
 
-                  {/* Revisión manual */}
-                  {requiereRevision && (
-                    <>
-                      <Avatar sx={{ bgcolor: 'warning.main', width: 56, height: 56, mx: 'auto', mb: 1 }}>
-                        <WarningAmberIcon sx={{ fontSize: 32 }} />
-                      </Avatar>
-                      <Typography variant="subtitle1" fontWeight={600} color="warning.main">
-                        Revisión Manual Requerida
+          {/* Card: Precios del cliente */}
+          {cliente && (
+            <Card
+              variant="outlined"
+              sx={{
+                borderLeft: 4,
+                borderLeftColor: 'success.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<PersonIcon />}
+                  title="Precios del cliente"
+                  color="success"
+                  chip={cliente.nombre ? <Chip label={cliente.nombre} size="small" color="success" variant="outlined" sx={{ fontWeight: 600 }} /> : null}
+                />
+                <Divider sx={{ mb: 1 }} />
+                {preciosCliente.length > 0 ? (
+                  preciosCliente.map((precio, index) => (
+                    <Box
+                      key={precio.id}
+                      sx={{
+                        mt: index > 0 ? 1.5 : 0.5,
+                        p: 1.5,
+                        bgcolor: 'action.hover',
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
+                        {precio.descripcion}
                       </Typography>
-                    </>
-                  )}
-
-                  {/* Grupo determinado */}
-                  {grupoSoat && !requiereRevision && (
-                    <>
-                      <Avatar
-                        sx={{ bgcolor: config ? `${config.color}.main` : 'grey.300', width: 56, height: 56, mx: 'auto', mb: 1 }}
-                      >
-                        {config ? <config.Icono sx={{ fontSize: 32 }} /> : <CategoryIcon sx={{ fontSize: 32 }} />}
-                      </Avatar>
-                      <Chip icon={<CheckCircleIcon />} label="Grupo determinado" color="success" size="small" sx={{ mb: 0.5 }} />
-                      <Typography variant="h5" fontWeight={700} sx={{ mt: 0.5 }}>
-                        {config?.nombre || grupoSoat}
-                      </Typography>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Card Tarifa */}
-            {grupoSoat && !requiereRevision && (
-              <Grid item xs={12}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    borderColor: tarifaCodigo ? 'secondary.main' : 'divider',
-                    borderWidth: tarifaCodigo ? 2 : 1,
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 3 }}>
-                    {tarifaCodigo ? (
-                      <>
-                        <Avatar sx={{ bgcolor: 'secondary.main', width: 56, height: 56, mx: 'auto', mb: 1 }}>
-                          <ReceiptLongIcon sx={{ fontSize: 32 }} />
-                        </Avatar>
-                        <Chip icon={<CheckCircleIcon />} label="Tarifa determinada" color="secondary" size="small" sx={{ mb: 0.5 }} />
-                        <Typography variant="h3" fontWeight={700} sx={{ mt: 0.5 }}>
-                          Tarifa {tarifaCodigo}
-                        </Typography>
-                      </>
-                    ) : (
-                      <>
-                        <Avatar sx={{ bgcolor: 'grey.300', width: 56, height: 56, mx: 'auto', mb: 1 }}>
-                          <ReceiptLongIcon sx={{ fontSize: 32 }} />
-                        </Avatar>
-                        <Typography variant="subtitle1" color="text.secondary">
-                          Determinando tarifa...
-                        </Typography>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
+                      <Grid container spacing={1}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                            Precio de Ley
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="primary.main">
+                            {formatCurrency(precio.precio_lay)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                            Comisión
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="secondary.main">
+                            {formatCurrency(precio.comision)}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  ))
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Este cliente no tiene precios configurados.
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </Grid>
       </Grid>
 
-      {/* Alerta error controlado */}
-      {requiereRevision && motivo && (
-        <Alert severity="warning" sx={{ mt: 3 }}>
-          <AlertTitle>Error controlado</AlertTitle>
-          {motivo}. Este vehículo requiere revisión manual para asignar el grupo tarifario correcto.
-        </Alert>
-      )}
-
-      {/* Alerta tarifa resuelta */}
-      {tarifaCodigo && (
-        <Alert severity="success" sx={{ mt: 3 }}>
+      {/* ═══ Alerta resumen final ═══ */}
+      {tarifaCodigo && !requiereRevision && (
+        <Alert
+          severity="success"
+          variant="outlined"
+          icon={<CheckCircleIcon />}
+          sx={{ mt: 3 }}
+        >
           <strong>{config?.nombre || grupoSoat}</strong> → <strong>Tarifa {tarifaCodigo}</strong>
-          {' — '}Determinada automáticamente desde los datos RUNT del vehículo {runtPlaca}.
+          {tarifaDetalle && <> — {tarifaDetalle.descripcion} — <strong>{formatCurrency(tarifaDetalle.valor)}</strong></>}
+          {' — '}Determinada automáticamente desde los datos RUNT del vehículo <strong>{runtPlaca}</strong>.
         </Alert>
       )}
     </Box>

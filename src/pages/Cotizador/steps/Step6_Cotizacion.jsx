@@ -9,6 +9,10 @@ import {
   Button,
   Divider,
   Chip,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -18,6 +22,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import SearchIcon from '@mui/icons-material/Search';
+import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
+import CasinoIcon from '@mui/icons-material/Casino';
 
 import {
   selectClienteSeleccionado,
@@ -30,7 +36,9 @@ import {
   selectCotizacion,
   selectCotizacionGuardada,
   selectLoading,
+  selectCelularCotizacion,
   setCotizacion,
+  setCelularCotizacion,
 } from '../../../store/cotizadorStore/cotizadorSlice';
 import {
   selectPlaca,
@@ -115,6 +123,7 @@ const Step6_Cotizacion = ({ onReset }) => {
   const cotizacion = useSelector(selectCotizacion);
   const cotizacionGuardada = useSelector(selectCotizacionGuardada);
   const loading = useSelector(selectLoading);
+  const celularCotizacion = useSelector(selectCelularCotizacion);
 
   // Datos RUNT del vehículo
   const placa = useSelector(selectPlaca);
@@ -171,6 +180,18 @@ const Step6_Cotizacion = ({ onReset }) => {
     window.print();
   };
 
+  const handleCelularChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    dispatch(setCelularCotizacion(value));
+  };
+
+  const generarCelularAleatorio = () => {
+    const prefijos = ['300', '301', '302', '310', '311', '312', '313', '314', '315', '316', '317', '318', '319', '320', '321', '322', '323', '350', '351'];
+    const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
+    const resto = Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+    dispatch(setCelularCotizacion(prefijo + resto));
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -193,6 +214,47 @@ const Step6_Cotizacion = ({ onReset }) => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Revisa los datos y ajusta la tarifa y comisión antes de guardar.
       </Typography>
+
+      {/* Campo Número de Celular */}
+      <Card variant="outlined" sx={{ mb: 3, borderLeft: 4, borderLeftColor: 'primary.main' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <PhoneAndroidIcon color="primary" fontSize="small" />
+            <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontSize: '0.75rem' }}>
+              Número de celular
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Ej: 3101234567"
+              value={celularCotizacion}
+              onChange={handleCelularChange}
+              inputProps={{ maxLength: 10, inputMode: 'numeric' }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneAndroidIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              helperText={celularCotizacion && celularCotizacion.length < 10 ? `${celularCotizacion.length}/10 dígitos` : celularCotizacion.length === 10 ? 'Número válido' : ''}
+            />
+            <Tooltip title="Generar número aleatorio" arrow>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={generarCelularAleatorio}
+                sx={{ minWidth: 'auto', px: 2, height: 40 }}
+                startIcon={<CasinoIcon />}
+              >
+                Generar
+              </Button>
+            </Tooltip>
+          </Box>
+        </CardContent>
+      </Card>
 
       <Grid container spacing={2}>
         {/* Card Cliente */}

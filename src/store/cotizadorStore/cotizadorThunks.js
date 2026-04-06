@@ -6,8 +6,11 @@ import {
   setCotizacionGuardada,
   setError,
   setModoCliente,
+  setTarifaDetalle,
+  setPreciosCliente,
 } from './cotizadorSlice';
 import AlertService from '../../services/alertService';
+import { apiService } from '../../services/api';
 
 // Mock data de clientes
 const MOCK_CLIENTES = [
@@ -121,6 +124,34 @@ export const guardarCotizacionThunk = (data) => {
     } catch (error) {
       dispatch(setError(error.message));
       AlertService.error('Error', 'No se pudo guardar la cotización');
+    }
+  };
+};
+
+/**
+ * Buscar detalle de tarifa SOAT por código de tarifa
+ */
+export const buscarTarifaPorCodigoThunk = (codigoTarifa) => {
+  return async (dispatch) => {
+    try {
+      const data = await apiService.get(`/api/tarifario_soat/codigo/${codigoTarifa}/`);
+      dispatch(setTarifaDetalle(data.data));
+    } catch (error) {
+      dispatch(setTarifaDetalle(null));
+    }
+  };
+};
+
+/**
+ * Obtener precios del cliente seleccionado
+ */
+export const obtenerPreciosClienteThunk = (clienteId) => {
+  return async (dispatch) => {
+    try {
+      const data = await apiService.get(`/api/clientes/${clienteId}/precios/`);
+      dispatch(setPreciosCliente(Array.isArray(data) ? data : []));
+    } catch (error) {
+      dispatch(setPreciosCliente([]));
     }
   };
 };

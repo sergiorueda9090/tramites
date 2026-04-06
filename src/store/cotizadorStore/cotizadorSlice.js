@@ -61,6 +61,7 @@ const initialState = {
     comision: 0,
     total: 0,
   },
+  celularCotizacion: '',
 
   // Step 7 - Grupo SOAT (selección manual)
   grupoClaseRunt: null,      // Clase RUNT seleccionada manualmente
@@ -73,6 +74,8 @@ const initialState = {
   moduloPregunta1: null,     // Respuesta a la primera pregunta del módulo (cilindraje, modelo, toneladas, pasajeros)
   moduloPregunta2: null,     // Respuesta a la segunda pregunta del módulo (cilindraje después de modelo)
   tarifaCodigo: null,        // Código de tarifa resultante (100, 110, 211, 810, etc.)
+  tarifaDetalle: null,       // Detalle de la tarifa desde TarifarioSoat { codigo_tarifa, descripcion, valor }
+  preciosCliente: [],        // Precios del cliente [{ descripcion, precio_lay, comision }]
 
   // UI States
   loading: false,
@@ -135,6 +138,8 @@ export const cotizadorStore = createSlice({
       state.moduloPregunta1 = null;
       state.moduloPregunta2 = null;
       state.tarifaCodigo = null;
+      state.tarifaDetalle = null;
+      state.preciosCliente = [];
     },
 
     // Step 3 - Tipo de vehículo
@@ -206,6 +211,9 @@ export const cotizadorStore = createSlice({
     setCotizacionGuardada: (state, action) => {
       state.cotizacionGuardada = action.payload;
     },
+    setCelularCotizacion: (state, action) => {
+      state.celularCotizacion = action.payload;
+    },
 
     // Step 7 - Grupo SOAT (selección manual)
     setGrupoClaseRunt: (state, action) => {
@@ -246,6 +254,13 @@ export const cotizadorStore = createSlice({
     },
     setTarifaCodigo: (state, action) => {
       state.tarifaCodigo = action.payload;
+      state.tarifaDetalle = null;
+    },
+    setTarifaDetalle: (state, action) => {
+      state.tarifaDetalle = action.payload;
+    },
+    setPreciosCliente: (state, action) => {
+      state.preciosCliente = action.payload;
     },
 
     // UI
@@ -285,12 +300,15 @@ export const {
   setVehiculoValidado,
   setCotizacion,
   setCotizacionGuardada,
+  setCelularCotizacion,
   setGrupoClaseRunt,
   setGrupoSubcriterio,
   setGrupoSoat,
   setModuloPregunta1,
   setModuloPregunta2,
   setTarifaCodigo,
+  setTarifaDetalle,
+  setPreciosCliente,
   setLoading,
   setError,
   resetCotizador,
@@ -319,6 +337,7 @@ export const selectDatosVehiculo = (state) => state.cotizadorStore.datosVehiculo
 export const selectVehiculoValidado = (state) => state.cotizadorStore.vehiculoValidado;
 export const selectCotizacion = (state) => state.cotizadorStore.cotizacion;
 export const selectCotizacionGuardada = (state) => state.cotizadorStore.cotizacionGuardada;
+export const selectCelularCotizacion = (state) => state.cotizadorStore.celularCotizacion;
 export const selectGrupoClaseRunt = (state) => state.cotizadorStore.grupoClaseRunt;
 export const selectGrupoSubcriterio = (state) => state.cotizadorStore.grupoSubcriterio;
 export const selectGrupoSoat = (state) => state.cotizadorStore.grupoSoat;
@@ -327,6 +346,8 @@ export const selectGrupoMotivo = (state) => state.cotizadorStore.grupoMotivo;
 export const selectModuloPregunta1 = (state) => state.cotizadorStore.moduloPregunta1;
 export const selectModuloPregunta2 = (state) => state.cotizadorStore.moduloPregunta2;
 export const selectTarifaCodigo = (state) => state.cotizadorStore.tarifaCodigo;
+export const selectTarifaDetalle = (state) => state.cotizadorStore.tarifaDetalle;
+export const selectPreciosCliente = (state) => state.cotizadorStore.preciosCliente;
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;
 
