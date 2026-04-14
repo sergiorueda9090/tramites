@@ -60,6 +60,7 @@ import {
   selectCilindraje,
   selectPesoBruto,
   selectPasajerosSentados,
+  selectCapacidadCarga,
   selectColor,
   selectPlaca,
   selectMarca,
@@ -70,7 +71,13 @@ import {
 // PARTE 1: Árbol Clase RUNT → Grupo
 // ═══════════════════════════════════════════════════════════
 
-const CLASES_MOTOS = ['MOTOCICLETA', 'MOTOCARRO', 'MOTOTRICICLO', 'CICLOMOTOR', 'CUATRIMOTO'];
+// Según mapa de clases del flujo SOAT:
+// MOTOCICLETA → MOTOS (directo)
+// MOTOCARRO   → MOTOCARROS (directo, grupo propio)
+// CICLOMOTOR  → CICLOMOTORES (directo, grupo propio)
+const CLASES_MOTOS = ['MOTOCICLETA', 'MOTOTRICICLO', 'CUATRIMOTO'];
+const CLASES_MOTOCARRO = ['MOTOCARRO'];
+const CLASES_CICLOMOTOR = ['CICLOMOTOR'];
 const CLASES_CARGA = ['CAMION', 'TRACTOCAMION', 'VOLQUETA', 'FURGON', 'CARROTANQUE', 'REMOLQUE', 'SEMIRREMOLQUE'];
 const CLASES_BUS = ['BUS', 'MICROBUS', 'BUSETA'];
 const CLASES_AUTO = ['AUTOMOVIL', 'STATION WAGON'];
@@ -78,8 +85,10 @@ const CLASES_AUTO = ['AUTOMOVIL', 'STATION WAGON'];
 function obtenerTipoSubcriterio(clase) {
   if (!clase) return null;
   if (CLASES_MOTOS.includes(clase)) return 'DIRECTO';
+  if (CLASES_MOTOCARRO.includes(clase)) return 'DIRECTO';
+  if (CLASES_CICLOMOTOR.includes(clase)) return 'DIRECTO';
   if (CLASES_CARGA.includes(clase)) return 'DIRECTO';
-  if (clase === 'CAMIONETA') return 'TIPO_SERVICIO';
+  if (clase === 'CAMIONETA' || clase === 'CAMPERO') return 'TIPO_SERVICIO';
   if (CLASES_AUTO.includes(clase)) return 'CLASIFICACION';
   if (CLASES_BUS.includes(clase)) return 'TIPO_SERVICIO_BUS';
   return 'NO_MAPEADA';
@@ -88,11 +97,17 @@ function obtenerTipoSubcriterio(clase) {
 function resolverGrupo(clase, subcriterio) {
   if (!clase) return null;
   if (CLASES_MOTOS.includes(clase)) return { grupo: 'MOTOS', requiereRevision: false };
+  if (CLASES_MOTOCARRO.includes(clase)) return { grupo: 'MOTOCARROS', requiereRevision: false };
+  if (CLASES_CICLOMOTOR.includes(clase)) return { grupo: 'CICLOMOTORES', requiereRevision: false };
   if (CLASES_CARGA.includes(clase)) return { grupo: 'CARGA', requiereRevision: false };
   if (!subcriterio) return null;
-  if (clase === 'CAMIONETA') {
-    if (subcriterio === 'PARTICULAR') return { grupo: 'CAMPEROS', requiereRevision: false };
-    if (subcriterio === 'PUBLICO') return { grupo: 'INTERMUNICIPAL', requiereRevision: false };
+  if (clase === 'CAMIONETA' || clase === 'CAMPERO') {
+    // PARTICULAR: subdividido por capacidad de pasajeros (≤5 o ≥6)
+    if (subcriterio === 'PARTICULAR_HASTA_5') return { grupo: 'CAMPEROS', requiereRevision: false };
+    if (subcriterio === 'PARTICULAR_6_MAS') return { grupo: '6_PASAJEROS', requiereRevision: false };
+    // PUBLICO: subdividido por capacidad de carga (≤1000 o >1000)
+    if (subcriterio === 'PUBLICO_CARGA_MENOR_IGUAL_1000') return { grupo: 'INTERMUNICIPAL', requiereRevision: false };
+    if (subcriterio === 'PUBLICO_CARGA_MAYOR_1000') return { grupo: 'CARGA', requiereRevision: false };
   }
   if (CLASES_AUTO.includes(clase)) {
     if (subcriterio === 'PARTICULAR') return { grupo: 'FAMILIAR_5P', requiereRevision: false };
@@ -116,7 +131,6 @@ const MODULOS = {
     pregunta1: {
       label: '¿Cilindraje?',
       opciones: [
-        { codigo: 'CICLOMOTOR', nombre: 'Ciclomotor' },
         { codigo: 'MENOS_100', nombre: 'Menos de 100 cc' },
         { codigo: '100_200', nombre: '100 - 200 cc' },
         { codigo: 'MAS_200', nombre: 'Más de 200 cc' },
@@ -124,7 +138,7 @@ const MODULOS = {
     },
     pregunta2: null,
     resolverTarifa: (p1) => {
-      const mapa = { CICLOMOTOR: 100, MENOS_100: 110, '100_200': 120, MAS_200: 130 };
+      const mapa = { MENOS_100: 110, '100_200': 120, MAS_200: 130 };
       return mapa[p1] || null;
     },
   },
@@ -271,6 +285,20 @@ const MODULOS = {
       return mapa[`${p1}|${p2}`] || null;
     },
   },
+
+  MOTOCARROS: {
+    nombre: 'Módulo Motocarros',
+    pregunta1: null,
+    pregunta2: null,
+    resolverTarifa: () => 140,
+  },
+
+  CICLOMOTORES: {
+    nombre: 'Módulo Ciclomotores',
+    pregunta1: null,
+    pregunta2: null,
+    resolverTarifa: () => 100,
+  },
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -278,21 +306,23 @@ const MODULOS = {
 // ═══════════════════════════════════════════════════════════
 
 const GRUPO_CONFIG = {
-  MOTOS:          { nombre: 'Motos',          color: 'warning', Icono: TwoWheelerIcon },
-  CARGA:          { nombre: 'Carga',          color: 'info',    Icono: LocalShippingIcon },
-  CAMPEROS:       { nombre: 'Camperos',       color: 'success', Icono: DirectionsCarIcon },
-  FAMILIAR_5P:    { nombre: 'Familiar 5P',    color: 'success', Icono: DirectionsCarIcon },
-  INTERMUNICIPAL: { nombre: 'Intermunicipal', color: 'primary', Icono: DirectionsBusIcon },
-  TAXI:           { nombre: 'Taxi',           color: 'warning', Icono: LocalTaxiIcon },
-  BUS_URBANO:     { nombre: 'Bus Urbano',     color: 'primary', Icono: DirectionsBusIcon },
-  '6_PASAJEROS':  { nombre: '6+ Pasajeros',   color: 'secondary', Icono: DirectionsBusIcon },
+  MOTOS:          { nombre: 'Motos',             color: 'warning',   Icono: TwoWheelerIcon },
+  MOTOCARROS:     { nombre: 'Motocarros',        color: 'warning',   Icono: TwoWheelerIcon },
+  CICLOMOTORES:   { nombre: 'Ciclomotores',      color: 'warning',   Icono: TwoWheelerIcon },
+  CARGA:          { nombre: 'Carga',             color: 'info',      Icono: LocalShippingIcon },
+  CAMPEROS:       { nombre: 'Camionetas y Camperos', color: 'success', Icono: DirectionsCarIcon },
+  FAMILIAR_5P:    { nombre: 'Familiar 5P',       color: 'success',   Icono: DirectionsCarIcon },
+  INTERMUNICIPAL: { nombre: 'Intermunicipal',    color: 'primary',   Icono: DirectionsBusIcon },
+  TAXI:           { nombre: 'Taxi',              color: 'warning',   Icono: LocalTaxiIcon },
+  BUS_URBANO:     { nombre: 'Bus Urbano',        color: 'primary',   Icono: DirectionsBusIcon },
+  '6_PASAJEROS':  { nombre: '6+ Pasajeros',      color: 'secondary', Icono: DirectionsBusIcon },
 };
 
 // ═══════════════════════════════════════════════════════════
 // Helpers para auto-resolución
 // ═══════════════════════════════════════════════════════════
 
-function resolverSubcriterioAuto(clase, tipoServicio, clasificacion, color) {
+function resolverSubcriterioAuto(clase, tipoServicio, clasificacion, color, pasajerosSentados, capacidadCarga) {
   const tipo = obtenerTipoSubcriterio(clase);
   if (!tipo || tipo === 'DIRECTO' || tipo === 'NO_MAPEADA') return null;
 
@@ -300,7 +330,15 @@ function resolverSubcriterioAuto(clase, tipoServicio, clasificacion, color) {
   const esPublico = servicio.includes('PÚBLIC') || servicio.includes('PUBLIC');
 
   if (tipo === 'TIPO_SERVICIO') {
-    return esPublico ? 'PUBLICO' : 'PARTICULAR';
+    // CAMIONETA / CAMPERO: subdividir según el mapa de clases
+    if (esPublico) {
+      const cargaNum = parseFloat(capacidadCarga);
+      if (!isNaN(cargaNum) && cargaNum > 1000) return 'PUBLICO_CARGA_MAYOR_1000';
+      return 'PUBLICO_CARGA_MENOR_IGUAL_1000';
+    }
+    const pasajerosNum = parseInt(pasajerosSentados) || 0;
+    if (pasajerosNum >= 6) return 'PARTICULAR_6_MAS';
+    return 'PARTICULAR_HASTA_5';
   }
 
   if (tipo === 'CLASIFICACION') {
@@ -332,11 +370,13 @@ function resolverPreguntasAuto(grupo, claseRunt, runtModelo, runtCilindraje, run
 
   switch (grupo) {
     case 'MOTOS': {
-      if (claseRunt === 'CICLOMOTOR') return { p1: 'CICLOMOTOR', p2: null };
       if (cc < 100) return { p1: 'MENOS_100', p2: null };
       if (cc <= 200) return { p1: '100_200', p2: null };
       return { p1: 'MAS_200', p2: null };
     }
+    case 'MOTOCARROS':
+    case 'CICLOMOTORES':
+      return { p1: null, p2: null };
     case 'CAMPEROS':
     case 'FAMILIAR_5P':
     case 'TAXI': {
@@ -381,8 +421,10 @@ const LABEL_SUBCRITERIO = {
 
 const OPCIONES_SUBCRITERIO = {
   TIPO_SERVICIO: [
-    { codigo: 'PARTICULAR', nombre: 'Particular' },
-    { codigo: 'PUBLICO', nombre: 'Público' },
+    { codigo: 'PARTICULAR_HASTA_5', nombre: 'Particular · Hasta 5 pasajeros' },
+    { codigo: 'PARTICULAR_6_MAS', nombre: 'Particular · 6 o más pasajeros' },
+    { codigo: 'PUBLICO_CARGA_MENOR_IGUAL_1000', nombre: 'Público · Carga ≤ 1000 kg' },
+    { codigo: 'PUBLICO_CARGA_MAYOR_1000', nombre: 'Público · Carga > 1000 kg' },
   ],
   CLASIFICACION: [
     { codigo: 'PARTICULAR', nombre: 'Particular' },
@@ -486,6 +528,7 @@ const Step7_GrupoSoat = () => {
   const runtCilindraje = useSelector(selectCilindraje);
   const runtPesoBruto = useSelector(selectPesoBruto);
   const runtPasajerosSentados = useSelector(selectPasajerosSentados);
+  const runtCapacidadCarga = useSelector(selectCapacidadCarga);
   const runtColor = useSelector(selectColor);
   const runtMarca = useSelector(selectMarca);
   const runtLinea = useSelector(selectLinea);
@@ -508,11 +551,18 @@ const Step7_GrupoSoat = () => {
   // ── Auto-resolver subcriterio desde datos del vehículo ──
   useEffect(() => {
     if (!claseRunt) return;
-    const sub = resolverSubcriterioAuto(claseRunt, runtTipoServicio, runtClasificacion, runtColor);
+    const sub = resolverSubcriterioAuto(
+      claseRunt,
+      runtTipoServicio,
+      runtClasificacion,
+      runtColor,
+      runtPasajerosSentados,
+      runtCapacidadCarga,
+    );
     if (sub) {
       dispatch(setGrupoSubcriterio(sub));
     }
-  }, [claseRunt, runtTipoServicio, runtClasificacion, runtColor, dispatch]);
+  }, [claseRunt, runtTipoServicio, runtClasificacion, runtColor, runtPasajerosSentados, runtCapacidadCarga, dispatch]);
 
   // ── Resolver grupo cuando cambian clase o subcriterio ──
   useEffect(() => {

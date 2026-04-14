@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box,
@@ -8,7 +8,10 @@ import {
   Divider,
   InputAdornment,
   TextField,
+  Alert,
+  AlertTitle,
 } from '@mui/material';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import CategoryIcon from '@mui/icons-material/Category';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -86,6 +89,65 @@ const formatFecha = (fecha) => {
   return new Date(fecha).toLocaleDateString('es-CO', { dateStyle: 'medium' });
 };
 
+/**
+ * Validaciones base del vehículo según flujo SOAT:
+ * - cilindraje > 0
+ * - pasajeros_sentados > 0
+ * - capacidadCarga numérica o null
+ * Si alguna falla, se marca inconsistencia y debe ir al Módulo de Casos Especiales.
+ */
+const ValidacionesBaseVehiculo = ({ cilindraje, pasajerosSentados, capacidadCarga }) => {
+  const inconsistencias = useMemo(() => {
+    const errores = [];
+
+    const cil = Number(cilindraje);
+    if (!cilindraje || isNaN(cil) || cil <= 0) {
+      errores.push('Cilindraje inválido o igual a 0.');
+    }
+
+    const pas = Number(pasajerosSentados);
+    if (pasajerosSentados === null || pasajerosSentados === undefined || pasajerosSentados === '' || isNaN(pas) || pas <= 0) {
+      errores.push('Pasajeros sentados inválido o igual a 0.');
+    }
+
+    // capacidadCarga: permitido numérico o null/vacío
+    if (capacidadCarga !== null && capacidadCarga !== undefined && capacidadCarga !== '') {
+      const cap = Number(capacidadCarga);
+      if (isNaN(cap)) {
+        errores.push('Capacidad de carga no es numérica.');
+      }
+    }
+
+    return errores;
+  }, [cilindraje, pasajerosSentados, capacidadCarga]);
+
+  if (inconsistencias.length === 0) {
+    return (
+      <Alert severity="success" sx={{ mb: 3 }}>
+        <AlertTitle>Validaciones OK</AlertTitle>
+        Los datos base del vehículo son consistentes. Puedes continuar con la cotización.
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert severity="warning" icon={<ReportProblemIcon />} sx={{ mb: 3 }}>
+      <AlertTitle>Inconsistencia detectada — requiere Casos Especiales</AlertTitle>
+      Se detectaron los siguientes problemas en los datos base del vehículo:
+      <Box component="ul" sx={{ pl: 3, mt: 1, mb: 0 }}>
+        {inconsistencias.map((err, idx) => (
+          <li key={idx}>
+            <Typography variant="body2">{err}</Typography>
+          </li>
+        ))}
+      </Box>
+      <Typography variant="body2" sx={{ mt: 1 }}>
+        Este vehículo debe ser procesado en el <strong>Módulo de Casos Especiales</strong>.
+      </Typography>
+    </Alert>
+  );
+};
+
 const Step5_DatosVehiculo = () => {
   const placa = useSelector(selectPlaca);
   const numLicencia = useSelector(selectNumLicencia);
@@ -148,6 +210,13 @@ const Step5_DatosVehiculo = () => {
         </Paper>
       ) : (
         <>
+          {/* Validaciones de datos base del vehículo */}
+          <ValidacionesBaseVehiculo
+            cilindraje={cilindraje}
+            pasajerosSentados={pasajerosSentados}
+            capacidadCarga={capacidadCarga}
+          />
+
           {/* Identificación del vehículo */}
           <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>

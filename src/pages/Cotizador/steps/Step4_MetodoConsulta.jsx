@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -11,11 +11,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button,
-  Alert,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -42,9 +39,9 @@ import {
   setImagenLista,
   setDatosManual,
 } from '../../../store/cotizadorStore/cotizadorSlice';
-import { setVehiculo, selectNombres, selectApellidos } from '../../../store/apisExternasStore/apisExternasRuntStore';
+import { setVehiculo } from '../../../store/apisExternasStore/apisExternasRuntStore';
 import MetodoConsultaCard from '../Components/MetodoConsultaCard';
-import { consultarRuntThunk, extraerDatosRuntThunk, extraerDatosFotoVinThunk, extraerDatosAPIFalabellaThunk, consultarNombreClienteThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
+import { consultarRuntThunk, extraerDatosRuntThunk, extraerDatosFotoVinThunk, extraerDatosAPIFalabellaThunk } from '../../../store/apisExternasStore/apisExternasRuntThunks';
 
 const TIPOS_DOCUMENTO = [
   { codigo: 'C', nombre: 'Cédula de Ciudadanía' },
@@ -110,9 +107,9 @@ const METODOS_CERO_KM = [
 
 const METODOS_TERCERO = [
   {
-    codigo: 'IA_FOTO_TARJETA',
-    nombre: 'IA Foto Tarjeta de Propiedad',
-    descripcion: 'Escanear tarjeta de propiedad con inteligencia artificial',
+    codigo: 'IA_VIN_RUNT',
+    nombre: 'IA Foto VIN + Documento en RUNT',
+    descripcion: 'Escanear VIN con IA y verificar en RUNT con documento',
     Icono: PhotoCameraIcon,
   },
   {
@@ -133,13 +130,6 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
   const tipoDocumento = useSelector(selectTipoDocumento);
   const consultaTelefono = useSelector(selectConsultaTelefono);
   const datosManual = useSelector(selectDatosManual);
-  const nombres = useSelector(selectNombres);
-  const apellidos = useSelector(selectApellidos);
-
-  // Estado local para documento manual
-  const [manualTipoDoc, setManualTipoDoc] = useState('C');
-  const [manualNumeroDoc, setManualNumeroDoc] = useState('');
-  const [personaConsultada, setPersonaConsultada] = useState(false);
 
   // Estado local para la imagen (File objects no se pueden serializar en Redux)
   const [imagenPreview, setImagenPreview] = useState(null);
@@ -182,17 +172,6 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
     // Limpiar imagen al cambiar método
     setImagenPreview(null);
     setImagenFile(null);
-    // Limpiar estado de consulta de persona
-    setPersonaConsultada(false);
-    setManualNumeroDoc('');
-  };
-
-  const handleConsultarPersona = async () => {
-    if (!manualNumeroDoc.trim()) return;
-    const result = await dispatch(consultarNombreClienteThunk({ numero_documento: manualNumeroDoc.trim() }));
-    if (result) {
-      setPersonaConsultada(true);
-    }
   };
 
   const processImageFile = (file) => {
@@ -568,63 +547,6 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
       {/* ===== INGRESO DATOS MANUALES ===== */}
       {metodoConsulta === 'MANUAL' && (
         <>
-        {/* Sección: Documento del tercero */}
-        <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Documento del tercero
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Ingresa el tipo y número de documento de la persona a nombre de quien se cotiza.
-          </Typography>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo de documento</InputLabel>
-                <Select
-                  value={manualTipoDoc}
-                  label="Tipo de documento"
-                  onChange={(e) => setManualTipoDoc(e.target.value)}
-                >
-                  {TIPOS_DOCUMENTO.map((tipo) => (
-                    <MenuItem key={tipo.codigo} value={tipo.codigo}>
-                      {tipo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
-                label="Número de documento"
-                value={manualNumeroDoc}
-                onChange={(e) => {
-                  setManualNumeroDoc(e.target.value);
-                  setPersonaConsultada(false);
-                }}
-                placeholder="Ej: 1098765432"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="contained"
-                startIcon={<PersonSearchIcon />}
-                onClick={handleConsultarPersona}
-                disabled={!manualNumeroDoc.trim()}
-                fullWidth
-                sx={{ height: 56 }}
-              >
-                Consultar
-              </Button>
-            </Grid>
-          </Grid>
-          {personaConsultada && nombres && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              Persona encontrada: <strong>{nombres} {apellidos}</strong>
-            </Alert>
-          )}
-        </Paper>
-
         {/* Sección: Datos del vehículo */}
         <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
