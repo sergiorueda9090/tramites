@@ -16,7 +16,8 @@ import { cotizadorStore }           from './cotizadorStore/cotizadorStore';
 import { apisExternasRuntStore }    from './apisExternasStore/apisExternasRuntStore';
 import { baseDeDatosStore }         from './baseDeDatosStore/baseDeDatosStore';
 import {apiAppStore}                from './apiAppStore/apiAppStore';
-
+import { casosEspecialesStore }     from './casosEspecialesStore/casosEspecialesStore';
+import { tramitesStore }            from './tamitesStore/tamitesStore';
 import presenceReducer    from './presenceStore/presenceStore';
 
 export const store = configureStore({
@@ -39,5 +40,7 @@ export const store = configureStore({
     apisExternasRuntStore: apisExternasRuntStore.reducer,
     baseDeDatosStore: baseDeDatosStore.reducer,
     apiAppStore: apiAppStore.reducer,
+    casosEspecialesStore: casosEspecialesStore.reducer,
+    tramitesStore: tramitesStore.reducer,
   },
 });

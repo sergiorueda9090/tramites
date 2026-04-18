@@ -7,6 +7,7 @@ import {
   setError,
   setModoCliente,
   setTarifaDetalle,
+  setTarifariosDisponibles,
   setPreciosCliente,
 } from './cotizadorSlice';
 import AlertService from '../../services/alertService';
@@ -138,6 +139,22 @@ export const buscarTarifaPorCodigoThunk = (codigoTarifa) => {
       dispatch(setTarifaDetalle(data.data));
     } catch (error) {
       dispatch(setTarifaDetalle(null));
+    }
+  };
+};
+
+/**
+ * Listar todos los tarifarios SOAT para el selector manual del Step 7.
+ * Se usa cuando la auto-resolución no es posible (ej: capacidad_carga inválida en grupo CARGA).
+ */
+export const listarTarifariosDisponiblesThunk = () => {
+  return async (dispatch) => {
+    try {
+      const response = await apiService.get('/api/tarifario_soat/list/', { page_size: 1000 });
+      const lista = response?.results ?? response?.data?.results ?? (Array.isArray(response) ? response : []);
+      dispatch(setTarifariosDisponibles(lista));
+    } catch (error) {
+      dispatch(setTarifariosDisponibles([]));
     }
   };
 };

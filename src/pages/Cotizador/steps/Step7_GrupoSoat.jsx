@@ -11,6 +11,9 @@ import {
   Alert,
   AlertTitle,
   Avatar,
+  Autocomplete,
+  TextField,
+  Button,
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -24,6 +27,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PersonIcon from '@mui/icons-material/Person';
+import SendIcon from '@mui/icons-material/Send';
 
 import {
   selectGrupoClaseRunt,
@@ -35,22 +39,33 @@ import {
   selectModuloPregunta2,
   selectTarifaCodigo,
   selectTarifaDetalle,
+  selectTarifaManual,
+  selectTarifariosDisponibles,
   selectPreciosCliente,
   selectClienteSeleccionado,
   selectModoCliente,
   selectNuevoCliente,
+  selectEsCasoEspecial,
+  selectCasoEspecialGuardado,
   setGrupoClaseRunt,
   setGrupoSubcriterio,
   setGrupoSoat,
   setModuloPregunta1,
   setModuloPregunta2,
   setTarifaCodigo,
+  setTarifaDetalle,
+  setTarifaManual,
+  setCasoEspecialGuardado,
 } from '../../../store/cotizadorStore/cotizadorSlice';
 
 import {
   buscarTarifaPorCodigoThunk,
   obtenerPreciosClienteThunk,
+  listarTarifariosDisponiblesThunk,
 } from '../../../store/cotizadorStore/cotizadorThunks';
+
+import { guardarCasoEspecialDesdeCotizadorThunk } from '../../../store/casosEspecialesStore/casosEspecialesThunks';
+import { enviarTramiteDesdeCotizadorThunk } from '../../../store/tamitesStore/tamitesThunks';
 
 import {
   selectClase,
@@ -360,12 +375,17 @@ function resolverSubcriterioAuto(clase, tipoServicio, clasificacion, color, pasa
   return null;
 }
 
-function resolverPreguntasAuto(grupo, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados) {
+function capacidadCargaEsValida(cap) {
+  if (cap === null || cap === undefined || cap === '') return false;
+  const n = parseFloat(cap);
+  return !isNaN(n) && n > 0;
+}
+
+function resolverPreguntasAuto(grupo, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados) {
   const currentYear = new Date().getFullYear();
   const modeloNum = parseInt(runtModelo) || 0;
   const vehicleAge = modeloNum > 0 ? currentYear - modeloNum : 0;
   const cc = parseInt(runtCilindraje) || 0;
-  const peso = parseFloat(runtPesoBruto) || 0;
   const pasajeros = parseInt(runtPasajerosSentados) || 0;
 
   switch (grupo) {
@@ -388,7 +408,10 @@ function resolverPreguntasAuto(grupo, claseRunt, runtModelo, runtCilindraje, run
       return { p1, p2 };
     }
     case 'CARGA': {
-      const toneladas = peso / 1000;
+      if (!capacidadCargaEsValida(runtCapacidadCarga)) {
+        return { p1: null, p2: null, requiereManual: true };
+      }
+      const toneladas = parseFloat(runtCapacidadCarga) / 1000;
       if (toneladas < 5) return { p1: 'MENOS_5', p2: null };
       if (toneladas <= 15) return { p1: '5_15', p2: null };
       return { p1: 'MAS_15', p2: null };
@@ -511,7 +534,11 @@ const Step7_GrupoSoat = () => {
   const pregunta2 = useSelector(selectModuloPregunta2);
   const tarifaCodigo = useSelector(selectTarifaCodigo);
   const tarifaDetalle = useSelector(selectTarifaDetalle);
+  const tarifaManual = useSelector(selectTarifaManual);
+  const tarifariosDisponibles = useSelector(selectTarifariosDisponibles);
   const preciosCliente = useSelector(selectPreciosCliente);
+  const esCasoEspecial = useSelector(selectEsCasoEspecial);
+  const casoEspecialGuardado = useSelector(selectCasoEspecialGuardado);
 
   // Datos del cliente
   const clienteSeleccionado = useSelector(selectClienteSeleccionado);
@@ -582,14 +609,23 @@ const Step7_GrupoSoat = () => {
   // ── Auto-resolver preguntas del módulo desde datos del vehículo ──
   useEffect(() => {
     if (!grupoSoat || !modulo || requiereRevision) return;
-    const { p1, p2 } = resolverPreguntasAuto(grupoSoat, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados);
-    if (p1 !== undefined) dispatch(setModuloPregunta1(p1));
-    if (p2 !== undefined) dispatch(setModuloPregunta2(p2));
-  }, [grupoSoat, modulo, requiereRevision, claseRunt, runtModelo, runtCilindraje, runtPesoBruto, runtPasajerosSentados, dispatch]);
+    const resultado = resolverPreguntasAuto(grupoSoat, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados);
+    if (resultado.requiereManual) {
+      dispatch(setTarifaManual(true));
+      dispatch(setModuloPregunta1(null));
+      dispatch(setModuloPregunta2(null));
+      return;
+    }
+    dispatch(setTarifaManual(false));
+    if (resultado.p1 !== undefined) dispatch(setModuloPregunta1(resultado.p1));
+    if (resultado.p2 !== undefined) dispatch(setModuloPregunta2(resultado.p2));
+  }, [grupoSoat, modulo, requiereRevision, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados, dispatch]);
 
   // ── Resolver tarifa cuando cambian grupo o preguntas del módulo ──
   useEffect(() => {
     if (!grupoSoat || !modulo) return;
+    // En modo manual la tarifa la elige el usuario; no auto-calcular.
+    if (tarifaManual) return;
 
     if (!necesitaPregunta1) {
       dispatch(setTarifaCodigo(modulo.resolverTarifa()));
@@ -607,14 +643,31 @@ const Step7_GrupoSoat = () => {
     }
 
     dispatch(setTarifaCodigo(null));
-  }, [dispatch, grupoSoat, modulo, pregunta1, pregunta2, necesitaPregunta1, necesitaPregunta2]);
+  }, [dispatch, grupoSoat, modulo, pregunta1, pregunta2, necesitaPregunta1, necesitaPregunta2, tarifaManual]);
 
-  // ── Buscar detalle de tarifa cuando se determina el código ──
+  // ── Buscar detalle de tarifa cuando se determina el código (solo en modo auto) ──
   useEffect(() => {
+    if (tarifaManual) return;
     if (tarifaCodigo) {
       dispatch(buscarTarifaPorCodigoThunk(tarifaCodigo));
     }
-  }, [tarifaCodigo, dispatch]);
+  }, [tarifaCodigo, tarifaManual, dispatch]);
+
+  // ── Cargar listado completo de tarifarios (para el selector manual) ──
+  useEffect(() => {
+    dispatch(listarTarifariosDisponiblesThunk());
+  }, [dispatch]);
+
+  // ── Guardar automáticamente en Casos Especiales cuando se detecta ──
+  useEffect(() => {
+    if (esCasoEspecial && !casoEspecialGuardado) {
+      dispatch(guardarCasoEspecialDesdeCotizadorThunk()).then((result) => {
+        if (result) {
+          dispatch(setCasoEspecialGuardado(true));
+        }
+      });
+    }
+  }, [esCasoEspecial, casoEspecialGuardado, dispatch]);
 
   // ── Obtener precios del cliente seleccionado ──
   useEffect(() => {
@@ -622,6 +675,21 @@ const Step7_GrupoSoat = () => {
       dispatch(obtenerPreciosClienteThunk(cliente.id));
     }
   }, [cliente?.id, dispatch]);
+
+  // ── Handler: selección manual de tarifa desde el listado ──
+  const handleSeleccionManualTarifa = (tarifario) => {
+    if (!tarifario) {
+      dispatch(setTarifaCodigo(null));
+      dispatch(setTarifaDetalle(null));
+      return;
+    }
+    dispatch(setTarifaCodigo(tarifario.codigo_tarifa));
+    dispatch(setTarifaDetalle(tarifario));
+  };
+
+  const tarifarioSeleccionadoManual = tarifaManual && tarifaCodigo
+    ? tarifariosDisponibles.find((t) => String(t.codigo_tarifa) === String(tarifaCodigo)) || tarifaDetalle || null
+    : null;
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -758,6 +826,7 @@ const Step7_GrupoSoat = () => {
               <InfoRow label="Cilindraje" value={runtCilindraje ? `${runtCilindraje} cc` : null} />
               <InfoRow label="Color" value={runtColor} />
               {runtPesoBruto && <InfoRow label="Peso Bruto" value={`${runtPesoBruto} kg`} />}
+              {runtCapacidadCarga && <InfoRow label="Capacidad de carga" value={`${runtCapacidadCarga} kg`} />}
               {runtPasajerosSentados && <InfoRow label="Pasajeros" value={runtPasajerosSentados} />}
             </CardContent>
           </Card>
@@ -821,6 +890,52 @@ const Step7_GrupoSoat = () => {
 
         {/* ── Columna derecha: Detalle de tarifa y precios del cliente ── */}
         <Grid item xs={12} md={6}>
+          {/* Card: Selección manual de tarifa (cuando capacidad_carga no es válida) */}
+          {tarifaManual && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'warning.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<WarningAmberIcon />}
+                  title="Selección manual de tarifa"
+                  color="warning"
+                />
+                <Divider sx={{ mb: 1.5 }} />
+                <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
+                  <AlertTitle>Capacidad de carga no disponible</AlertTitle>
+                  No se pudo determinar la tarifa automáticamente porque la capacidad de carga del vehículo no está disponible o no es válida. Selecciona la tarifa manualmente del listado.
+                </Alert>
+                <Autocomplete
+                  fullWidth
+                  size="small"
+                  options={tarifariosDisponibles}
+                  value={tarifarioSeleccionadoManual}
+                  onChange={(_, nuevo) => handleSeleccionManualTarifa(nuevo)}
+                  getOptionLabel={(opt) => {
+                    if (!opt) return '';
+                    const valorFmt = opt.valor != null ? formatCurrency(opt.valor) : '';
+                    return `Tarifa ${opt.codigo_tarifa} — ${opt.descripcion || ''}${valorFmt ? ` · ${valorFmt}` : ''}`;
+                  }}
+                  isOptionEqualToValue={(a, b) => String(a?.codigo_tarifa) === String(b?.codigo_tarifa)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Buscar y seleccionar tarifa"
+                      placeholder="Ej: Tarifa 310, Carga, etc."
+                    />
+                  )}
+                  noOptionsText={tarifariosDisponibles.length === 0 ? 'Cargando tarifarios...' : 'Sin resultados'}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Card: Detalle de la tarifa */}
           {tarifaCodigo && tarifaDetalle && (
             <Card
@@ -954,8 +1069,27 @@ const Step7_GrupoSoat = () => {
         >
           <strong>{config?.nombre || grupoSoat}</strong> → <strong>Tarifa {tarifaCodigo}</strong>
           {tarifaDetalle && <> — {tarifaDetalle.descripcion} — <strong>{formatCurrency(tarifaDetalle.valor)}</strong></>}
-          {' — '}Determinada automáticamente desde los datos RUNT del vehículo <strong>{runtPlaca}</strong>.
+          {' — '}
+          {tarifaManual
+            ? <>Seleccionada manualmente para el vehículo <strong>{runtPlaca}</strong>.</>
+            : <>Determinada automáticamente desde los datos RUNT del vehículo <strong>{runtPlaca}</strong>.</>}
         </Alert>
+      )}
+
+      {/* ═══ Acción: Enviar a Trámites ═══ */}
+      {tarifaCodigo && !requiereRevision && (
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<SendIcon />}
+            onClick={() => dispatch(enviarTramiteDesdeCotizadorThunk())}
+            sx={{ fontWeight: 600, px: 4 }}
+          >
+            Enviar a Trámites
+          </Button>
+        </Box>
       )}
     </Box>
   );

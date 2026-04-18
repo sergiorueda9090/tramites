@@ -75,12 +75,15 @@ const initialState = {
   moduloPregunta2: null,     // Respuesta a la segunda pregunta del módulo (cilindraje después de modelo)
   tarifaCodigo: null,        // Código de tarifa resultante (100, 110, 211, 810, etc.)
   tarifaDetalle: null,       // Detalle de la tarifa desde TarifarioSoat { codigo_tarifa, descripcion, valor }
+  tarifaManual: false,       // true cuando el usuario debe seleccionar la tarifa manualmente
+  tarifariosDisponibles: [], // Listado completo de tarifarios para el selector manual
   preciosCliente: [],        // Precios del cliente [{ descripcion, precio_lay, comision }]
 
   // UI States
   loading: false,
   error: null,
   cotizacionGuardada: false,
+  casoEspecialGuardado: false,
 };
 
 export const cotizadorStore = createSlice({
@@ -139,7 +142,9 @@ export const cotizadorStore = createSlice({
       state.moduloPregunta2 = null;
       state.tarifaCodigo = null;
       state.tarifaDetalle = null;
+      state.tarifaManual = false;
       state.preciosCliente = [];
+      state.casoEspecialGuardado = false;
     },
 
     // Step 3 - Tipo de vehículo
@@ -259,8 +264,17 @@ export const cotizadorStore = createSlice({
     setTarifaDetalle: (state, action) => {
       state.tarifaDetalle = action.payload;
     },
+    setTarifaManual: (state, action) => {
+      state.tarifaManual = action.payload;
+    },
+    setTarifariosDisponibles: (state, action) => {
+      state.tarifariosDisponibles = Array.isArray(action.payload) ? action.payload : [];
+    },
     setPreciosCliente: (state, action) => {
       state.preciosCliente = action.payload;
+    },
+    setCasoEspecialGuardado: (state, action) => {
+      state.casoEspecialGuardado = action.payload;
     },
 
     // UI
@@ -308,7 +322,10 @@ export const {
   setModuloPregunta2,
   setTarifaCodigo,
   setTarifaDetalle,
+  setTarifaManual,
+  setTarifariosDisponibles,
   setPreciosCliente,
+  setCasoEspecialGuardado,
   setLoading,
   setError,
   resetCotizador,
@@ -347,7 +364,37 @@ export const selectModuloPregunta1 = (state) => state.cotizadorStore.moduloPregu
 export const selectModuloPregunta2 = (state) => state.cotizadorStore.moduloPregunta2;
 export const selectTarifaCodigo = (state) => state.cotizadorStore.tarifaCodigo;
 export const selectTarifaDetalle = (state) => state.cotizadorStore.tarifaDetalle;
+export const selectTarifaManual = (state) => state.cotizadorStore.tarifaManual;
+export const selectTarifariosDisponibles = (state) => state.cotizadorStore.tarifariosDisponibles;
 export const selectPreciosCliente = (state) => state.cotizadorStore.preciosCliente;
+export const selectCasoEspecialGuardado = (state) => state.cotizadorStore.casoEspecialGuardado;
+
+/**
+ * Selector que determina si el vehículo es un "caso especial":
+ * - Clase RUNT no mapeada (grupoRequiereRevision)
+ * - Capacidad de carga inválida para grupo CARGA (tarifaManual)
+ * - Validaciones base del vehículo fallan: cilindraje <= 0, pasajeros <= 0, capacidad_carga no numérica
+ */
+export const selectEsCasoEspecial = (state) => {
+  const s = state.cotizadorStore;
+  const runt = state.apisExternasRuntStore;
+  if (!s || !runt) return false;
+
+  if (s.grupoRequiereRevision) return true;
+  if (s.tarifaManual) return true;
+
+  // Validaciones base del vehículo (mismas reglas que ValidacionesBaseVehiculo en Step5)
+  const cc = parseFloat(runt.cilindraje);
+  if (isNaN(cc) || cc <= 0) return true;
+
+  const pas = parseFloat(runt.pasajeros_sentados);
+  if (isNaN(pas) || pas <= 0) return true;
+
+  const cap = runt.capacidad_carga;
+  if (cap !== null && cap !== undefined && cap !== '' && isNaN(parseFloat(cap))) return true;
+
+  return false;
+};
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;
 

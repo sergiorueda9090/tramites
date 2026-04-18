@@ -36,6 +36,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import StorageIcon from '@mui/icons-material/Storage';
 import ApiIcon from '@mui/icons-material/Api';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 
 
 
@@ -63,6 +64,8 @@ const menuItems = [
       { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat' },
       { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
       { text: 'Base de Datos',          icon: StorageIcon,          path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos' },
+      { text: 'Casos Especiales',       icon: ReportProblemIcon,    path: ROUTES.CASOS_ESPECIALES,       moduleCode: 'casos_especiales' },
+      { text: 'Trámites',               icon: AssignmentTurnedInIcon, path: ROUTES.TRAMITES,             moduleCode: 'tramites' },
       { text: 'API Endpoints',          icon: ApiIcon,              path: ROUTES.API_ENDPOINTS,          moduleCode: 'api_app' },
       { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
       { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },

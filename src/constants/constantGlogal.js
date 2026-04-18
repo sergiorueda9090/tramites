@@ -1,8 +1,8 @@
-export const URL = 'http://127.0.0.1:8000';
-export const URLws = '127.0.0.1:8000';
+import { API_BASE_URL } from '../utils/constants';
 
-//export const URL = 'https://tramitesbackend.movilidad2a.com'; //'http://127.0.0.1:8000';
-//export const URLws = 'tramitesbackend.movilidad2a.com';//'127.0.0.1:8000';
+// Alias retrocompatibles — la URL real se define en .env (REACT_APP_API_URL)
+export const URL = API_BASE_URL;
+export const URLws = API_BASE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 export const TOKEN = (() => {
     const token = localStorage.getItem("access"); // Obtener el valor almacenado

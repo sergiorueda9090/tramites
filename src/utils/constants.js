@@ -1,5 +1,7 @@
-//export const API_BASE_URL = 'https://tramitesbackend.movilidad2a.com'; // || 'http://localhost:8000';//'https://tramitesbackend.movilidad2a.com' //'http://localhost:8000';
-export const API_BASE_URL = 'http://localhost:8000';
+// Fuente unica de la URL del backend: se configura en el archivo .env
+// Local:     REACT_APP_API_URL=http://localhost:8000
+// Produccion: REACT_APP_API_URL=https://tramitesbackend.movilidad2a.com
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 console.log('1 API BASE URL:', API_BASE_URL);
 export const ROUTES = {
   HOME: '/',
@@ -19,6 +21,8 @@ export const ROUTES = {
   TARIFARIO_SOAT: '/tarifario-soat',
   COTIZADOR: '/cotizador',
   BASE_DE_DATOS: '/base-de-datos',
+  CASOS_ESPECIALES: '/casos-especiales',
+  TRAMITES: '/tramites',
   API_ENDPOINTS: '/api-endpoints',
   REPORTES: '/reportes',
   CONFIGURACION: '/configuracion',

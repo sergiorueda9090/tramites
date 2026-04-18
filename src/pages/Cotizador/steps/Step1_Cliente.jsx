@@ -69,7 +69,7 @@ const Step1_Cliente = ({ onAutoAdvance }) => {
   const handleSearch = useCallback((e) => {
     const value = e.target.value;
     dispatch(setClienteQuery(value));
-    if (value.length >= 4) {
+    if (value.length >= 3) {
       dispatch(get_search_clients({ 'search': value }));
     }
   }, [dispatch]);
@@ -233,7 +233,7 @@ const Step1_Cliente = ({ onAutoAdvance }) => {
         </List>
       )}
 
-      {clienteQuery.length >= 2 && !loading && clientesEncontrados.length === 0 && (
+      {clienteQuery.length >= 3 && !loading && clientesEncontrados.length === 0 && (
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             No se encontraron clientes

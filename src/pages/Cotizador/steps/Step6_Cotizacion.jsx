@@ -53,6 +53,7 @@ import {
   selectCilindraje,
   selectTipoCombustible,
   selectPesoBruto,
+  selectCapacidadCarga,
   selectClasificacion,
   selectOrganismoTransito,
   selectSoat,
@@ -138,6 +139,7 @@ const Step6_Cotizacion = ({ onReset }) => {
   const cilindraje = useSelector(selectCilindraje);
   const tipoCombustible = useSelector(selectTipoCombustible);
   const pesoBruto = useSelector(selectPesoBruto);
+  const capacidadCarga = useSelector(selectCapacidadCarga);
   const clasificacion = useSelector(selectClasificacion);
   const organismoTransito = useSelector(selectOrganismoTransito);
   const soat = useSelector(selectSoat);
@@ -358,6 +360,9 @@ const Step6_Cotizacion = ({ onReset }) => {
                   </Grid>
                   <Grid item xs={6} sm={4} md={3}>
                     <InfoRow label="Peso Bruto" value={pesoBruto ? `${pesoBruto} kg` : null} />
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <InfoRow label="Capacidad de carga" value={capacidadCarga ? `${capacidadCarga} kg` : null} />
                   </Grid>
                   <Grid item xs={6} sm={4} md={3}>
                     <InfoRow label="VIN" value={vin} />
