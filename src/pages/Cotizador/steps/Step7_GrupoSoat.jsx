@@ -73,7 +73,6 @@ import {
   selectClasificacion,
   selectModelo,
   selectCilindraje,
-  selectPesoBruto,
   selectPasajerosSentados,
   selectCapacidadCarga,
   selectColor,
@@ -553,7 +552,6 @@ const Step7_GrupoSoat = () => {
   const runtClasificacion = useSelector(selectClasificacion);
   const runtModelo = useSelector(selectModelo);
   const runtCilindraje = useSelector(selectCilindraje);
-  const runtPesoBruto = useSelector(selectPesoBruto);
   const runtPasajerosSentados = useSelector(selectPasajerosSentados);
   const runtCapacidadCarga = useSelector(selectCapacidadCarga);
   const runtColor = useSelector(selectColor);
@@ -609,6 +607,17 @@ const Step7_GrupoSoat = () => {
   // ── Auto-resolver preguntas del módulo desde datos del vehículo ──
   useEffect(() => {
     if (!grupoSoat || !modulo || requiereRevision) return;
+
+    // Caso especial → forzar selección manual de tarifa y limpiar auto-resolución previa
+    if (esCasoEspecial) {
+      dispatch(setTarifaManual(true));
+      dispatch(setModuloPregunta1(null));
+      dispatch(setModuloPregunta2(null));
+      dispatch(setTarifaCodigo(null));
+      dispatch(setTarifaDetalle(null));
+      return;
+    }
+
     const resultado = resolverPreguntasAuto(grupoSoat, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados);
     if (resultado.requiereManual) {
       dispatch(setTarifaManual(true));
@@ -619,7 +628,7 @@ const Step7_GrupoSoat = () => {
     dispatch(setTarifaManual(false));
     if (resultado.p1 !== undefined) dispatch(setModuloPregunta1(resultado.p1));
     if (resultado.p2 !== undefined) dispatch(setModuloPregunta2(resultado.p2));
-  }, [grupoSoat, modulo, requiereRevision, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados, dispatch]);
+  }, [grupoSoat, modulo, requiereRevision, esCasoEspecial, claseRunt, runtModelo, runtCilindraje, runtCapacidadCarga, runtPasajerosSentados, dispatch]);
 
   // ── Resolver tarifa cuando cambian grupo o preguntas del módulo ──
   useEffect(() => {
@@ -825,8 +834,7 @@ const Step7_GrupoSoat = () => {
               <InfoRow label="Modelo" value={runtModelo} />
               <InfoRow label="Cilindraje" value={runtCilindraje ? `${runtCilindraje} cc` : null} />
               <InfoRow label="Color" value={runtColor} />
-              {runtPesoBruto && <InfoRow label="Peso Bruto" value={`${runtPesoBruto} kg`} />}
-              {runtCapacidadCarga && <InfoRow label="Capacidad de carga" value={`${runtCapacidadCarga} kg`} />}
+              <InfoRow label="Capacidad de Carga" value={runtCapacidadCarga ? `${runtCapacidadCarga} kg` : null} />
               {runtPasajerosSentados && <InfoRow label="Pasajeros" value={runtPasajerosSentados} />}
             </CardContent>
           </Card>
@@ -908,8 +916,8 @@ const Step7_GrupoSoat = () => {
                 />
                 <Divider sx={{ mb: 1.5 }} />
                 <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
-                  <AlertTitle>Capacidad de carga no disponible</AlertTitle>
-                  No se pudo determinar la tarifa automáticamente porque la capacidad de carga del vehículo no está disponible o no es válida. Selecciona la tarifa manualmente del listado.
+                  <AlertTitle>Caso especial — selección manual requerida</AlertTitle>
+                  Este vehículo tiene inconsistencias en sus datos base y fue marcado como caso especial. Selecciona la tarifa manualmente del listado.
                 </Alert>
                 <Autocomplete
                   fullWidth
