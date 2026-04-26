@@ -26,6 +26,7 @@ const Cotizador       = lazy(() => import('../pages/Cotizador'));
 const BaseDeDatos     = lazy(() => import('../pages/BaseDeDatos'));
 const CasosEspeciales = lazy(() => import('../pages/CasosEspeciales'));
 const Tramites        = lazy(() => import('../pages/Tramites'));
+const PasarelaDePago  = lazy(() => import('../pages/PasarelaDePago'));
 const ApiApp          = lazy(() => import('../pages/ApiApp'));
 
 // Placeholder pages for routes that are not yet implemented
@@ -81,6 +82,7 @@ const AppRouter = () => {
             <Route path="base-de-datos"  element={<ProtectedModule moduleCode="base_de_datos"><BaseDeDatos /></ProtectedModule>} />
             <Route path="casos-especiales" element={<ProtectedModule moduleCode="casos_especiales"><CasosEspeciales /></ProtectedModule>} />
             <Route path="tramites" element={<ProtectedModule moduleCode="tramites"><Tramites /></ProtectedModule>} />
+            <Route path="pasarela-de-pago" element={<ProtectedModule moduleCode="pasarela_de_pago"><PasarelaDePago /></ProtectedModule>} />
             <Route path="api-endpoints" element={<ProtectedModule moduleCode="api_app"><ApiApp /></ProtectedModule>} />
 
             <Route path="reportes" element={<ProtectedModule moduleCode="reportes"><PlaceholderPage title="Reportes" /></ProtectedModule>} />

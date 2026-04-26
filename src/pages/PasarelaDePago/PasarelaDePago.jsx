@@ -11,10 +11,10 @@ import {
   selectPageSize,
   selectSortField,
   selectSortOrder,
-  selectPaginatedTramites,
+  selectPaginatedPasarelas,
   selectFilteredTotalRows,
   selectOpenModal,
-  selectSelectedTramite,
+  selectSelectedPasarela,
   selectForm,
   selectLoading,
   selectAppliedFilters,
@@ -24,7 +24,7 @@ import {
   selectHistoryData,
   selectHistoryPagination,
   selectOpenHistoryModal,
-  selectSelectedHistoryTramite,
+  selectSelectedHistoryPasarela,
   setPage,
   setPageSize,
   setSort,
@@ -39,18 +39,17 @@ import {
   closeHistoryDialog,
   setHistoryPage,
   setHistoryPageSize,
-} from '../../store/tamitesStore/tamitesStore';
+} from '../../store/pasarelaDePagoStore/pasarelaDePagoStore';
 
 import {
   listAllThunk,
   saveThunk,
-  deleteThunk,
   viewThunk,
   showThunk,
   getHistoryThunk,
   loadAuxDataThunk,
-  enviarAPasarelaDesdeTramiteThunk,
-} from '../../store/tamitesStore/tamitesThunks';
+  devolverATramitesThunk,
+} from '../../store/pasarelaDePagoStore/pasarelaDePagoThunks';
 
 import {
   TramitesFilters,
@@ -59,11 +58,10 @@ import {
   HistoryDialog,
 } from './Components';
 
-const Tramites = () => {
+const PasarelaDePago = () => {
   const dispatch = useDispatch();
   const { canCreate, canEdit, canDelete } = usePermissions();
 
-  // Selectores
   const filters = useSelector(selectFilters);
   const activeFilters = useSelector(selectActiveFilters);
   const appliedFilters = useSelector(selectAppliedFilters);
@@ -71,25 +69,21 @@ const Tramites = () => {
   const pageSize = useSelector(selectPageSize);
   const sortField = useSelector(selectSortField);
   const sortOrder = useSelector(selectSortOrder);
-  const paginatedData = useSelector(selectPaginatedTramites);
+  const paginatedData = useSelector(selectPaginatedPasarelas);
   const totalRows = useSelector(selectFilteredTotalRows);
   const openModal = useSelector(selectOpenModal);
-  const selectedTramite = useSelector(selectSelectedTramite);
+  const selectedPasarela = useSelector(selectSelectedPasarela);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
   const clientes = useSelector(selectClientes);
   const etiquetas = useSelector(selectEtiquetas);
   const tarifarios = useSelector(selectTarifarios);
 
-  // History selectors
   const historyData = useSelector(selectHistoryData);
   const historyPagination = useSelector(selectHistoryPagination);
   const openHistory = useSelector(selectOpenHistoryModal);
-  const selectedHistoryTramite = useSelector(selectSelectedHistoryTramite);
+  const selectedHistoryPasarela = useSelector(selectSelectedHistoryPasarela);
 
-  /**
-   * Construye los parámetros de consulta para el backend
-   */
   const buildQueryParams = useCallback(() => {
     const params = {
       page,
@@ -99,6 +93,7 @@ const Tramites = () => {
     if (appliedFilters.search) params.search = appliedFilters.search;
     if (appliedFilters.cliente) params.cliente = appliedFilters.cliente;
     if (appliedFilters.etiqueta) params.etiqueta = appliedFilters.etiqueta;
+    if (appliedFilters.tramite_origen) params.tramite_origen = appliedFilters.tramite_origen;
     if (appliedFilters.tipo_tramite) params.tipo_tramite = appliedFilters.tipo_tramite;
     if (appliedFilters.grupo_soat) params.grupo_soat = appliedFilters.grupo_soat;
     if (appliedFilters.tarifa_codigo) params.tarifa_codigo = appliedFilters.tarifa_codigo;
@@ -115,24 +110,19 @@ const Tramites = () => {
     return params;
   }, [page, pageSize, appliedFilters, sortField, sortOrder]);
 
-  /**
-   * Cargar trámites del backend
-   */
-  const fetchTramites = useCallback(() => {
+  const fetchPasarelas = useCallback(() => {
     const params = buildQueryParams();
     dispatch(listAllThunk(params));
   }, [dispatch, buildQueryParams]);
 
-  // Cargar trámites y datos auxiliares al montar
   useEffect(() => {
-    fetchTramites();
-  }, [fetchTramites]);
+    fetchPasarelas();
+  }, [fetchPasarelas]);
 
   useEffect(() => {
     dispatch(loadAuxDataThunk());
   }, [dispatch]);
 
-  // Handlers de paginación
   const handlePageChange = (newPage) => {
     dispatch(setPage(newPage + 1));
   };
@@ -143,12 +133,10 @@ const Tramites = () => {
 
   const pageForComponent = page - 1;
 
-  // Handler de ordenamiento
   const handleSort = (field) => {
     dispatch(setSort({ field }));
   };
 
-  // Handlers de filtros
   const handleFilterChange = (field, value) => {
     dispatch(updateFilter({ field, value }));
   };
@@ -165,26 +153,21 @@ const Tramites = () => {
     dispatch(clearFilter(field));
   };
 
-  // Handlers de CRUD
-  const handleView = (tramite) => {
-    dispatch(viewThunk(tramite));
+  const handleView = (pasarela) => {
+    dispatch(viewThunk(pasarela));
   };
 
-  const handleEdit = (tramite) => {
-    dispatch(showThunk(tramite.id));
+  const handleEdit = (pasarela) => {
+    dispatch(showThunk(pasarela.id));
   };
 
-  const handleDelete = (tramite) => {
-    dispatch(deleteThunk(tramite));
+  const handleDevolverATramites = (pasarela) => {
+    dispatch(devolverATramitesThunk(pasarela));
   };
 
-  const handleHistory = (tramite) => {
-    dispatch(openHistoryDialog(tramite));
-    dispatch(getHistoryThunk(tramite.id, { page: 1 }));
-  };
-
-  const handleEnviarAPasarela = (tramite) => {
-    dispatch(enviarAPasarelaDesdeTramiteThunk(tramite));
+  const handleHistory = (pasarela) => {
+    dispatch(openHistoryDialog(pasarela));
+    dispatch(getHistoryThunk(pasarela.id, { page: 1 }));
   };
 
   const handleCloseHistory = () => {
@@ -193,12 +176,12 @@ const Tramites = () => {
 
   const handleHistoryPageChange = (newPage) => {
     dispatch(setHistoryPage(newPage + 1));
-    dispatch(getHistoryThunk(selectedHistoryTramite.id, { page: newPage + 1 }));
+    dispatch(getHistoryThunk(selectedHistoryPasarela.id, { page: newPage + 1 }));
   };
 
   const handleHistoryPageSizeChange = (newPageSize) => {
     dispatch(setHistoryPageSize(newPageSize));
-    dispatch(getHistoryThunk(selectedHistoryTramite.id, { page: 1, page_size: newPageSize }));
+    dispatch(getHistoryThunk(selectedHistoryPasarela.id, { page: 1, page_size: newPageSize }));
   };
 
   const handleCreate = () => {
@@ -232,16 +215,16 @@ const Tramites = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight={600} gutterBottom>
-            Trámites
+            Pasarela de Pago
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gestión de trámites SOAT del sistema
+            Gestión de registros enviados desde Trámites
           </Typography>
         </Box>
-        {canCreate('tramites') && (
+        {canCreate('pasarela_de_pago') && (
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo trámite
+              Nuevo registro
             </Button>
           </Box>
         )}
@@ -272,10 +255,9 @@ const Tramites = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={canEdit('tramites') ? handleEdit : undefined}
+        onEdit={canEdit('pasarela_de_pago') ? handleEdit : undefined}
         onHistory={handleHistory}
-        onEnviarAPasarela={canCreate('pasarela_de_pago') ? handleEnviarAPasarela : undefined}
-        onDelete={canDelete('tramites') ? handleDelete : undefined}
+        onDevolverATramites={canDelete('pasarela_de_pago') ? handleDevolverATramites : undefined}
       />
 
       {/* Create/Edit Dialog */}
@@ -283,7 +265,7 @@ const Tramites = () => {
         open={openModal}
         onClose={handleCloseModal}
         onSave={handleSave}
-        selectedTramite={selectedTramite}
+        selectedTramite={selectedPasarela}
         form={form}
         clientes={clientes}
         etiquetas={etiquetas}
@@ -295,7 +277,7 @@ const Tramites = () => {
       <HistoryDialog
         open={openHistory}
         onClose={handleCloseHistory}
-        tramite={selectedHistoryTramite}
+        tramite={selectedHistoryPasarela}
         historyData={historyData}
         page={historyPagination.page - 1}
         pageSize={historyPagination.pageSize}
@@ -307,4 +289,4 @@ const Tramites = () => {
   );
 };
 
-export default Tramites;
+export default PasarelaDePago;

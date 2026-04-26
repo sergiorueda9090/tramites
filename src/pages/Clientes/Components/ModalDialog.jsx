@@ -362,6 +362,14 @@ const ClienteDialog = ({
 
             <TextField
               fullWidth
+              label="Email"
+              type="email"
+              value={form.email || ''}
+              onChange={handleChange('email')}
+            />
+
+            <TextField
+              fullWidth
               label="Direccion"
               value={form.direccion || ''}
               onChange={handleChange('direccion')}

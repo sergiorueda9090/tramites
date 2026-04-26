@@ -110,6 +110,7 @@ const formatFieldName = (field) => {
   const fieldNames = {
     nombre: 'Nombre',
     telefono: 'Teléfono',
+    email: 'Email',
     direccion: 'Dirección',
     color: 'Color',
     tipo_cliente: 'Tipo de cliente',
@@ -428,6 +429,7 @@ export const viewThunk = (cliente) => {
         <div style="text-align: left;">
           <p><strong>Tipo de cliente:</strong> ${tipoClienteLabel[cliente.tipo_cliente] || cliente.tipo_cliente || '-'}</p>
           <p><strong>Teléfono:</strong> ${cliente.telefono || '-'}</p>
+          <p><strong>Email:</strong> ${cliente.email || '-'}</p>
           <p><strong>Dirección:</strong> ${cliente.direccion || '-'}</p>
           <p><strong>Medio de comunicación:</strong> ${medioComunicacionLabel[cliente.medio_comunicacion] || cliente.medio_comunicacion || '-'}</p>
           <p><strong>Usuario asignado:</strong> ${cliente.usuario_name || '-'}</p>

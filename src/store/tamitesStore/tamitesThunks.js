@@ -26,6 +26,8 @@ const API_URLS = {
   history: (id) => `/api/tramites/${id}/history/`,
   cambiarEstado: (id) => `/api/tramites/${id}/cambiar-estado/`,
   revertirEstado: (id) => `/api/tramites/${id}/revertir-estado/`,
+  // URL de pasarela de pago (para "Enviar a Pasarela" desde un trámite)
+  pasarelaCreate: '/api/pasarela_de_pago/create/',
   // URLs auxiliares para selects
   clientes: '/api/clientes/list/',
   etiquetas: '/api/etiquetas/list/',
@@ -755,6 +757,137 @@ export const enviarTramiteDesdeCotizadorThunk = () => {
       await AlertService.success(
         '¡Trámite enviado!',
         `El trámite #${response.data?.id} fue registrado correctamente para la placa <strong>${response.data?.placa || '-'}</strong>.`,
+        { timer: 3500 }
+      );
+
+      return response.data;
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};
+
+/**
+ * Construye el payload para crear un registro de pasarela a partir de un trámite
+ * existente. Copia todos los campos de snapshot y referencia el tramite_origen.
+ */
+const construirPayloadPasarela = (tramite) => ({
+  tramite_origen: tramite.id,
+  cliente: tramite.cliente?.id || null,
+  etiqueta: tramite.etiqueta?.id || null,
+  precio_cliente: tramite.precio_cliente?.id || null,
+  tarifario_soat: tramite.tarifario_soat?.id || null,
+
+  tipo_tramite: tramite.tipo_tramite || 'SOAT',
+  tipo_vehiculo: tramite.tipo_vehiculo || '',
+
+  grupo_soat: tramite.grupo_soat || '',
+  grupo_clase_runt: tramite.grupo_clase_runt || '',
+  grupo_subcriterio: tramite.grupo_subcriterio || '',
+  modulo_pregunta1: tramite.modulo_pregunta1 || '',
+  modulo_pregunta2: tramite.modulo_pregunta2 || '',
+  tarifa_codigo: tramite.tarifa_codigo || '',
+  tarifa_manual: !!tramite.tarifa_manual,
+
+  precio_lay: tramite.precio_lay || null,
+  comision: tramite.comision || null,
+
+  placa: tramite.placa || '',
+  clase: tramite.clase || '',
+  tipo_servicio: tramite.tipo_servicio || '',
+  marca: tramite.marca || '',
+  linea: tramite.linea || '',
+  modelo: tramite.modelo || '',
+  color: tramite.color || '',
+  cilindraje: tramite.cilindraje || '',
+  pasajeros_sentados: tramite.pasajeros_sentados || '',
+  capacidad_carga: tramite.capacidad_carga || '',
+  peso_bruto: tramite.peso_bruto || '',
+  chasis: tramite.chasis || '',
+  vin: tramite.vin || '',
+
+  tipo_documento: tramite.tipo_documento || 'CC',
+  numero_documento: tramite.numero_documento || '',
+  nombre_completo: tramite.nombre_completo || '',
+  telefono: tramite.telefono || '',
+  correo: tramite.correo || '',
+  direccion: tramite.direccion || '',
+});
+
+/**
+ * Enviar trámite a Pasarela de Pago. Solo disponible cuando el trámite completó
+ * su flujo interno (cargar_pdf_estado === '1'). Doble confirmación antes del POST.
+ */
+export const enviarAPasarelaDesdeTramiteThunk = (tramite) => {
+  return async (dispatch) => {
+    try {
+      if (!tramite?.id) {
+        AlertService.error('Trámite inválido', 'No se pudo identificar el trámite a enviar.');
+        return null;
+      }
+
+      const placa = tramite.placa || '(sin placa)';
+      const clienteNombre = tramite.cliente?.nombre || '(sin cliente)';
+      const tarifaCod = tramite.tarifa_codigo || '-';
+      const tarifaValor = tramite.precio_lay
+        ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tramite.precio_lay)
+        : '-';
+
+      const primera = await AlertService.confirm(
+        '¿Enviar este trámite a Pasarela de Pago?',
+        `
+          <div style="text-align: left; background: #f5f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #1976d2;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #1976d2;">Se creará un registro en Pasarela de Pago con los siguientes datos:</p>
+            <p style="margin: 4px 0;"><strong>Trámite origen:</strong> #${tramite.id}</p>
+            <p style="margin: 4px 0;"><strong>Cliente:</strong> ${clienteNombre}</p>
+            <p style="margin: 4px 0;"><strong>Placa:</strong> ${placa}</p>
+            <p style="margin: 4px 0;"><strong>Tarifa:</strong> ${tarifaCod}</p>
+            <p style="margin: 4px 0;"><strong>Valor:</strong> ${tarifaValor}</p>
+          </div>
+        `,
+        {
+          icon: 'question',
+          confirmText: 'Sí, revisar datos',
+          cancelText: 'Cancelar',
+        }
+      );
+      if (!primera.isConfirmed) return null;
+
+      const segunda = await AlertService.confirm(
+        '¿Confirmar envío definitivo?',
+        `
+          <div style="text-align: left; background: #fff8e1; padding: 16px; border-radius: 8px; border-left: 4px solid #ff9800;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #e65100;">⚠ Esta acción crea un nuevo registro en Pasarela</p>
+            <p style="margin: 4px 0;">El trámite <strong>#${tramite.id} - ${placa}</strong> quedará trazado en Pasarela de Pago.</p>
+          </div>
+          <p style="margin-top: 12px; font-weight: 500;">¿Deseas continuar?</p>
+        `,
+        {
+          icon: 'warning',
+          confirmText: 'Sí, enviar a Pasarela',
+          cancelText: 'Revisar nuevamente',
+        }
+      );
+      if (!segunda.isConfirmed) return null;
+
+      dispatch(showBackdrop('Enviando a pasarela...'));
+
+      const payload = construirPayloadPasarela(tramite);
+      const response = await api.post(API_URLS.pasarelaCreate, payload);
+
+      // Refrescar lista de trámites: el backend excluye los que ya tienen
+      // una pasarela activa, así que este trámite desaparece del listado.
+      dispatch(listAllThunk());
+
+      dispatch(hideBackdrop());
+
+      await AlertService.success(
+        '¡Enviado a Pasarela!',
+        `El registro de pasarela #${response.data?.id} fue creado correctamente para la placa <strong>${response.data?.placa || '-'}</strong>. El trámite fue retirado del listado.`,
         { timer: 3500 }
       );
 

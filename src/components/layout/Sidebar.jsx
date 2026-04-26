@@ -37,6 +37,7 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import StorageIcon from '@mui/icons-material/Storage';
 import ApiIcon from '@mui/icons-material/Api';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import PaymentIcon from '@mui/icons-material/Payment';
 
 
 
@@ -66,6 +67,7 @@ const menuItems = [
       { text: 'Base de Datos',          icon: StorageIcon,          path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos' },
       { text: 'Casos Especiales',       icon: ReportProblemIcon,    path: ROUTES.CASOS_ESPECIALES,       moduleCode: 'casos_especiales' },
       { text: 'Trámites',               icon: AssignmentTurnedInIcon, path: ROUTES.TRAMITES,             moduleCode: 'tramites' },
+      { text: 'Pasarela de Pago',       icon: PaymentIcon,          path: ROUTES.PASARELA_DE_PAGO,       moduleCode: 'pasarela_de_pago' },
       { text: 'API Endpoints',          icon: ApiIcon,              path: ROUTES.API_ENDPOINTS,          moduleCode: 'api_app' },
       { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
       { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },

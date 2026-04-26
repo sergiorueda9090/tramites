@@ -18,6 +18,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PaymentIcon from '@mui/icons-material/Payment';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
@@ -238,6 +239,7 @@ const TramitesDataTable = ({
   onEdit,
   onHistory,
   onDelete,
+  onEnviarAPasarela,
   emptyMessage = 'No se encontraron trámites',
   stickyHeader = true,
   maxHeight = 600,
@@ -290,7 +292,7 @@ const TramitesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onHistory || onDelete) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -320,7 +322,7 @@ const TramitesDataTable = ({
                       {renderCellContent(column, row)}
                     </TableCell>
                   ))}
-                  {showActions && (onView || onEdit || onHistory || onDelete) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -341,6 +343,13 @@ const TramitesDataTable = ({
                           <Tooltip title="Ver historial">
                             <IconButton size="small" onClick={() => onHistory(row)} color="warning">
                               <HistoryIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onEnviarAPasarela && (
+                          <Tooltip title="Enviar a Pasarela de Pago">
+                            <IconButton size="small" onClick={() => onEnviarAPasarela(row)} color="success">
+                              <PaymentIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}

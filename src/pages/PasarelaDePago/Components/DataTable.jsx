@@ -13,13 +13,12 @@ import {
   Tooltip,
   Typography,
   Chip,
-  Avatar,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EmailIcon from '@mui/icons-material/Email';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
@@ -64,116 +63,168 @@ const TableLoadingSkeleton = ({ rows = 5, columns = 5 }) => {
 };
 
 // ============================================
-// Clientes Columns Configuration
+// Helpers
+// ============================================
+const formatCurrency = (value) => {
+  if (!value) return '$0';
+  const num = Number(value);
+  if (isNaN(num)) return '-';
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+};
+
+const ESTADO_LABELS = {
+  tramite_estado: 'Trámite',
+  confirmacion_estado: 'Confirmación',
+  cargar_pdf_estado: 'PDF',
+};
+
+const EstadoChip = ({ field, value }) => (
+  <Chip
+    size="small"
+    label={ESTADO_LABELS[field]}
+    color={value === '1' ? 'success' : 'default'}
+    variant={value === '1' ? 'filled' : 'outlined'}
+    sx={{ fontWeight: 500 }}
+  />
+);
+
+const GRUPO_SOAT_COLORS = {
+  MOTOS: 'primary',
+  MOTOCARROS: 'primary',
+  CICLOMOTORES: 'primary',
+  CARGA: 'info',
+  CAMPEROS: 'success',
+  FAMILIAR_5P: 'success',
+  INTERMUNICIPAL: 'warning',
+  TAXI: 'warning',
+  BUS_URBANO: 'secondary',
+  '6_PASAJEROS': 'secondary',
+};
+
+// ============================================
+// Columns Configuration
 // ============================================
 const columns = [
   { field: 'id', headerName: 'ID', width: 70 },
   {
-    field: 'nombre',
+    field: 'placa',
+    headerName: 'Placa',
+    minWidth: 110,
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={600}>
+        {value || '-'}
+      </Typography>
+    ),
+  },
+  {
+    field: 'cliente',
     headerName: 'Cliente',
+    minWidth: 180,
+    sortable: false,
+    renderCell: ({ row }) => row.cliente?.nombre || '-',
+  },
+  {
+    field: 'tipo_tramite',
+    headerName: 'Tipo',
+    minWidth: 100,
+    renderCell: ({ row }) => row.tipo_tramite_display || row.tipo_tramite || '-',
+  },
+  {
+    field: 'grupo_soat',
+    headerName: 'Grupo SOAT',
+    minWidth: 140,
+    renderCell: ({ row }) =>
+      row.grupo_soat ? (
+        <Chip
+          label={row.grupo_soat_display || row.grupo_soat}
+          size="small"
+          color={GRUPO_SOAT_COLORS[row.grupo_soat] || 'default'}
+          variant="outlined"
+          sx={{ fontWeight: 500 }}
+        />
+      ) : (
+        '-'
+      ),
+  },
+  {
+    field: 'tarifa_codigo',
+    headerName: 'Tarifa',
+    minWidth: 100,
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={600} color="info.main">
+        {value || '-'}
+      </Typography>
+    ),
+  },
+  {
+    field: 'nombre_completo',
+    headerName: 'Titular',
+    minWidth: 180,
+  },
+  {
+    field: 'numero_documento',
+    headerName: 'Documento',
+    minWidth: 140,
+  },
+  {
+    field: 'precio_lay',
+    headerName: 'Precio',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={600} color="primary">
+        {formatCurrency(value)}
+      </Typography>
+    ),
+  },
+  {
+    field: 'comision',
+    headerName: 'Comisión',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={600} color="secondary">
+        {formatCurrency(value)}
+      </Typography>
+    ),
+  },
+  {
+    field: 'estados',
+    headerName: 'Estados',
     minWidth: 200,
+    sortable: false,
     renderCell: ({ row }) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: row.color || '#1976d2',
-            fontSize: '0.875rem',
-          }}
-        >
-          {row.nombre?.charAt(0)?.toUpperCase() || 'C'}
-        </Avatar>
-        <Typography variant="body2" fontWeight={500}>
-          {row.nombre || '-'}
-        </Typography>
+      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+        <EstadoChip field="tramite_estado" value={row.tramite_estado} />
+        <EstadoChip field="confirmacion_estado" value={row.confirmacion_estado} />
+        <EstadoChip field="cargar_pdf_estado" value={row.cargar_pdf_estado} />
       </Box>
     ),
   },
   {
-    field: 'tipo_cliente',
-    headerName: 'Tipo',
-    minWidth: 140,
-    renderCell: ({ row }) => {
-      const labels = {
-        cda: 'CDA',
-        concesionario: 'Concesionario',
-        particular: 'Particular',
-        punto_aliado: 'Punto aliado',
-      };
-      const colors = {
-        cda: 'error',
-        concesionario: 'warning',
-        particular: 'info',
-        punto_aliado: 'success',
-      };
-      return (
-        <Chip
-          label={labels[row.tipo_cliente] || row.tipo_cliente || '-'}
-          size="small"
-          color={colors[row.tipo_cliente] || 'default'}
-          variant="outlined"
-        />
-      );
-    },
-  },
-  { field: 'telefono', headerName: 'Teléfono', minWidth: 130 },
-  {
-    field: 'email',
-    headerName: 'Email',
-    minWidth: 180,
-    renderCell: ({ value }) => value || '-',
-  },
-  { field: 'direccion', headerName: 'Dirección', minWidth: 200 },
-  {
-    field: 'medio_comunicacion',
-    headerName: 'Medio',
-    minWidth: 120,
-    renderCell: ({ value }) => {
-      const isEmail = value === 'email';
-      return (
-        <Chip
-          icon={isEmail ? <EmailIcon fontSize="small" /> : <WhatsAppIcon fontSize="small" />}
-          label={isEmail ? 'Email' : 'WhatsApp'}
-          size="small"
-          color={isEmail ? 'primary' : 'success'}
-          variant="outlined"
-        />
-      );
-    },
-  },
-  {
-    field: 'usuario_name',
-    headerName: 'Vendedor',
+    field: 'usuario',
+    headerName: 'Registrado por',
     minWidth: 150,
-    renderCell: ({ value }) => value || '-',
-  },
-  {
-    field: 'precios_count',
-    headerName: 'Precios',
-    minWidth: 100,
-    align: 'center',
-    renderCell: ({ value }) => (
-      <Chip
-        label={value || 0}
-        size="small"
-        color={value > 0 ? 'info' : 'default'}
-        variant={value > 0 ? 'filled' : 'outlined'}
-      />
-    ),
+    sortable: false,
+    renderCell: ({ row }) => row.usuario?.name || '-',
   },
   {
     field: 'created_at',
-    headerName: 'Creado',
-    minWidth: 150,
+    headerName: 'Fecha de creación',
+    minWidth: 160,
     renderCell: ({ value }) => formatDateTime(value),
   },
 ];
 
 // ============================================
-// ClientesDataTable Component
+// TramitesDataTable Component
 // ============================================
-const ClientesDataTable = ({
+const TramitesDataTable = ({
   data,
   loading = false,
   page = 0,
@@ -186,39 +237,19 @@ const ClientesDataTable = ({
   onSort,
   onView,
   onEdit,
+  onHistory,
   onDelete,
-  emptyMessage = 'No se encontraron clientes',
+  onDevolverATramites,
+  emptyMessage = 'No se encontraron registros de pasarela',
   stickyHeader = true,
   maxHeight = 600,
   showActions = true,
 }) => {
   const renderCellContent = (column, row) => {
     const value = row[column.field];
-
     if (column.renderCell) {
       return column.renderCell({ row, value });
     }
-
-    if (column.type === 'chip' && value) {
-      return (
-        <Chip
-          label={value}
-          size="small"
-          color={column.getChipColor ? column.getChipColor(value) : 'default'}
-        />
-      );
-    }
-
-    if (column.type === 'boolean') {
-      return (
-        <Chip
-          label={value ? 'Sí' : 'No'}
-          size="small"
-          color={value ? 'success' : 'default'}
-        />
-      );
-    }
-
     return value ?? '-';
   };
 
@@ -261,7 +292,7 @@ const ClientesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onDelete) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -291,7 +322,7 @@ const ClientesDataTable = ({
                       {renderCellContent(column, row)}
                     </TableCell>
                   ))}
-                  {showActions && (onView || onEdit || onDelete) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -305,6 +336,20 @@ const ClientesDataTable = ({
                           <Tooltip title="Editar">
                             <IconButton size="small" onClick={() => onEdit(row)} color="primary">
                               <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onHistory && (
+                          <Tooltip title="Ver historial">
+                            <IconButton size="small" onClick={() => onHistory(row)} color="warning">
+                              <HistoryIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onDevolverATramites && (
+                          <Tooltip title="Devolver a Trámites">
+                            <IconButton size="small" onClick={() => onDevolverATramites(row)} sx={{ color: '#ff9800' }}>
+                              <KeyboardReturnIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}
@@ -337,4 +382,4 @@ const ClientesDataTable = ({
 };
 
 export { columns };
-export default ClientesDataTable;
+export default TramitesDataTable;
