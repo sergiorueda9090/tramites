@@ -81,9 +81,16 @@ const Login = () => {
 
     setIsLoading(true);
     setError(null);
-    dispatch(showBackdrop('Iniciando sesión...'));
 
-    dispatch(getAuth( formData.email, formData.password ))
+    try {
+      const result = await dispatch(getAuth(formData.email, formData.password));
+      if (result && result.success === false) {
+        setError(result.error || 'Credenciales inválidas');
+      }
+    } finally {
+      setIsLoading(false);
+      dispatch(hideBackdrop());
+    }
 
     /*try {
       // Llamar al API de autenticación

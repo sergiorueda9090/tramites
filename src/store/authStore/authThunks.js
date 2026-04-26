@@ -90,10 +90,13 @@ export const getAuth = (email, password) => {
                 // Mostrar mensaje de exito
                 AlertService.success('Bienvenido', `Hola ${fullName}!`);
 
+                return { success: true };
+
             } else {
                 console.log('ERROR: Status no es 200:', response.status);
                 dispatch(hideBackdrop());
                 AlertService.error('Error', 'No se pudo iniciar sesion');
+                return { success: false, error: 'No se pudo iniciar sesion' };
             }
 
         } catch (error) {
@@ -106,6 +109,7 @@ export const getAuth = (email, password) => {
 
             const errorMessage = error.response?.data?.detail || error.message || 'Error de autenticacion';
             AlertService.error('Error de autenticacion', errorMessage);
+            return { success: false, error: errorMessage };
         }
     };
 };
