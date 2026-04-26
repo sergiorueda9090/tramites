@@ -127,6 +127,33 @@ export const pasarelaDePagoStore = createSlice({
       state.loading = false;
     },
 
+    /**
+     * Elimina una pasarela del listado en el cliente (sin tocar el backend).
+     * Lo dispara el hook de tiempo real cuando otro usuario la borra/devuelve.
+     */
+    removePasarelaById: (state, action) => {
+      const id = action.payload;
+      const before = state.pasarelas.length;
+      state.pasarelas = state.pasarelas.filter((p) => p.id !== id);
+      if (state.pasarelas.length < before && state.pagination.count > 0) {
+        state.pagination.count -= 1;
+      }
+    },
+
+    /**
+     * Inserta una pasarela al inicio del listado SIN tocar `loading` ni
+     * borrar el resto. Usado por el hook de tiempo real cuando otro usuario
+     * crea/restaura un registro: aparece directo, sin spinner.
+     * Si ya existe (por id), no duplica.
+     */
+    prependPasarela: (state, action) => {
+      const item = action.payload;
+      if (!item || item.id == null) return;
+      if (state.pasarelas.some((p) => p.id === item.id)) return;
+      state.pasarelas = [item, ...state.pasarelas];
+      state.pagination.count = (state.pagination.count || 0) + 1;
+    },
+
     // Datos auxiliares
     setClientes: (state, action) => {
       state.clientes = action.payload;
@@ -298,6 +325,8 @@ export const {
   setLoading,
   setError,
   setPasarelas,
+  removePasarelaById,
+  prependPasarela,
   setClientes,
   setEtiquetas,
   setTarifarios,

@@ -125,6 +125,33 @@ export const tramitesStore = createSlice({
       state.loading = false;
     },
 
+    /**
+     * Elimina un tramite del listado en el cliente (sin tocar el backend).
+     * Se usa cuando llega un evento WS de que el tramite ya no debe aparecer
+     * (ej: fue enviado a pasarela por otro usuario).
+     */
+    removeTramiteById: (state, action) => {
+      const id = action.payload;
+      const before = state.tramites.length;
+      state.tramites = state.tramites.filter((t) => t.id !== id);
+      if (state.tramites.length < before && state.pagination.count > 0) {
+        state.pagination.count -= 1;
+      }
+    },
+
+    /**
+     * Inserta un tramite al inicio del listado SIN tocar `loading`. Usado por
+     * el hook de tiempo real cuando otro usuario devuelve una pasarela y el
+     * tramite vuelve al listado.
+     */
+    prependTramite: (state, action) => {
+      const item = action.payload;
+      if (!item || item.id == null) return;
+      if (state.tramites.some((t) => t.id === item.id)) return;
+      state.tramites = [item, ...state.tramites];
+      state.pagination.count = (state.pagination.count || 0) + 1;
+    },
+
     // Datos auxiliares
     setClientes: (state, action) => {
       state.clientes = action.payload;
@@ -295,6 +322,8 @@ export const {
   setLoading,
   setError,
   setTramites,
+  removeTramiteById,
+  prependTramite,
   setClientes,
   setEtiquetas,
   setTarifarios,

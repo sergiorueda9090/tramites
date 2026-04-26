@@ -20,6 +20,7 @@ import { casosEspecialesStore }     from './casosEspecialesStore/casosEspeciales
 import { tramitesStore }            from './tamitesStore/tamitesStore';
 import { pasarelaDePagoStore }       from './pasarelaDePagoStore/pasarelaDePagoStore';
 import presenceReducer    from './presenceStore/presenceStore';
+import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     usersStore      : usersStore.reducer,
     clientesStore   : clientesStore.reducer,
     presence        : presenceReducer,
+    cellPresence    : cellPresenceReducer,
     etiquetasStore  : etiquetasStore.reducer,
     tarjetasStore   : tarjetasStore.reducer,
     recepcionPagoStore: recepcionPagoStore.reducer,

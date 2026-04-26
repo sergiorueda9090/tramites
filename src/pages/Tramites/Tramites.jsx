@@ -3,6 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import usePermissions from '../../hooks/usePermissions';
+import useCellPresence from '../../hooks/useCellPresence';
+import useTramitesRealtime from '../../hooks/useTramitesRealtime';
+
+const TRAMITES_VIEW_ID = 'tramites_list';
 
 import {
   selectFilters,
@@ -62,6 +66,12 @@ import {
 const Tramites = () => {
   const dispatch = useDispatch();
   const { canCreate, canEdit, canDelete } = usePermissions();
+
+  // Presencia colaborativa por celda (estilo Google Sheets)
+  const { focusCell, blurCell, getOccupant, getRowOccupants } = useCellPresence(TRAMITES_VIEW_ID);
+
+  // Eventos de tiempo real sobre el listado (ej: trámites eliminados al enviarse a pasarela)
+  useTramitesRealtime();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -276,6 +286,11 @@ const Tramites = () => {
         onHistory={handleHistory}
         onEnviarAPasarela={canCreate('pasarela_de_pago') ? handleEnviarAPasarela : undefined}
         onDelete={canDelete('tramites') ? handleDelete : undefined}
+        // Presencia colaborativa por celda
+        getOccupant={getOccupant}
+        getRowOccupants={getRowOccupants}
+        onCellFocus={focusCell}
+        onCellBlur={blurCell}
       />
 
       {/* Create/Edit Dialog */}

@@ -12,6 +12,7 @@ import {
   closeModal,
   openEditModal,
   setHistory,
+  prependTramite,
 } from './tamitesStore';
 
 // URLs del módulo tramites
@@ -897,6 +898,25 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite) => {
       dispatch(hideBackdrop());
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};
+
+/**
+ * Trae UN tramite por id y lo inserta al inicio del listado SIN tocar
+ * `loading` ni mostrar backdrop. Usado por el hook de tiempo real cuando
+ * llega `tramite_restored`: evita el spinner del listado completo.
+ */
+export const fetchTramiteSilentThunk = (tramiteId) => {
+  return async (dispatch) => {
+    if (tramiteId == null) return null;
+    try {
+      const response = await api.get(API_URLS.detail(tramiteId));
+      dispatch(prependTramite(response.data));
+      return response.data;
+    } catch (error) {
+      console.warn('[fetchTramiteSilentThunk] error:', error?.response?.status, tramiteId);
       return null;
     }
   };

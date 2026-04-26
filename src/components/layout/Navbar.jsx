@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -20,6 +20,8 @@ import {
   useTheme,
   useMediaQuery,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -76,6 +78,21 @@ const Navbar = ({ sidebarCollapsed }) => {
 
   // Hook de presencia para usuarios conectados en tiempo real
   const { connectedUsers, isConnected, onlineCount } = usePresence();
+
+  // Snackbar de transiciones de conexion (offline <-> online)
+  const [connectionSnackbar, setConnectionSnackbar] = useState({ open: false, severity: 'info', message: '' });
+  const prevConnectedRef = useRef(isConnected);
+  useEffect(() => {
+    const prev = prevConnectedRef.current;
+    if (prev !== isConnected) {
+      if (prev === true && isConnected === false) {
+        setConnectionSnackbar({ open: true, severity: 'warning', message: 'Conexion en tiempo real perdida, reintentando...' });
+      } else if (prev === false && isConnected === true) {
+        setConnectionSnackbar({ open: true, severity: 'success', message: 'Reconectado al tiempo real' });
+      }
+      prevConnectedRef.current = isConnected;
+    }
+  }, [isConnected]);
 
   console.log('=== PRESENCE DEBUG ===');
   console.log('connectedUsers:', connectedUsers);
@@ -220,24 +237,26 @@ const Navbar = ({ sidebarCollapsed }) => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
               {isConnected ? (
-                <FiberManualRecordIcon
-                  sx={{
-                    fontSize: 10,
-                    color: 'success.main',
-                    animation: 'pulse 2s infinite',
-                    '@keyframes pulse': {
-                      '0%': { opacity: 1 },
-                      '50%': { opacity: 0.5 },
-                      '100%': { opacity: 1 },
-                    },
-                  }}
-                />
+                <Tooltip title="Tiempo real activo">
+                  <FiberManualRecordIcon
+                    sx={{
+                      fontSize: 10,
+                      color: 'success.main',
+                      animation: 'pulse 2s infinite',
+                      '@keyframes pulse': {
+                        '0%': { opacity: 1 },
+                        '50%': { opacity: 0.5 },
+                        '100%': { opacity: 1 },
+                      },
+                    }}
+                  />
+                </Tooltip>
               ) : (
-                <Tooltip title="Conectando...">
+                <Tooltip title="Sin conexion en tiempo real, reintentando...">
                   <WifiOffIcon
                     sx={{
                       fontSize: 14,
-                      color: 'warning.main',
+                      color: 'error.main',
                     }}
                   />
                 </Tooltip>
@@ -420,6 +439,23 @@ const Navbar = ({ sidebarCollapsed }) => {
             </Typography>
           </Box>
         </Menu>
+
+        {/* Snackbar de cambios de estado de conexion en tiempo real */}
+        <Snackbar
+          open={connectionSnackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setConnectionSnackbar((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setConnectionSnackbar((s) => ({ ...s, open: false }))}
+            severity={connectionSnackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {connectionSnackbar.message}
+          </Alert>
+        </Snackbar>
       </Toolbar>
     </AppBar>
   );

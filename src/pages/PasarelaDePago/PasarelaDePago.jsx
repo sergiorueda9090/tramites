@@ -3,6 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import usePermissions from '../../hooks/usePermissions';
+import useCellPresence from '../../hooks/useCellPresence';
+import usePasarelaRealtime from '../../hooks/usePasarelaRealtime';
+
+const PASARELA_VIEW_ID = 'pasarela_de_pago_list';
 
 import {
   selectFilters,
@@ -61,6 +65,12 @@ import {
 const PasarelaDePago = () => {
   const dispatch = useDispatch();
   const { canCreate, canEdit, canDelete } = usePermissions();
+
+  // Presencia colaborativa por celda (estilo Google Sheets)
+  const { focusCell, blurCell, getOccupant, getRowOccupants } = useCellPresence(PASARELA_VIEW_ID);
+
+  // Eventos de tiempo real sobre el listado (entradas/salidas de registros)
+  usePasarelaRealtime();
 
   const filters = useSelector(selectFilters);
   const activeFilters = useSelector(selectActiveFilters);
@@ -258,6 +268,11 @@ const PasarelaDePago = () => {
         onEdit={canEdit('pasarela_de_pago') ? handleEdit : undefined}
         onHistory={handleHistory}
         onDevolverATramites={canDelete('pasarela_de_pago') ? handleDevolverATramites : undefined}
+        // Presencia colaborativa por celda
+        getOccupant={getOccupant}
+        getRowOccupants={getRowOccupants}
+        onCellFocus={focusCell}
+        onCellBlur={blurCell}
       />
 
       {/* Create/Edit Dialog */}

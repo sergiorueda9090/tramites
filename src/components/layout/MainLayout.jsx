@@ -5,6 +5,7 @@ import { Box, Toolbar, useTheme, useMediaQuery } from '@mui/material';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
+import RealtimeToastHost from '../common/RealtimeToastHost';
 import { selectSidebarCollapsed } from '../../store/uiStore/uiStore';
 import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '../../utils/constants';
 
@@ -50,6 +51,9 @@ const MainLayout = () => {
 
         <Footer />
       </Box>
+
+      {/* Toasts globales para notificaciones de tiempo real (WebSocket) */}
+      <RealtimeToastHost />
     </Box>
   );
 };

@@ -11,6 +11,7 @@ import {
   selectConnectedUsers,
   selectIsConnected,
 } from '../store/presenceStore/presenceStore';
+import { setAuthenticated } from '../store/authStore/authStore';
 
 // Colores para asignar aleatoriamente a usuarios
 const USER_COLORS = [
@@ -83,11 +84,35 @@ export const usePresence = () => {
         case 'connection_status':
           console.log('Estado de conexion:', data.connected);
           dispatch(setConnected(data.connected));
+          if (data.connected) {
+            dispatch(setConnectionError(null));
+          }
+          break;
+
+        case 'reconnect_paused':
+          console.log('Reconexion pausada (pestania oculta)');
           break;
 
         case 'reconnect_failed':
           console.log('Reconexion fallida');
           dispatch(setConnectionError('No se pudo reconectar al servidor'));
+          break;
+
+        case 'token_refreshed':
+          // El servicio WS refresco el JWT por su cuenta tras un cierre 4001.
+          // Sincronizamos el authStore para que axios lo use tambien.
+          if (data.access && user) {
+            dispatch(setAuthenticated({
+              access: data.access,
+              islogin: true,
+              idrol: user.idrol,
+              id_user: user.id_user,
+              name_user: user.name_user,
+              email: user.email,
+              avatar: user.avatar,
+              permissions: user.permissions,
+            }));
+          }
           break;
 
         case 'pong':
@@ -99,7 +124,7 @@ export const usePresence = () => {
           break;
       }
     },
-    [dispatch]
+    [dispatch, user]
   );
 
   /**
@@ -125,11 +150,11 @@ export const usePresence = () => {
       };
 
       console.log('Conectando WebSocket con userData:', userData);
-      websocketService.connect(userData);
+      websocketService.connect(userData, user.token);
     } else {
       console.log('No hay id_user, no se conecta el WebSocket');
     }
-  }, [user?.id_user, user?.name_user, user?.avatar]);
+  }, [user?.id_user, user?.name_user, user?.avatar, user?.token]);
 
   /**
    * Desconecta del WebSocket

@@ -12,6 +12,7 @@ import {
   closeModal,
   openEditModal,
   setHistory,
+  prependPasarela,
 } from './pasarelaDePagoStore';
 
 // URLs del módulo pasarela de pago
@@ -608,6 +609,26 @@ export const revertirEstadoThunk = (pasarelaId, paso) => {
       dispatch(hideBackdrop());
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};
+
+/**
+ * Trae UN registro por id y lo inserta al inicio del listado SIN tocar
+ * `loading` ni mostrar backdrop. Usado por el hook de tiempo real cuando
+ * llega `pasarela_added`: evita el spinner/skeleton del listado completo.
+ */
+export const fetchPasarelaSilentThunk = (pasarelaId) => {
+  return async (dispatch) => {
+    if (pasarelaId == null) return null;
+    try {
+      const response = await api.get(API_URLS.detail(pasarelaId));
+      dispatch(prependPasarela(response.data));
+      return response.data;
+    } catch (error) {
+      // Silencioso: no alertar al usuario por un evento de tiempo real fallido.
+      console.warn('[fetchPasarelaSilentThunk] error:', error?.response?.status, pasarelaId);
       return null;
     }
   };

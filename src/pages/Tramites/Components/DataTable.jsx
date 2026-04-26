@@ -21,6 +21,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PaymentIcon from '@mui/icons-material/Payment';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
+import CellPresenceOverlay from '../../../components/common/CellPresenceOverlay';
 
 // ============================================
 // TableLoadingSkeleton Component
@@ -244,7 +245,18 @@ const TramitesDataTable = ({
   stickyHeader = true,
   maxHeight = 600,
   showActions = true,
+  // Presencia colaborativa por celda (opcional)
+  getOccupant,
+  getRowOccupants,
+  onCellFocus,
+  onCellBlur,
 }) => {
+  const hasPresence = typeof onCellFocus === 'function' && typeof getOccupant === 'function';
+
+  const handleCellClick = (rowId, column) => {
+    if (hasPresence) onCellFocus(rowId, column);
+  };
+
   const renderCellContent = (column, row) => {
     const value = row[column.field];
     if (column.renderCell) {
@@ -317,11 +329,29 @@ const TramitesDataTable = ({
                   key={row.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  {columns.map((column) => (
-                    <TableCell key={column.field} align={column.align || 'left'}>
-                      {renderCellContent(column, row)}
-                    </TableCell>
-                  ))}
+                  {columns.map((column) => {
+                    const cellContent = renderCellContent(column, row);
+                    return (
+                      <TableCell
+                        key={column.field}
+                        align={column.align || 'left'}
+                        onClick={() => handleCellClick(row.id, column.field)}
+                        sx={hasPresence ? { cursor: 'cell', position: 'relative', overflow: 'visible' } : undefined}
+                      >
+                        {hasPresence ? (
+                          <CellPresenceOverlay
+                            getOccupant={getOccupant}
+                            rowId={row.id}
+                            column={column.field}
+                          >
+                            {cellContent}
+                          </CellPresenceOverlay>
+                        ) : (
+                          cellContent
+                        )}
+                      </TableCell>
+                    );
+                  })}
                   {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
