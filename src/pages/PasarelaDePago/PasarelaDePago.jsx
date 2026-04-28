@@ -5,9 +5,6 @@ import AddIcon from '@mui/icons-material/Add';
 import usePermissions from '../../hooks/usePermissions';
 import useCellPresence from '../../hooks/useCellPresence';
 import usePasarelaRealtime from '../../hooks/usePasarelaRealtime';
-
-const PASARELA_VIEW_ID = 'pasarela_de_pago_list';
-
 import {
   selectFilters,
   selectActiveFilters,
@@ -44,7 +41,6 @@ import {
   setHistoryPage,
   setHistoryPageSize,
 } from '../../store/pasarelaDePagoStore/pasarelaDePagoStore';
-
 import {
   listAllThunk,
   saveThunk,
@@ -54,13 +50,14 @@ import {
   loadAuxDataThunk,
   devolverATramitesThunk,
 } from '../../store/pasarelaDePagoStore/pasarelaDePagoThunks';
-
 import {
   TramitesFilters,
   TramitesDataTable,
   TramiteDialog,
   HistoryDialog,
 } from './Components';
+
+const PASARELA_VIEW_ID = 'pasarela_de_pago_list';
 
 const PasarelaDePago = () => {
   const dispatch = useDispatch();

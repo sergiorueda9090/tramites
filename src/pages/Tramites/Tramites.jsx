@@ -5,9 +5,6 @@ import AddIcon from '@mui/icons-material/Add';
 import usePermissions from '../../hooks/usePermissions';
 import useCellPresence from '../../hooks/useCellPresence';
 import useTramitesRealtime from '../../hooks/useTramitesRealtime';
-
-const TRAMITES_VIEW_ID = 'tramites_list';
-
 import {
   selectFilters,
   selectActiveFilters,
@@ -44,7 +41,6 @@ import {
   setHistoryPage,
   setHistoryPageSize,
 } from '../../store/tamitesStore/tamitesStore';
-
 import {
   listAllThunk,
   saveThunk,
@@ -55,13 +51,14 @@ import {
   loadAuxDataThunk,
   enviarAPasarelaDesdeTramiteThunk,
 } from '../../store/tamitesStore/tamitesThunks';
-
 import {
   TramitesFilters,
   TramitesDataTable,
   TramiteDialog,
   HistoryDialog,
 } from './Components';
+
+const TRAMITES_VIEW_ID = 'tramites_list';
 
 const Tramites = () => {
   const dispatch = useDispatch();
