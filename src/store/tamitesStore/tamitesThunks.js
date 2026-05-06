@@ -822,8 +822,13 @@ const construirPayloadPasarela = (tramite) => ({
 /**
  * Enviar trámite a Pasarela de Pago. Solo disponible cuando el trámite completó
  * su flujo interno (cargar_pdf_estado === '1'). Doble confirmación antes del POST.
+ *
+ * `esperarConfirmacionPago` (opcional): callback async que abre un modal de timer
+ * de 3 minutos en la vista. Debe resolver `true` si el pago fue exitoso o `false`
+ * en caso contrario (incluye expiración del tiempo). Si resuelve `false`, el thunk
+ * aborta sin POSTear a Pasarela.
  */
-export const enviarAPasarelaDesdeTramiteThunk = (tramite) => {
+export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionPago } = {}) => {
   return async (dispatch) => {
     try {
       if (!tramite?.id) {
@@ -875,9 +880,37 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite) => {
       );
       if (!segunda.isConfirmed) return null;
 
+      // Tercera puerta: timer de 3 minutos para que el usuario confirme el pago real.
+      // El callback resuelve con `{ exitoso: boolean, observacion: string, tarjeta: number|null }`.
+      // Si no hay callback (ej. test directo) se omite y se mantiene el flujo previo.
+      let observacionPago = '';
+      let tarjetaPago = null;
+      if (typeof esperarConfirmacionPago === 'function') {
+        const resultado = await esperarConfirmacionPago(tramite);
+        // Compatibilidad: aceptar también boolean plano por si algún caller no usa el modal.
+        const esObjeto = typeof resultado === 'object' && resultado !== null;
+        const exitoso = esObjeto ? Boolean(resultado.exitoso) : Boolean(resultado);
+        observacionPago = esObjeto && resultado.observacion
+          ? String(resultado.observacion).trim()
+          : '';
+        tarjetaPago = esObjeto && resultado.tarjeta ? resultado.tarjeta : null;
+        if (!exitoso) {
+          await AlertService.info(
+            'Envío cancelado',
+            'El pago no fue confirmado como exitoso. El trámite no se envió a Pasarela.',
+            { timer: 3000 }
+          );
+          return null;
+        }
+      }
+
       dispatch(showBackdrop('Enviando a pasarela...'));
 
       const payload = construirPayloadPasarela(tramite);
+      // Adjunta observación + tarjeta opcionales. El backend persistirá los campos
+      // cuando existan en el modelo PasarelaPago; mientras tanto los ignora.
+      if (observacionPago) payload.observacion = observacionPago;
+      if (tarjetaPago) payload.tarjeta = tarjetaPago;
       const response = await api.post(API_URLS.pasarelaCreate, payload);
 
       // Refrescar lista de trámites: el backend excluye los que ya tienen

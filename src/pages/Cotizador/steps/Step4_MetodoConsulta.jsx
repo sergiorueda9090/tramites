@@ -20,6 +20,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import PhoneIcon from '@mui/icons-material/Phone';
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import {
@@ -198,6 +200,31 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
     dispatch(setImagenLista(false));
   };
 
+  // Rota la imagen (en grados; positivo = horario, negativo = antihorario)
+  // y reemplaza tanto el preview como el File que se enviará al backend.
+  const rotateImage = (degrees) => {
+    if (!imagenFile || !imagenPreview) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const isQuarterTurn = Math.abs(degrees) % 180 === 90;
+      canvas.width = isQuarterTurn ? img.height : img.width;
+      canvas.height = isQuarterTurn ? img.width : img.height;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((degrees * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      const mime = imagenFile.type || 'image/png';
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const newFile = new File([blob], imagenFile.name, { type: mime, lastModified: Date.now() });
+        setImagenFile(newFile);
+        setImagenPreview(canvas.toDataURL(mime));
+      }, mime, 0.95);
+    };
+    img.src = imagenPreview;
+  };
+
   const generarTelefonoColombia = () => {
     const prefijos = ['300', '301', '302', '303', '304', '305', '310', '311', '312', '313', '314', '315', '316', '317', '318', '319', '320', '321', '322', '323', '324', '325', '350', '351'];
     const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
@@ -362,21 +389,41 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                   objectFit: 'contain',
                 }}
               />
-              <IconButton
-                onClick={handleRemoveImage}
-                color="error"
-                size="small"
+              <Box
                 sx={{
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                  bgcolor: 'background.paper',
-                  boxShadow: 1,
-                  '&:hover': { bgcolor: 'error.50' },
+                  display: 'flex',
+                  gap: 0.5,
                 }}
               >
-                <DeleteIcon />
-              </IconButton>
+                <IconButton
+                  onClick={() => rotateImage(-90)}
+                  size="small"
+                  title="Rotar a la izquierda"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                >
+                  <RotateLeftIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => rotateImage(90)}
+                  size="small"
+                  title="Rotar a la derecha"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                >
+                  <RotateRightIcon />
+                </IconButton>
+                <IconButton
+                  onClick={handleRemoveImage}
+                  color="error"
+                  size="small"
+                  title="Eliminar imagen"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'error.50' } }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
             </Box>
           )}
         </Paper>
@@ -438,21 +485,41 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                   objectFit: 'contain',
                 }}
               />
-              <IconButton
-                onClick={handleRemoveImage}
-                color="error"
-                size="small"
+              <Box
                 sx={{
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                  bgcolor: 'background.paper',
-                  boxShadow: 1,
-                  '&:hover': { bgcolor: 'error.50' },
+                  display: 'flex',
+                  gap: 0.5,
                 }}
               >
-                <DeleteIcon />
-              </IconButton>
+                <IconButton
+                  onClick={() => rotateImage(-90)}
+                  size="small"
+                  title="Rotar a la izquierda"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                >
+                  <RotateLeftIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => rotateImage(90)}
+                  size="small"
+                  title="Rotar a la derecha"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                >
+                  <RotateRightIcon />
+                </IconButton>
+                <IconButton
+                  onClick={handleRemoveImage}
+                  color="error"
+                  size="small"
+                  title="Eliminar imagen"
+                  sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'error.50' } }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
             </Box>
           )}
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -51,11 +51,14 @@ import {
   loadAuxDataThunk,
   enviarAPasarelaDesdeTramiteThunk,
 } from '../../store/tamitesStore/tamitesThunks';
+import { listAllThunk as listAllTarjetasThunk } from '../../store/tarjetasStore/tarjetasThunks';
+import { selectTarjetas } from '../../store/tarjetasStore/tarjetasStore';
 import {
   TramitesFilters,
   TramitesDataTable,
   TramiteDialog,
   HistoryDialog,
+  PagoTimerDialog,
 } from './Components';
 
 const TRAMITES_VIEW_ID = 'tramites_list';
@@ -87,6 +90,7 @@ const Tramites = () => {
   const clientes = useSelector(selectClientes);
   const etiquetas = useSelector(selectEtiquetas);
   const tarifarios = useSelector(selectTarifarios);
+  const tarjetas = useSelector(selectTarjetas);
 
   // History selectors
   const historyData = useSelector(selectHistoryData);
@@ -137,6 +141,9 @@ const Tramites = () => {
 
   useEffect(() => {
     dispatch(loadAuxDataThunk());
+    // Cargar todas las tarjetas para el select del modal de pago.
+    // page_size alto para traerlas todas en una sola llamada.
+    dispatch(listAllTarjetasThunk({ page: 1, page_size: 1000 }));
   }, [dispatch]);
 
   // Handlers de paginación
@@ -190,8 +197,28 @@ const Tramites = () => {
     dispatch(getHistoryThunk(tramite.id, { page: 1 }));
   };
 
+  // Estado para el modal de timer (3 min) previo al envío real a Pasarela.
+  // Guarda una referencia al `resolve` de la promesa que el thunk está esperando,
+  // de modo que los botones del modal puedan resolverla y desbloquear el flujo.
+  const [pagoTimer, setPagoTimer] = useState({ open: false, tramite: null });
+  const pagoTimerResolveRef = useRef(null);
+
+  const esperarConfirmacionPago = useCallback((tramite) => {
+    return new Promise((resolve) => {
+      pagoTimerResolveRef.current = resolve;
+      setPagoTimer({ open: true, tramite });
+    });
+  }, []);
+
+  const handlePagoTimerResult = useCallback((exitoso, observacion = '', tarjetaId = null) => {
+    setPagoTimer({ open: false, tramite: null });
+    const resolver = pagoTimerResolveRef.current;
+    pagoTimerResolveRef.current = null;
+    resolver?.({ exitoso: Boolean(exitoso), observacion, tarjeta: tarjetaId });
+  }, []);
+
   const handleEnviarAPasarela = (tramite) => {
-    dispatch(enviarAPasarelaDesdeTramiteThunk(tramite));
+    dispatch(enviarAPasarelaDesdeTramiteThunk(tramite, { esperarConfirmacionPago }));
   };
 
   const handleCloseHistory = () => {
@@ -314,6 +341,14 @@ const Tramites = () => {
         totalRows={historyPagination.count}
         onPageChange={handleHistoryPageChange}
         onPageSizeChange={handleHistoryPageSizeChange}
+      />
+
+      {/* Timer 3 min previo al envío a Pasarela */}
+      <PagoTimerDialog
+        open={pagoTimer.open}
+        tramite={pagoTimer.tramite}
+        tarjetas={tarjetas}
+        onResult={handlePagoTimerResult}
       />
     </Box>
   );

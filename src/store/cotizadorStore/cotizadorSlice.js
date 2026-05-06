@@ -391,7 +391,11 @@ export const selectEsCasoEspecial = (state) => {
   if (isNaN(pas) || pas <= 0) return true;
 
   const cap = runt.capacidad_carga;
-  if (cap !== null && cap !== undefined && cap !== '' && isNaN(parseFloat(cap))) return true;
+  if (cap !== null && cap !== undefined && cap !== '') {
+    // Validación estricta: rechaza letras o símbolos (ej. "16000 K", "16000KG", "ABC").
+    // parseFloat no sirve aquí porque ignora el sufijo no numérico.
+    if (!/^-?\d+(\.\d+)?$/.test(String(cap).trim())) return true;
+  }
 
   return false;
 };
