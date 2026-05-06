@@ -21,11 +21,13 @@ const Devoluciones     = lazy(() => import('../pages/Devoluciones'));
 const CargosNoRegistrados = lazy(() => import('../pages/CargosNoRegistrados'));
 const AjusteSaldo     = lazy(() => import('../pages/AjusteSaldo'));
 const Gastos          = lazy(() => import('../pages/Gastos'));
+const GastosCategoria = lazy(() => import('../pages/GastosCategoria'));
 const TarifarioSoat   = lazy(() => import('../pages/TarifarioSoat'));
 const Cotizador       = lazy(() => import('../pages/Cotizador'));
 const BaseDeDatos     = lazy(() => import('../pages/BaseDeDatos'));
 const CasosEspeciales = lazy(() => import('../pages/CasosEspeciales'));
 const Tramites        = lazy(() => import('../pages/Tramites'));
+const TramitesFinalizados = lazy(() => import('../pages/FinalizadosTramites'));
 const PasarelaDePago  = lazy(() => import('../pages/PasarelaDePago'));
 const ApiApp          = lazy(() => import('../pages/ApiApp'));
 
@@ -77,11 +79,13 @@ const AppRouter = () => {
             <Route path="cargos-no-registrados" element={<ProtectedModule moduleCode="cargos_no_registrados"><CargosNoRegistrados /></ProtectedModule>} />
             <Route path="ajuste-saldo"    element={<ProtectedModule moduleCode="ajuste_saldo"><AjusteSaldo /></ProtectedModule>} />
             <Route path="gastos"          element={<ProtectedModule moduleCode="gastos"><Gastos /></ProtectedModule>} />
+            <Route path="gastos-categoria" element={<ProtectedModule moduleCode="gastos_categoria"><GastosCategoria /></ProtectedModule>} />
             <Route path="tarifario-soat"  element={<ProtectedModule moduleCode="tarifario_soat"><TarifarioSoat /></ProtectedModule>} />
             <Route path="cotizador"      element={<ProtectedModule moduleCode="cotizador"><Cotizador /></ProtectedModule>} />
             <Route path="base-de-datos"  element={<ProtectedModule moduleCode="base_de_datos"><BaseDeDatos /></ProtectedModule>} />
             <Route path="casos-especiales" element={<ProtectedModule moduleCode="casos_especiales"><CasosEspeciales /></ProtectedModule>} />
             <Route path="tramites" element={<ProtectedModule moduleCode="tramites"><Tramites /></ProtectedModule>} />
+            <Route path="tramites-finalizados" element={<ProtectedModule moduleCode="finalizados_tramites"><TramitesFinalizados /></ProtectedModule>} />
             <Route path="pasarela-de-pago" element={<ProtectedModule moduleCode="pasarela_de_pago"><PasarelaDePago /></ProtectedModule>} />
             <Route path="api-endpoints" element={<ProtectedModule moduleCode="api_app"><ApiApp /></ProtectedModule>} />
 

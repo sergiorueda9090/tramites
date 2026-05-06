@@ -9,6 +9,86 @@ import {
   setPersona,
 } from './apisExternasRuntStore';
 
+const escapeHtml = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+/**
+ * Construye el contenido HTML de la alerta a partir del error de axios.
+ * - Intenta extraer "descripcionRespuesta" desde response.detalle (puede venir
+ *   stringificado y anidado, p.ej. el RUNT envuelve el payload original tras "raw:").
+ * - Siempre incluye un <details> con el JSON completo del backend para diagnostico.
+ */
+const buildBackendErrorHtml = (error) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+  const fallback = error?.message || 'No se pudo completar la solicitud';
+
+  let descripcion = null;
+  try {
+    let detalle = data?.detalle;
+    if (typeof detalle === 'string') {
+      try { detalle = JSON.parse(detalle); } catch { /* dejarlo como string */ }
+    }
+    if (detalle && typeof detalle === 'object') {
+      if (typeof detalle.descripcionRespuesta === 'string') {
+        descripcion = detalle.descripcionRespuesta;
+      } else if (typeof detalle.error === 'string') {
+        const m = detalle.error.match(/raw:\s*(\{[\s\S]+\})\s*$/);
+        if (m) {
+          try {
+            const raw = JSON.parse(m[1]);
+            if (typeof raw?.descripcionRespuesta === 'string') {
+              descripcion = raw.descripcionRespuesta;
+            }
+          } catch { /* ignorar */ }
+        }
+      }
+    }
+  } catch { /* ignorar */ }
+
+  const principal = data?.error || data?.detail || fallback;
+  const statusTag = status ? ` <span style="color:#999;">(HTTP ${status})</span>` : '';
+
+  const partes = [];
+  if (descripcion) {
+    partes.push(
+      `<p style="margin:0 0 8px 0; font-weight:600; color:#d32f2f;">${escapeHtml(descripcion)}</p>`,
+      `<p style="margin:0 0 12px 0; font-size:0.85rem; color:#666;">${escapeHtml(principal)}${statusTag}</p>`
+    );
+  } else {
+    partes.push(
+      `<p style="margin:0 0 12px 0; font-weight:600;">${escapeHtml(principal)}${statusTag}</p>`
+    );
+  }
+
+  if (data !== undefined) {
+    let payload;
+    try { payload = JSON.stringify(data, null, 2); } catch { payload = String(data); }
+    partes.push(
+      `<details style="margin-top:8px; text-align:left;">`,
+      `<summary style="cursor:pointer; color:#1976d2; font-size:0.9rem;">Ver respuesta completa del backend</summary>`,
+      `<pre style="background:#f5f5f5; padding:12px; border-radius:6px; font-size:0.78rem; overflow:auto; max-height:320px; margin-top:8px; text-align:left; white-space:pre-wrap; word-break:break-word;">${escapeHtml(payload)}</pre>`,
+      `</details>`
+    );
+  }
+
+  return partes.join('');
+};
+
+const titleForStatus = (status) => {
+  if (status === 400) return 'Error de validación';
+  if (status === 401) return 'No autorizado';
+  if (status === 403) return 'Acceso denegado';
+  if (status === 404) return 'No encontrado';
+  if (status === 500) return 'Error del servidor';
+  if (status === 502) return 'Servicio no disponible';
+  return 'Error';
+};
+
 // URL del endpoint RUNT
 const API_URL               = '/api/cotizador/external/runt/';
 const API_GET_INFO_EXTERNAL = '/api/cotizador/get_user_info_external/';
@@ -48,22 +128,11 @@ export const consultarNombreClienteThunk = ({ numero_documento }) => {
 
     } catch (error) {
       dispatch(hideBackdrop());
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 502) title = 'Servicio no disponible';
-      else if (status === 500) title = 'Error del servidor';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo consultar los datos de la persona';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo consultar los datos de la persona';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };
@@ -88,8 +157,14 @@ export const consultarRuntThunk = ({ placa, tipo_documento, numero_documento }) 
 
       dispatch(setVehiculo(response.data));
 
-      // Consultar información del usuario enseguida
-      await dispatch(consultarInformacionUsuarioThunk({ numero_documento }));
+      // Solo consultamos el titular cuando el documento es CC: la API externa
+      // de get_user_info_external no resuelve otros tipos y dispara error.
+      // Para no-CC dejamos el titular en blanco y avanzamos.
+      if (tipo_documento === 'C') {
+        await dispatch(consultarInformacionUsuarioThunk({ numero_documento }));
+      } else {
+        dispatch(setPersona(null));
+      }
 
       dispatch(hideBackdrop());
 
@@ -97,21 +172,11 @@ export const consultarRuntThunk = ({ placa, tipo_documento, numero_documento }) 
 
     } catch (error) {
       dispatch(hideBackdrop());
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 500) title = 'Error del servidor';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo consultar el RUNT';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo consultar el RUNT';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };
@@ -135,21 +200,11 @@ export const consultarInformacionUsuarioThunk = ({ numero_documento }) => {
 
     } catch (error) {
       dispatch(hideBackdrop());
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 500) title = 'Error del servidor';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo consultar la información del usuario';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo consultar la información del usuario';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };
@@ -200,8 +255,14 @@ export const extraerDatosRuntThunk = ({ imagen }) => {
 
       dispatch(setVehiculo(runtResponse.data));
 
-      // Paso 3: Consultar información del usuario
-      await dispatch(consultarInformacionUsuarioThunk({ numero_documento: nro_documento }));
+      // Paso 3: Consultar información del usuario solo si es CC.
+      // Para otros tipos (CE/NIT/PAS/etc.) la API externa falla; dejamos
+      // el titular en blanco y avanzamos sin mostrar error.
+      if (tipo_documento === 'C') {
+        await dispatch(consultarInformacionUsuarioThunk({ numero_documento: nro_documento }));
+      } else {
+        dispatch(setPersona(null));
+      }
 
       dispatch(hideBackdrop());
       dispatch(setLoading(false));
@@ -211,22 +272,11 @@ export const extraerDatosRuntThunk = ({ imagen }) => {
     } catch (error) {
       dispatch(hideBackdrop());
       dispatch(setLoading(false));
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 500) title = 'Error del servidor';
-      else if (status === 502) title = 'Servicio no disponible';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo procesar la tarjeta de propiedad';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo procesar la tarjeta de propiedad';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };
@@ -273,22 +323,11 @@ export const extraerDatosFotoVinThunk = ({ imagen }) => {
     } catch (error) {
       dispatch(hideBackdrop());
       dispatch(setLoading(false));
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 500) title = 'Error del servidor';
-      else if (status === 502) title = 'Servicio no disponible';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo procesar la foto del VIN';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo procesar la foto del VIN';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };
@@ -311,21 +350,11 @@ export const extraerDatosAPIFalabellaThunk = ({ placa }) => {
 
     } catch (error) {
       dispatch(hideBackdrop());
-
-      const status = error.response?.status;
-      const response = error.response?.data;
-
-      let title = 'Error';
-      if (status === 400) title = 'Error de validación';
-      else if (status === 401) title = 'No autorizado';
-      else if (status === 404) title = 'No encontrado';
-      else if (status === 500) title = 'Error del servidor';
-
-      const message = response?.error || response?.detail || error.message || 'No se pudo consultar el RUNT';
-
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo consultar el RUNT';
       dispatch(setError(message));
-      AlertService.error(title, message);
-
+      AlertService.error(title, html);
       return null;
     }
   };

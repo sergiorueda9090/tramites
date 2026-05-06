@@ -22,8 +22,9 @@ const API_URLS = {
   restore: (id) => `/api/gastos/relaciones/${id}/restore/`,
   hardDelete: (id) => `/api/gastos/relaciones/${id}/hard-delete/`,
   history: (id) => `/api/gastos/relaciones/${id}/history/`,
-  // URLs auxiliares para cargar datos de selects
-  gastos: '/api/gastos/list/',
+  // URLs auxiliares para cargar datos de selects.
+  // El select de "Categoría" se alimenta desde el nuevo módulo gastos_categoria.
+  gastos: '/api/gastos_categoria/list/',
   tarjetas: '/api/tarjetas/list/',
 };
 

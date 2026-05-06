@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -16,6 +16,8 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
+  Chip,
+  Stack,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -24,6 +26,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ClearIcon from '@mui/icons-material/Clear';
 import PhoneIcon from '@mui/icons-material/Phone';
 import BadgeIcon from '@mui/icons-material/Badge';
+import StarIcon from '@mui/icons-material/Star';
 
 import {
   selectClienteQuery,
@@ -37,6 +40,8 @@ import {
 
 import {
   selectClientes,
+  selectTopClientes,
+  selectTopLoading,
   selectOpenModal,
   selectSelectedCliente,
   selectForm,
@@ -47,7 +52,7 @@ import {
   updatePrecio,
   removePrecio,
 } from '../../../store/clientesStore/clientesStore';
-import { listAllThunk as get_search_clients, saveThunk } from '../../../store/clientesStore/clientesThunks';
+import { listAllThunk as get_search_clients, listTopClientesThunk, saveThunk } from '../../../store/clientesStore/clientesThunks';
 
 import { ClienteDialog } from '../../Clientes/Components';
 
@@ -55,11 +60,17 @@ const Step1_Cliente = ({ onAutoAdvance }) => {
   const dispatch = useDispatch();
 
   const clientesEncontrados = useSelector(selectClientes);
+  const topClientes         = useSelector(selectTopClientes);
+  const topLoading          = useSelector(selectTopLoading);
 
   const clienteQuery        = useSelector(selectClienteQuery);
   const clienteSeleccionado = useSelector(selectClienteSeleccionado);
   const modoCliente         = useSelector(selectModoCliente);
   const loading             = useSelector(selectLoading);
+
+  useEffect(() => {
+    dispatch(listTopClientesThunk(10));
+  }, [dispatch]);
 
   // ClienteDialog state from clientesStore
   const openModal       = useSelector(selectOpenModal);
@@ -203,6 +214,34 @@ const Step1_Cliente = ({ onAutoAdvance }) => {
           Nuevo
         </Button>
       </Box>
+
+      {/* Clientes frecuentes (solo cuando no hay busqueda activa) */}
+      {clienteQuery.length < 3 && (topClientes.length > 0 || topLoading) && (
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <StarIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+            <Typography variant="subtitle2" color="text.secondary">
+              Clientes frecuentes
+            </Typography>
+            {topLoading && <CircularProgress size={14} />}
+          </Box>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            {topClientes.map((cliente) => (
+              <Chip
+                key={cliente.id}
+                avatar={
+                  <Avatar sx={{ bgcolor: cliente.color || 'primary.main' }}>
+                    <PersonIcon sx={{ fontSize: 16, color: '#fff' }} />
+                  </Avatar>
+                }
+                label={`${cliente.nombre}${cliente.consultas ? ` · ${cliente.consultas}` : ''}`}
+                onClick={() => handleSelectCliente(cliente)}
+                sx={{ cursor: 'pointer' }}
+              />
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       {/* Resultados */}
       {clientesEncontrados.length > 0 && (

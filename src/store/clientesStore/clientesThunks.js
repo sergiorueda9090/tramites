@@ -5,6 +5,8 @@ import {
   setLoading,
   setError,
   setClientes,
+  setTopClientes,
+  setTopLoading,
   setPagination,
   closeModal,
   openEditModal,
@@ -13,6 +15,7 @@ import {
 // URLs del módulo de clientes
 const API_URLS = {
   list: '/api/clientes/list/',
+  top: '/api/clientes/top/',
   detail: (id) => `/api/clientes/${id}/`,
   create: '/api/clientes/create/',
   update: (id) => `/api/clientes/${id}/update/`,
@@ -164,6 +167,24 @@ export const listAllThunk = (params = {}) => {
       const { title, message, htmlMessage } = extractApiError(error);
       dispatch(setError(message));
       AlertService.error(title, htmlMessage);
+    }
+  };
+};
+
+/**
+ * Obtener top N clientes mas consultados (frecuencia segun RegistroVehiculo del cotizador)
+ * Silencioso: no abre backdrop ni alertas — es un widget secundario.
+ */
+export const listTopClientesThunk = (limit = 10, days = 90) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setTopLoading(true));
+      const response = await api.get(API_URLS.top, { params: { limit, days } });
+      dispatch(setTopClientes(Array.isArray(response.data) ? response.data : []));
+    } catch (error) {
+      dispatch(setTopLoading(false));
+      // Falla silenciosa: el widget desaparece, el flujo de busqueda sigue funcionando.
+      console.warn('[clientes] No se pudo cargar top clientes:', error?.message || error);
     }
   };
 };

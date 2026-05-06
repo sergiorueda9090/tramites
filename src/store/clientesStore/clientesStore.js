@@ -16,6 +16,10 @@ const initialState = {
   loading: false,
   error: null,
 
+  // Top clientes mas consultados (para sugerencias en Cotizador)
+  topClientes: [],
+  topLoading: false,
+
   // Paginación (del servidor - formato DRF)
   pagination: {
     count: 0,
@@ -78,6 +82,15 @@ export const clientesStore = createSlice({
     setClientes: (state, action) => {
       state.clientes = action.payload;
       state.loading = false;
+    },
+
+    // Top clientes
+    setTopClientes: (state, action) => {
+      state.topClientes = action.payload;
+      state.topLoading = false;
+    },
+    setTopLoading: (state, action) => {
+      state.topLoading = action.payload;
     },
 
     // Paginación (formato DRF: count, next, previous)
@@ -200,6 +213,8 @@ export const {
   setLoading,
   setError,
   setClientes,
+  setTopClientes,
+  setTopLoading,
   setPagination,
   setPage,
   setPageSize,
@@ -223,6 +238,8 @@ export const {
 export const selectClientes = (state) => state.clientesStore.clientes;
 export const selectLoading = (state) => state.clientesStore.loading;
 export const selectError = (state) => state.clientesStore.error;
+export const selectTopClientes = (state) => state.clientesStore.topClientes;
+export const selectTopLoading = (state) => state.clientesStore.topLoading;
 export const selectPagination = (state) => state.clientesStore.pagination;
 export const selectPage = (state) => state.clientesStore.pagination.page;
 export const selectPageSize = (state) => state.clientesStore.pagination.pageSize;

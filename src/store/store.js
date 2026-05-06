@@ -19,6 +19,8 @@ import {apiAppStore}                from './apiAppStore/apiAppStore';
 import { casosEspecialesStore }     from './casosEspecialesStore/casosEspecialesStore';
 import { tramitesStore }            from './tamitesStore/tamitesStore';
 import { pasarelaDePagoStore }       from './pasarelaDePagoStore/pasarelaDePagoStore';
+import { finalizadosTamitesStore } from './finalizadosTamitesStore/finalizadosTamitesStore';
+import { gastosCategoriaStore }     from './gastosCategoriaStore/gastosCategoriaStore';
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
 
@@ -46,5 +48,7 @@ export const store = configureStore({
     casosEspecialesStore: casosEspecialesStore.reducer,
     tramitesStore: tramitesStore.reducer,
     pasarelaDePagoStore: pasarelaDePagoStore.reducer,
+    finalizadosTamitesStore: finalizadosTamitesStore.reducer,
+    gastosCategoriaStore: gastosCategoriaStore.reducer,
   },
 });
