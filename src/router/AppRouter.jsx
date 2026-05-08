@@ -30,6 +30,7 @@ const Tramites        = lazy(() => import('../pages/Tramites'));
 const TramitesFinalizados = lazy(() => import('../pages/FinalizadosTramites'));
 const PasarelaDePago  = lazy(() => import('../pages/PasarelaDePago'));
 const ApiApp          = lazy(() => import('../pages/ApiApp'));
+const CuatroPorMil    = lazy(() => import('../pages/CuatroPorMil'));
 
 // Placeholder pages for routes that are not yet implemented
 const PlaceholderPage = ({ title }) => (
@@ -88,6 +89,7 @@ const AppRouter = () => {
             <Route path="tramites-finalizados" element={<ProtectedModule moduleCode="finalizados_tramites"><TramitesFinalizados /></ProtectedModule>} />
             <Route path="pasarela-de-pago" element={<ProtectedModule moduleCode="pasarela_de_pago"><PasarelaDePago /></ProtectedModule>} />
             <Route path="api-endpoints" element={<ProtectedModule moduleCode="api_app"><ApiApp /></ProtectedModule>} />
+            <Route path="cuatro-por-mil" element={<ProtectedModule moduleCode="cuatro_por_mil"><CuatroPorMil /></ProtectedModule>} />
 
             <Route path="reportes" element={<ProtectedModule moduleCode="reportes"><PlaceholderPage title="Reportes" /></ProtectedModule>} />
             <Route path="configuracion" element={<ProtectedModule moduleCode="configuracion"><Configuraciones /></ProtectedModule>} />

@@ -40,6 +40,7 @@ import ApiIcon from '@mui/icons-material/Api';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
+import PercentIcon from '@mui/icons-material/Percent';
 
 
 
@@ -80,6 +81,7 @@ const menuItems = [
       { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo' },
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
       { text: 'Categorías de gasto',    icon: CategoryIcon,         path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria' },
+      { text: '4 x 1000',               icon: PercentIcon,          path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil' },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },
