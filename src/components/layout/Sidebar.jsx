@@ -41,6 +41,9 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PercentIcon from '@mui/icons-material/Percent';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import SavingsIcon from '@mui/icons-material/Savings';
+import LanIcon from '@mui/icons-material/Lan';
 
 
 
@@ -82,6 +85,9 @@ const menuItems = [
       { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
       { text: 'Categorías de gasto',    icon: CategoryIcon,         path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria' },
       { text: '4 x 1000',               icon: PercentIcon,          path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil' },
+      { text: 'Utilidades',             icon: MonetizationOnIcon,   path: ROUTES.UTILIDADES,             moduleCode: 'utilidades' },
+      { text: 'Utilidad ocasional',     icon: SavingsIcon,          path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional' },
+      { text: 'Conmutador de IPs',      icon: LanIcon,              path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips' },
       { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
       { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
       { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },

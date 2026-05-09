@@ -31,6 +31,9 @@ const TramitesFinalizados = lazy(() => import('../pages/FinalizadosTramites'));
 const PasarelaDePago  = lazy(() => import('../pages/PasarelaDePago'));
 const ApiApp          = lazy(() => import('../pages/ApiApp'));
 const CuatroPorMil    = lazy(() => import('../pages/CuatroPorMil'));
+const Utilidades      = lazy(() => import('../pages/Utilidades'));
+const UtilidadOcasional = lazy(() => import('../pages/UtilidadOcasional'));
+const ConmutadorIps   = lazy(() => import('../pages/ConmutadorIps'));
 
 // Placeholder pages for routes that are not yet implemented
 const PlaceholderPage = ({ title }) => (
@@ -90,6 +93,9 @@ const AppRouter = () => {
             <Route path="pasarela-de-pago" element={<ProtectedModule moduleCode="pasarela_de_pago"><PasarelaDePago /></ProtectedModule>} />
             <Route path="api-endpoints" element={<ProtectedModule moduleCode="api_app"><ApiApp /></ProtectedModule>} />
             <Route path="cuatro-por-mil" element={<ProtectedModule moduleCode="cuatro_por_mil"><CuatroPorMil /></ProtectedModule>} />
+            <Route path="utilidades"     element={<ProtectedModule moduleCode="utilidades"><Utilidades /></ProtectedModule>} />
+            <Route path="utilidad-ocasional" element={<ProtectedModule moduleCode="utilidad_ocasional"><UtilidadOcasional /></ProtectedModule>} />
+            <Route path="conmutador-ips" element={<ProtectedModule moduleCode="computador_ips"><ConmutadorIps /></ProtectedModule>} />
 
             <Route path="reportes" element={<ProtectedModule moduleCode="reportes"><PlaceholderPage title="Reportes" /></ProtectedModule>} />
             <Route path="configuracion" element={<ProtectedModule moduleCode="configuracion"><Configuraciones /></ProtectedModule>} />

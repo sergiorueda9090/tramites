@@ -22,6 +22,9 @@ import { pasarelaDePagoStore }       from './pasarelaDePagoStore/pasarelaDePagoS
 import { finalizadosTamitesStore } from './finalizadosTamitesStore/finalizadosTamitesStore';
 import { gastosCategoriaStore }     from './gastosCategoriaStore/gastosCategoriaStore';
 import { cuatroPorMilStore }        from './cuatroPorMilStore/cuatroPorMilStore';
+import { utilidadesStore }         from './utilidadesStore/utilidadesStore';
+import { utilidadOcasionalStore }   from './utilidadOcasionalStore/utilidadOcasionalStore';
+import { conmutadorIpsStore }      from './conmutadorIpsStore/conmutadorIpsStore';
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
 
@@ -51,6 +54,9 @@ export const store = configureStore({
     pasarelaDePagoStore: pasarelaDePagoStore.reducer,
     finalizadosTamitesStore: finalizadosTamitesStore.reducer,
     gastosCategoriaStore: gastosCategoriaStore.reducer,
-    cuatroPorMilStore: cuatroPorMilStore.reducer
+    cuatroPorMilStore: cuatroPorMilStore.reducer,
+    utilidadesStore: utilidadesStore.reducer,
+    utilidadOcasionalStore: utilidadOcasionalStore.reducer,
+    conmutadorIpsStore: conmutadorIpsStore.reducer,
   },
 });
