@@ -54,10 +54,14 @@ import {
   HistoryDialog,
   PdfsManagerDialog,
 } from './Components';
+import useFinalizadosRealtime from '../../hooks/useFinalizadosRealtime';
 
 const TramitesFinalizados = () => {
   const dispatch = useDispatch();
   const { canEdit, canDelete } = usePermissions();
+
+  // Eventos de tiempo real (entradas nuevas desde Pasarela)
+  useFinalizadosRealtime();
 
   // Selectores
   const filters = useSelector(selectFilters);

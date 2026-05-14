@@ -113,8 +113,33 @@ const GRUPO_SOAT_COLORS = {
 // ============================================
 // Columns Configuration
 // ============================================
-const columns = [
+const buildColumns = ({ onOpenPdfs } = {}) => [
   { field: 'id', headerName: 'ID', width: 70 },
+  {
+    field: 'pdfs',
+    headerName: 'PDFs',
+    width: 70,
+    align: 'center',
+    sortable: false,
+    renderCell: ({ row }) =>
+      onOpenPdfs ? (
+        <Tooltip title="PDFs adjuntos">
+          <IconButton size="small" onClick={() => onOpenPdfs(row)} color="error">
+            <Badge
+              badgeContent={row.pdfs_count || 0}
+              color="error"
+              showZero={false}
+              overlap="circular"
+              sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}
+            >
+              <PictureAsPdfIcon fontSize="small" />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+      ) : (
+        '-'
+      ),
+  },
   {
     field: 'placa',
     headerName: 'Placa',
@@ -296,6 +321,8 @@ const columns = [
   },
 ];
 
+const columns = buildColumns();
+
 // ============================================
 // TramitesDataTable Component
 // ============================================
@@ -326,6 +353,7 @@ const TramitesDataTable = ({
   onCellFocus,
   onCellBlur,
 }) => {
+  const tableColumns = React.useMemo(() => buildColumns({ onOpenPdfs }), [onOpenPdfs]);
   const hasPresence = typeof onCellFocus === 'function' && typeof getOccupant === 'function';
 
   const handleCellClick = (rowId, column) => {
@@ -343,7 +371,7 @@ const TramitesDataTable = ({
   if (loading) {
     return (
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableLoadingSkeleton rows={5} columns={columns.length + (showActions ? 1 : 0)} />
+        <TableLoadingSkeleton rows={5} columns={tableColumns.length + (showActions ? 1 : 0)} />
       </Paper>
     );
   }
@@ -354,7 +382,7 @@ const TramitesDataTable = ({
         <Table stickyHeader={stickyHeader} size="medium">
           <TableHead>
             <TableRow>
-              {columns.map((column) => (
+              {tableColumns.map((column) => (
                 <TableCell
                   key={column.field}
                   align={column.align || 'left'}
@@ -379,7 +407,7 @@ const TramitesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onOpenPdfs) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -390,7 +418,7 @@ const TramitesDataTable = ({
             {data.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (showActions ? 1 : 0)}
+                  colSpan={tableColumns.length + (showActions ? 1 : 0)}
                   align="center"
                   sx={{ py: 8 }}
                 >
@@ -404,7 +432,7 @@ const TramitesDataTable = ({
                   key={row.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  {columns.map((column) => {
+                  {tableColumns.map((column) => {
                     const cellContent = renderCellContent(column, row);
                     return (
                       <TableCell
@@ -427,7 +455,7 @@ const TramitesDataTable = ({
                       </TableCell>
                     );
                   })}
-                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onOpenPdfs) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -441,21 +469,6 @@ const TramitesDataTable = ({
                           <Tooltip title="Editar">
                             <IconButton size="small" onClick={() => onEdit(row)} color="primary">
                               <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onOpenPdfs && (
-                          <Tooltip title="PDFs adjuntos">
-                            <IconButton size="small" onClick={() => onOpenPdfs(row)} color="error">
-                              <Badge
-                                badgeContent={row.pdfs_count || 0}
-                                color="error"
-                                showZero={false}
-                                overlap="circular"
-                                sx={{ '& .MuiBadge-badge': { fontSize: 10, height: 16, minWidth: 16 } }}
-                              >
-                                <PictureAsPdfIcon fontSize="small" />
-                              </Badge>
                             </IconButton>
                           </Tooltip>
                         )}

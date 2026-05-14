@@ -15,6 +15,8 @@ import notificationService from '../services/notificationService';
  *   - tramite_restored: el tramite vuelve a aparecer (la pasarela asociada
  *     fue devuelta o eliminada). Fetch SILENCIOSO del registro y prepend
  *     al store. NO se muestra spinner.
+ *   - tramite_added: un nuevo tramite fue creado (ej. desde Base de Datos).
+ *     Fetch SILENCIOSO del registro y prepend al store.
  */
 export const useTramitesRealtime = () => {
   const dispatch = useDispatch();
@@ -38,6 +40,21 @@ export const useTramitesRealtime = () => {
           severity: 'info',
           title: 'Trámite devuelto',
           message: `El trámite #${idTxt}${placa} volvió al listado`,
+          duration: 5000,
+        });
+      });
+      return;
+    }
+
+    if (data.type === 'tramite_added' && data.tramite_id != null) {
+      console.log('[useTramitesRealtime] tramite_added (silencioso)', data);
+      dispatch(fetchTramiteSilentThunk(data.tramite_id)).then((item) => {
+        const placa = item?.placa ? ` — Placa ${item.placa}` : '';
+        const idTxt = item?.id ?? data.tramite_id;
+        notificationService.show({
+          severity: 'success',
+          title: 'Nuevo trámite',
+          message: `Se agregó el trámite #${idTxt}${placa}`,
           duration: 5000,
         });
       });

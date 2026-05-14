@@ -29,6 +29,7 @@ const API_URLS = {
   revertirEstado: (id) => `/api/tramites/${id}/revertir-estado/`,
   // URL de pasarela de pago (para "Enviar a Pasarela" desde un trámite)
   pasarelaCreate: '/api/pasarela_de_pago/create/',
+  pasarelaConfirmarPago: (id) => `/api/pasarela_de_pago/${id}/confirmar-pago/`,
   // URLs auxiliares para selects
   clientes: '/api/clientes/list/',
   etiquetas: '/api/etiquetas/list/',
@@ -820,34 +821,81 @@ const construirPayloadPasarela = (tramite) => ({
 });
 
 /**
- * Enviar trámite a Pasarela de Pago. Solo disponible cuando el trámite completó
- * su flujo interno (cargar_pdf_estado === '1'). Doble confirmación antes del POST.
+ * Enviar trámite a Pasarela de Pago.
  *
- * `esperarConfirmacionPago` (opcional): callback async que abre un modal de timer
- * de 3 minutos en la vista. Debe resolver `true` si el pago fue exitoso o `false`
- * en caso contrario (incluye expiración del tiempo). Si resuelve `false`, el thunk
- * aborta sin POSTear a Pasarela.
+ * Flujo:
+ *   1. Click en el icono → POST inmediato a /pasarela_de_pago/create/ con
+ *      pago_estado='pendiente'. El registro aparece en tiempo real para todas
+ *      las sesiones que estén viendo Pasarela; el trámite sale del listado de
+ *      Trámites para todos. El operario que disparó el envío sigue con los
+ *      modales abiertos.
+ *   2. Dos confirmaciones SweetAlert (revisar datos / confirmar definitivo).
+ *      Cancelar cualquiera marca la pasarela como `no_exitoso`.
+ *   3. Modal de timer (3 min). 'Pago exitoso' → pago_estado='exitoso'.
+ *      'No éxito' o expiración → pago_estado='no_exitoso'.
+ *
+ * El registro nunca se borra: queda en Pasarela con su estado de pago final
+ * como evidencia auditable del intento.
+ *
+ * `esperarConfirmacionPago` (opcional): callback async que abre el modal
+ * de timer. Resuelve `{ exitoso, observacion, tarjeta }`.
  */
 export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionPago } = {}) => {
   return async (dispatch) => {
+    if (!tramite?.id) {
+      AlertService.error('Trámite inválido', 'No se pudo identificar el trámite a enviar.');
+      return null;
+    }
+
+    const placa = tramite.placa || '(sin placa)';
+    const clienteNombre = tramite.cliente?.nombre || '(sin cliente)';
+    const tarifaCod = tramite.tarifa_codigo || '-';
+    const tarifaValor = tramite.precio_lay
+      ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tramite.precio_lay)
+      : '-';
+
+    // ─── 1) POST inmediato al click ───
+    let response;
+    let pasarelaId = null;
     try {
-      if (!tramite?.id) {
-        AlertService.error('Trámite inválido', 'No se pudo identificar el trámite a enviar.');
-        return null;
+      dispatch(showBackdrop('Enviando a pasarela...'));
+      const payload = construirPayloadPasarela(tramite);
+      payload.pago_estado = 'pendiente';
+      response = await api.post(API_URLS.pasarelaCreate, payload);
+      pasarelaId = response.data?.id || null;
+      // El trámite ya tiene pasarela activa → el backend lo excluye del listado.
+      dispatch(listAllThunk());
+    } catch (error) {
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
+    } finally {
+      dispatch(hideBackdrop());
+    }
+
+    // Helper interno: marca la pasarela con un estado final. Best-effort,
+    // si falla no rompe el flujo (el registro ya existe en Pasarela).
+    const marcarPago = async ({ pago_estado, observacion = '', tarjeta = null }) => {
+      if (!pasarelaId) return;
+      try {
+        await api.post(API_URLS.pasarelaConfirmarPago(pasarelaId), {
+          pago_estado,
+          observacion,
+          tarjeta,
+        });
+      } catch (err) {
+        console.warn('[enviarAPasarelaDesdeTramiteThunk] confirmar-pago falló:', err);
       }
+    };
 
-      const placa = tramite.placa || '(sin placa)';
-      const clienteNombre = tramite.cliente?.nombre || '(sin cliente)';
-      const tarifaCod = tramite.tarifa_codigo || '-';
-      const tarifaValor = tramite.precio_lay
-        ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tramite.precio_lay)
-        : '-';
-
+    try {
+      // ─── 2) Confirmación 1 (revisar datos) ───
       const primera = await AlertService.confirm(
         '¿Enviar este trámite a Pasarela de Pago?',
         `
           <div style="text-align: left; background: #f5f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #1976d2;">
-            <p style="margin: 0 0 8px; font-weight: 600; color: #1976d2;">Se creará un registro en Pasarela de Pago con los siguientes datos:</p>
+            <p style="margin: 0 0 8px; font-weight: 600; color: #1976d2;">El registro ya está visible en Pasarela de Pago (estado: pendiente). Verifica los datos:</p>
+            <p style="margin: 4px 0;"><strong>Pasarela:</strong> #${pasarelaId ?? '-'}</p>
             <p style="margin: 4px 0;"><strong>Trámite origen:</strong> #${tramite.id}</p>
             <p style="margin: 4px 0;"><strong>Cliente:</strong> ${clienteNombre}</p>
             <p style="margin: 4px 0;"><strong>Placa:</strong> ${placa}</p>
@@ -857,78 +905,70 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
         `,
         {
           icon: 'question',
-          confirmText: 'Sí, revisar datos',
-          cancelText: 'Cancelar',
+          confirmText: 'Sí, continuar',
+          cancelText: 'Cancelar (marcar no exitoso)',
         }
       );
-      if (!primera.isConfirmed) return null;
+      if (!primera.isConfirmed) {
+        await marcarPago({ pago_estado: 'no_exitoso', observacion: 'Cancelado en confirmación 1' });
+        return response.data;
+      }
 
+      // ─── Confirmación 2 (envío definitivo) ───
       const segunda = await AlertService.confirm(
         '¿Confirmar envío definitivo?',
         `
           <div style="text-align: left; background: #fff8e1; padding: 16px; border-radius: 8px; border-left: 4px solid #ff9800;">
-            <p style="margin: 0 0 8px; font-weight: 600; color: #e65100;">⚠ Esta acción crea un nuevo registro en Pasarela</p>
-            <p style="margin: 4px 0;">El trámite <strong>#${tramite.id} - ${placa}</strong> quedará trazado en Pasarela de Pago.</p>
+            <p style="margin: 0 0 8px; font-weight: 600; color: #e65100;">⚠ Esta acción procede al paso de cobro</p>
+            <p style="margin: 4px 0;">El trámite <strong>#${tramite.id} - ${placa}</strong> está en Pasarela como pendiente. A continuación se abrirá el cronómetro de pago.</p>
           </div>
           <p style="margin-top: 12px; font-weight: 500;">¿Deseas continuar?</p>
         `,
         {
           icon: 'warning',
-          confirmText: 'Sí, enviar a Pasarela',
-          cancelText: 'Revisar nuevamente',
+          confirmText: 'Sí, abrir cronómetro',
+          cancelText: 'Cancelar (marcar no exitoso)',
         }
       );
-      if (!segunda.isConfirmed) return null;
-
-      // Tercera puerta: timer de 3 minutos para que el usuario confirme el pago real.
-      // El callback resuelve con `{ exitoso: boolean, observacion: string, tarjeta: number|null }`.
-      // Si no hay callback (ej. test directo) se omite y se mantiene el flujo previo.
-      let observacionPago = '';
-      let tarjetaPago = null;
-      if (typeof esperarConfirmacionPago === 'function') {
-        const resultado = await esperarConfirmacionPago(tramite);
-        // Compatibilidad: aceptar también boolean plano por si algún caller no usa el modal.
-        const esObjeto = typeof resultado === 'object' && resultado !== null;
-        const exitoso = esObjeto ? Boolean(resultado.exitoso) : Boolean(resultado);
-        observacionPago = esObjeto && resultado.observacion
-          ? String(resultado.observacion).trim()
-          : '';
-        tarjetaPago = esObjeto && resultado.tarjeta ? resultado.tarjeta : null;
-        if (!exitoso) {
-          await AlertService.info(
-            'Envío cancelado',
-            'El pago no fue confirmado como exitoso. El trámite no se envió a Pasarela.',
-            { timer: 3000 }
-          );
-          return null;
-        }
+      if (!segunda.isConfirmed) {
+        await marcarPago({ pago_estado: 'no_exitoso', observacion: 'Cancelado en confirmación 2' });
+        return response.data;
       }
 
-      dispatch(showBackdrop('Enviando a pasarela...'));
+      // ─── 3) Modal de timer (3 min) ───
+      if (typeof esperarConfirmacionPago === 'function') {
+        const resultado = await esperarConfirmacionPago(tramite);
+        const esObjeto = typeof resultado === 'object' && resultado !== null;
+        const exitoso = esObjeto ? Boolean(resultado.exitoso) : Boolean(resultado);
+        const observacionPago = esObjeto && resultado.observacion
+          ? String(resultado.observacion).trim()
+          : '';
+        const tarjetaPago = esObjeto && resultado.tarjeta ? resultado.tarjeta : null;
 
-      const payload = construirPayloadPasarela(tramite);
-      // Adjunta observación + tarjeta opcionales. El backend persistirá los campos
-      // cuando existan en el modelo PasarelaPago; mientras tanto los ignora.
-      if (observacionPago) payload.observacion = observacionPago;
-      if (tarjetaPago) payload.tarjeta = tarjetaPago;
-      const response = await api.post(API_URLS.pasarelaCreate, payload);
+        await marcarPago({
+          pago_estado: exitoso ? 'exitoso' : 'no_exitoso',
+          observacion: observacionPago,
+          tarjeta: tarjetaPago,
+        });
 
-      // Refrescar lista de trámites: el backend excluye los que ya tienen
-      // una pasarela activa, así que este trámite desaparece del listado.
-      dispatch(listAllThunk());
-
-      dispatch(hideBackdrop());
-
-      await AlertService.success(
-        '¡Enviado a Pasarela!',
-        `El registro de pasarela #${response.data?.id} fue creado correctamente para la placa <strong>${response.data?.placa || '-'}</strong>. El trámite fue retirado del listado.`,
-        { timer: 3500 }
-      );
+        await AlertService.success(
+          exitoso ? '¡Pago confirmado!' : 'Pago marcado como no exitoso',
+          exitoso
+            ? `El registro de pasarela #${pasarelaId} para la placa <strong>${response.data?.placa || '-'}</strong> quedó marcado como pago exitoso.`
+            : `El registro de pasarela #${pasarelaId} se conservó marcado como pago no exitoso. Revisa la observación si necesitas dar seguimiento.`,
+          { timer: 3500 }
+        );
+      } else {
+        // Sin callback de UI: dejamos el registro en 'pendiente'.
+        await AlertService.success(
+          '¡Enviado a Pasarela!',
+          `El registro de pasarela #${pasarelaId} fue creado correctamente para la placa <strong>${response.data?.placa || '-'}</strong>. El trámite fue retirado del listado.`,
+          { timer: 3500 }
+        );
+      }
 
       return response.data;
-
     } catch (error) {
-      dispatch(hideBackdrop());
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
       return null;

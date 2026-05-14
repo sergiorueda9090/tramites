@@ -13,6 +13,7 @@ import {
   openEditModal,
   setHistory,
   prependPasarela,
+  replacePasarela,
 } from './pasarelaDePagoStore';
 
 // URLs del módulo pasarela de pago
@@ -629,6 +630,137 @@ export const fetchPasarelaSilentThunk = (pasarelaId) => {
     } catch (error) {
       // Silencioso: no alertar al usuario por un evento de tiempo real fallido.
       console.warn('[fetchPasarelaSilentThunk] error:', error?.response?.status, pasarelaId);
+      return null;
+    }
+  };
+};
+
+/**
+ * Trae UN registro por id y lo reemplaza en el listado (sin spinner).
+ * Usado por el hook de tiempo real cuando llega `pasarela_updated`:
+ * refresca silenciosamente el item existente (ej. pago_estado cambió).
+ * Si el registro no está en el listado (porque no estaba paginado en esta
+ * sesión), simplemente no hace nada — `replacePasarela` lo ignora.
+ */
+export const refetchPasarelaSilentThunk = (pasarelaId) => {
+  return async (dispatch) => {
+    if (pasarelaId == null) return null;
+    try {
+      const response = await api.get(API_URLS.detail(pasarelaId));
+      dispatch(replacePasarela(response.data));
+      return response.data;
+    } catch (error) {
+      console.warn('[refetchPasarelaSilentThunk] error:', error?.response?.status, pasarelaId);
+      return null;
+    }
+  };
+};
+
+const FINALIZADOS_API = {
+  crearDesdePasarela: '/api/finalizados_tramites/crear-desde-pasarela/',
+};
+
+/**
+ * Enviar pasarela a Trámites Finalizados.
+ *
+ * Flujo (paralelo al "Enviar a Pasarela" desde Trámites):
+ *   1. Dos confirmaciones SweetAlert (revisar / confirmar definitivo).
+ *   2. Modal de timer (3 min) FinalizadosTimerDialog.
+ *   3. Solo si "Pago exitoso" → POST /finalizados_tramites/crear-desde-pasarela/.
+ *      Eso crea el TramiteFinalizado y hace soft-delete a la pasarela. El backend
+ *      dispara finalizado_added (Finalizados lo ve en tiempo real) y
+ *      pasarela_removed (Pasarela lo ve desaparecer en tiempo real).
+ *   4. Si "No éxito" o expira: no se hace nada (la pasarela queda intacta).
+ *
+ * `esperarConfirmacionPago` (opcional): callback async que abre el modal de
+ * timer. Resuelve `{ exitoso, observacion, tarjeta }`.
+ */
+export const enviarAFinalizadosDesdePasarelaThunk = (pasarela, { esperarConfirmacionPago } = {}) => {
+  return async (dispatch) => {
+    if (!pasarela?.id) {
+      AlertService.error('Pasarela inválida', 'No se pudo identificar el registro a enviar.');
+      return null;
+    }
+
+    const placa = pasarela.placa || '(sin placa)';
+    const clienteNombre = pasarela.cliente?.nombre || '(sin cliente)';
+    const tarifaCod = pasarela.tarifa_codigo || '-';
+    const tarifaValor = pasarela.precio_lay
+      ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(pasarela.precio_lay)
+      : '-';
+
+    try {
+      const primera = await AlertService.confirm(
+        '¿Enviar este registro a Trámites Finalizados?',
+        `
+          <div style="text-align: left; background: #f5f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #1976d2;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #1976d2;">El registro pasará a Trámites Finalizados solo si confirmas un pago exitoso:</p>
+            <p style="margin: 4px 0;"><strong>Pasarela:</strong> #${pasarela.id}</p>
+            <p style="margin: 4px 0;"><strong>Cliente:</strong> ${clienteNombre}</p>
+            <p style="margin: 4px 0;"><strong>Placa:</strong> ${placa}</p>
+            <p style="margin: 4px 0;"><strong>Tarifa:</strong> ${tarifaCod}</p>
+            <p style="margin: 4px 0;"><strong>Valor:</strong> ${tarifaValor}</p>
+          </div>
+        `,
+        { icon: 'question', confirmText: 'Sí, revisar datos', cancelText: 'Cancelar' }
+      );
+      if (!primera.isConfirmed) return null;
+
+      const segunda = await AlertService.confirm(
+        '¿Confirmar envío definitivo?',
+        `
+          <div style="text-align: left; background: #fff8e1; padding: 16px; border-radius: 8px; border-left: 4px solid #ff9800;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #e65100;">⚠ A continuación se abrirá el cronómetro de cobro</p>
+            <p style="margin: 4px 0;">La pasarela <strong>#${pasarela.id} - ${placa}</strong> saldrá del listado de Pasarela y aparecerá en Trámites Finalizados solo si confirmas que el pago fue exitoso.</p>
+          </div>
+        `,
+        { icon: 'warning', confirmText: 'Sí, abrir cronómetro', cancelText: 'Revisar nuevamente' }
+      );
+      if (!segunda.isConfirmed) return null;
+
+      // ─── Modal de timer ───
+      if (typeof esperarConfirmacionPago !== 'function') {
+        AlertService.error('Configuración incompleta', 'No se pudo abrir el cronómetro.');
+        return null;
+      }
+
+      const resultado = await esperarConfirmacionPago(pasarela);
+      const esObjeto = typeof resultado === 'object' && resultado !== null;
+      const exitoso = esObjeto ? Boolean(resultado.exitoso) : Boolean(resultado);
+      const observacionPago = esObjeto && resultado.observacion
+        ? String(resultado.observacion).trim()
+        : '';
+      const tarjetaPago = esObjeto && resultado.tarjeta ? resultado.tarjeta : null;
+
+      if (!exitoso) {
+        await AlertService.info(
+          'Envío cancelado',
+          'El pago no fue confirmado como exitoso. La pasarela se mantiene en el listado.',
+          { timer: 3000 }
+        );
+        return null;
+      }
+
+      // Solo entra acá si exitoso=true → POST al backend.
+      dispatch(showBackdrop('Enviando a Trámites Finalizados...'));
+      const response = await api.post(FINALIZADOS_API.crearDesdePasarela, {
+        pasarela_id: pasarela.id,
+        observacion: observacionPago,
+        tarjeta: tarjetaPago,
+      });
+      dispatch(hideBackdrop());
+
+      await AlertService.success(
+        '¡Pago confirmado!',
+        `El registro #${pasarela.id} se envió a Trámites Finalizados (#${response.data?.id}) y salió del listado de Pasarela.`,
+        { timer: 3500 }
+      );
+
+      return response.data;
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
       return null;
     }
   };

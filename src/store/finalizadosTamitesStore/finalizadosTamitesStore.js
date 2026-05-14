@@ -115,6 +115,19 @@ export const finalizadosTamitesStore = createSlice({
       state.loading = false;
     },
 
+    /**
+     * Inserta un finalizado al inicio del listado SIN tocar `loading`.
+     * Usado por el hook de tiempo real al recibir `finalizado_added`.
+     * Si ya existe (por id), no duplica.
+     */
+    prependFinalizado: (state, action) => {
+      const item = action.payload;
+      if (!item || item.id == null) return;
+      if (state.finalizados.some((f) => f.id === item.id)) return;
+      state.finalizados = [item, ...state.finalizados];
+      state.pagination.count = (state.pagination.count || 0) + 1;
+    },
+
     // Datos auxiliares
     setClientes: (state, action) => { state.clientes = action.payload; },
     setEtiquetas: (state, action) => { state.etiquetas = action.payload; },
@@ -329,6 +342,7 @@ export const {
   setLoading,
   setError,
   setFinalizados,
+  prependFinalizado,
   setClientes,
   setEtiquetas,
   setTarjetas,

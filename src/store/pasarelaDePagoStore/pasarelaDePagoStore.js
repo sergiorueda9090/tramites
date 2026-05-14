@@ -154,6 +154,19 @@ export const pasarelaDePagoStore = createSlice({
       state.pagination.count = (state.pagination.count || 0) + 1;
     },
 
+    /**
+     * Reemplaza un registro en el listado por su id. Usado por el hook de
+     * tiempo real al recibir `pasarela_updated` (ej. cuando otro usuario
+     * confirmó el pago en el modal de timer). Si no existe, no hace nada.
+     */
+    replacePasarela: (state, action) => {
+      const item = action.payload;
+      if (!item || item.id == null) return;
+      const idx = state.pasarelas.findIndex((p) => p.id === item.id);
+      if (idx === -1) return;
+      state.pasarelas[idx] = item;
+    },
+
     // Datos auxiliares
     setClientes: (state, action) => {
       state.clientes = action.payload;
@@ -327,6 +340,7 @@ export const {
   setPasarelas,
   removePasarelaById,
   prependPasarela,
+  replacePasarela,
   setClientes,
   setEtiquetas,
   setTarifarios,

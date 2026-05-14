@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -49,12 +49,16 @@ import {
   getHistoryThunk,
   loadAuxDataThunk,
   devolverATramitesThunk,
+  enviarAFinalizadosDesdePasarelaThunk,
 } from '../../store/pasarelaDePagoStore/pasarelaDePagoThunks';
+import { listAllThunk as listAllTarjetasThunk } from '../../store/tarjetasStore/tarjetasThunks';
+import { selectTarjetas } from '../../store/tarjetasStore/tarjetasStore';
 import {
   TramitesFilters,
   TramitesDataTable,
   TramiteDialog,
   HistoryDialog,
+  FinalizadosTimerDialog,
 } from './Components';
 
 const PASARELA_VIEW_ID = 'pasarela_de_pago_list';
@@ -90,6 +94,31 @@ const PasarelaDePago = () => {
   const historyPagination = useSelector(selectHistoryPagination);
   const openHistory = useSelector(selectOpenHistoryModal);
   const selectedHistoryPasarela = useSelector(selectSelectedHistoryPasarela);
+  const tarjetas = useSelector(selectTarjetas);
+
+  // Estado del modal de timer (3 min) previo al envío a Trámites Finalizados.
+  const [finalizadosTimer, setFinalizadosTimer] = useState({ open: false, pasarela: null });
+  const finalizadosTimerResolveRef = useRef(null);
+
+  const esperarConfirmacionPagoFinalizados = useCallback((pasarela) => {
+    return new Promise((resolve) => {
+      finalizadosTimerResolveRef.current = resolve;
+      setFinalizadosTimer({ open: true, pasarela });
+    });
+  }, []);
+
+  const handleFinalizadosTimerResult = useCallback((result) => {
+    setFinalizadosTimer({ open: false, pasarela: null });
+    const resolver = finalizadosTimerResolveRef.current;
+    finalizadosTimerResolveRef.current = null;
+    resolver?.(result);
+  }, []);
+
+  const handleEnviarAFinalizados = (pasarela) => {
+    dispatch(enviarAFinalizadosDesdePasarelaThunk(pasarela, {
+      esperarConfirmacionPago: esperarConfirmacionPagoFinalizados,
+    }));
+  };
 
   const buildQueryParams = useCallback(() => {
     const params = {
@@ -129,6 +158,13 @@ const PasarelaDePago = () => {
   useEffect(() => {
     dispatch(loadAuxDataThunk());
   }, [dispatch]);
+
+  // Cargar tarjetas para el select del modal de timer.
+  useEffect(() => {
+    if (canCreate('finalizados_tramites')) {
+      dispatch(listAllTarjetasThunk());
+    }
+  }, [dispatch, canCreate]);
 
   const handlePageChange = (newPage) => {
     dispatch(setPage(newPage + 1));
@@ -265,6 +301,7 @@ const PasarelaDePago = () => {
         onEdit={canEdit('pasarela_de_pago') ? handleEdit : undefined}
         onHistory={handleHistory}
         onDevolverATramites={canDelete('pasarela_de_pago') ? handleDevolverATramites : undefined}
+        onEnviarAFinalizados={canCreate('finalizados_tramites') ? handleEnviarAFinalizados : undefined}
         // Presencia colaborativa por celda
         getOccupant={getOccupant}
         getRowOccupants={getRowOccupants}
@@ -296,6 +333,14 @@ const PasarelaDePago = () => {
         totalRows={historyPagination.count}
         onPageChange={handleHistoryPageChange}
         onPageSizeChange={handleHistoryPageSizeChange}
+      />
+
+      {/* Modal de timer (3 min) previo al envío a Trámites Finalizados */}
+      <FinalizadosTimerDialog
+        open={finalizadosTimer.open}
+        pasarela={finalizadosTimer.pasarela}
+        tarjetas={tarjetas}
+        onResult={handleFinalizadosTimerResult}
       />
     </Box>
   );

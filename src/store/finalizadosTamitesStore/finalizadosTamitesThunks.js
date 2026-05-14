@@ -16,6 +16,7 @@ import {
   setPdfsSaving,
   setExistingPdfs,
   closePdfsManager,
+  prependFinalizado,
 } from './finalizadosTamitesStore';
 
 // Cache de File objects fuera de Redux (no son serializables).
@@ -499,4 +500,23 @@ export const downloadPdfThunk = (finalizadoId, pdfId, filename) => async () => {
     const { title, htmlMessage } = extractApiError(error);
     AlertService.error(title, htmlMessage);
   }
+};
+
+/**
+ * Trae UN finalizado por id y lo inserta al inicio del listado SIN tocar
+ * `loading` ni mostrar backdrop. Usado por el hook de tiempo real cuando
+ * llega `finalizado_added`: evita el spinner del listado completo.
+ */
+export const fetchFinalizadoSilentThunk = (finalizadoId) => {
+  return async (dispatch) => {
+    if (finalizadoId == null) return null;
+    try {
+      const response = await api.get(API_URLS.detail(finalizadoId));
+      dispatch(prependFinalizado(response.data));
+      return response.data;
+    } catch (error) {
+      console.warn('[fetchFinalizadoSilentThunk] error:', error?.response?.status, finalizadoId);
+      return null;
+    }
+  };
 };

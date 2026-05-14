@@ -38,15 +38,17 @@ const formatCurrency = (value) =>
     : '-';
 
 /**
- * Modal con cuenta regresiva de 3 minutos previa al envío a Pasarela de Pago.
- * El usuario debe indicar si el pago fue exitoso o no.
+ * Modal con cuenta regresiva de 3 minutos previo a enviar una pasarela
+ * a Trámites Finalizados. Solo si el usuario marca "Pago exitoso" se
+ * dispara el envío.
  *
  * Props:
  *  - open: boolean
- *  - tramite: objeto del trámite (para mostrar resumen)
- *  - onResult: (boolean) => void  // true = pago exitoso, false = no éxito / timeout
+ *  - pasarela: objeto de pasarela (para mostrar resumen)
+ *  - tarjetas: lista para el select opcional
+ *  - onResult: ({ exitoso, observacion, tarjeta }) => void
  */
-const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
+const FinalizadosTimerDialog = ({ open, pasarela, tarjetas = [], onResult }) => {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
   const [observacion, setObservacion] = useState('');
   const [tarjetaId, setTarjetaId] = useState('');
@@ -54,7 +56,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
   const onResultRef = useRef(onResult);
   const observacionRef = useRef('');
   const tarjetaIdRef = useRef('');
-  // Mantener la referencia más reciente al callback / observación / tarjeta sin reiniciar el timer.
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
   useEffect(() => { observacionRef.current = observacion; }, [observacion]);
   useEffect(() => { tarjetaIdRef.current = tarjetaId; }, [tarjetaId]);
@@ -63,38 +64,41 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
     if (!open) return undefined;
     setSecondsLeft(TOTAL_SECONDS);
     setObservacion('');
-    setTarjetaId('');
+    setTarjetaId(pasarela?.tarjeta?.id ? String(pasarela.tarjeta.id) : '');
     intervalRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalRef.current);
-          // Timeout = considerar como "no éxito"; conserva lo que el usuario alcanzó a ingresar.
-          onResultRef.current?.(false, observacionRef.current.trim(), tarjetaIdRef.current || null);
+          onResultRef.current?.({
+            exitoso: false,
+            observacion: observacionRef.current.trim(),
+            tarjeta: tarjetaIdRef.current || null,
+          });
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(intervalRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleExitoso = () => {
     clearInterval(intervalRef.current);
-    onResult?.(true, observacion.trim(), tarjetaId || null);
+    onResult?.({ exitoso: true, observacion: observacion.trim(), tarjeta: tarjetaId || null });
   };
 
   const handleNoExito = () => {
     clearInterval(intervalRef.current);
-    onResult?.(false, observacion.trim(), tarjetaId || null);
+    onResult?.({ exitoso: false, observacion: observacion.trim(), tarjeta: tarjetaId || null });
   };
 
-  const placa = tramite?.placa || '(sin placa)';
-  const clienteNombre = tramite?.cliente?.nombre || '(sin cliente)';
-  const tarifaCod = tramite?.tarifa_codigo || '-';
-  const tarifaValor = formatCurrency(tramite?.precio_lay);
+  const placa = pasarela?.placa || '(sin placa)';
+  const clienteNombre = pasarela?.cliente?.nombre || '(sin cliente)';
+  const tarifaCod = pasarela?.tarifa_codigo || '-';
+  const tarifaValor = formatCurrency(pasarela?.precio_lay);
 
   const progress = (secondsLeft / TOTAL_SECONDS) * 100;
-  // Color del cronómetro: verde > 60s, amarillo 30-60s, rojo < 30s.
   const timerColor = secondsLeft > 60 ? 'success' : secondsLeft > 30 ? 'warning' : 'error';
 
   return (
@@ -103,7 +107,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
       maxWidth="sm"
       fullWidth
       disableEscapeKeyDown
-      // No permitir cerrar haciendo clic fuera: el usuario debe elegir explícitamente.
       onClose={(_, reason) => {
         if (reason === 'backdropClick') return;
         handleNoExito();
@@ -111,7 +114,7 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <HourglassBottomIcon color={timerColor} />
-        Esperando confirmación del pago
+        Enviar a Trámites Finalizados
       </DialogTitle>
 
       <DialogContent dividers>
@@ -155,12 +158,12 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               }}
             >
               <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Resumen del trámite
+                Resumen de la pasarela
               </Typography>
             </Box>
             <Stack divider={<Divider />}>
               {[
-                { icon: <ReceiptLongIcon sx={{ fontSize: 16 }} color="action" />, label: 'Trámite', value: `#${tramite?.id ?? '-'}` },
+                { icon: <ReceiptLongIcon sx={{ fontSize: 16 }} color="action" />, label: 'Pasarela', value: `#${pasarela?.id ?? '-'}` },
                 { icon: <PersonIcon sx={{ fontSize: 16 }} color="action" />, label: 'Cliente', value: clienteNombre },
                 { icon: <DirectionsCarIcon sx={{ fontSize: 16 }} color="action" />, label: 'Placa', value: placa, mono: true },
                 { icon: <LocalOfferIcon sx={{ fontSize: 16 }} color="action" />, label: 'Tarifa', chip: tarifaCod },
@@ -204,7 +207,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             </Stack>
           </Box>
 
-          {/* Valor destacado: tipografía MUY grande para evitar errores de cobro. */}
           <Box
             sx={{
               p: { xs: 3, sm: 4 },
@@ -243,24 +245,13 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             </Typography>
           </Box>
 
-          {/* Selección de tarjeta usada para el pago. Obligatoria para marcar
-              el pago como exitoso. Lista todas las tarjetas registradas en
-              el módulo /tarjetas. */}
           <TextField
             select
-            required
-            error={!tarjetaId}
-            label="Tarjeta utilizada"
+            label="Tarjeta utilizada (opcional)"
             value={tarjetaId}
             onChange={(e) => setTarjetaId(e.target.value)}
             fullWidth
-            helperText={
-              tarjetas.length === 0
-                ? 'No hay tarjetas registradas'
-                : !tarjetaId
-                  ? 'Obligatorio para marcar el pago como exitoso'
-                  : 'Selecciona la tarjeta con la que se realizó el pago'
-            }
+            helperText={tarjetas.length === 0 ? 'No hay tarjetas registradas' : 'Selecciona la tarjeta con la que se realizó el pago'}
             InputProps={{
               startAdornment: (
                 <Box sx={{ pr: 1, color: 'action.active', display: 'flex' }}>
@@ -269,6 +260,9 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               ),
             }}
           >
+            <MenuItem value="">
+              <em>Sin especificar</em>
+            </MenuItem>
             {tarjetas.map((t) => (
               <MenuItem key={t.id} value={t.id}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
@@ -286,7 +280,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             ))}
           </TextField>
 
-          {/* Observación opcional: el usuario puede dejar vacío. */}
           <TextField
             label="Observación (opcional)"
             placeholder="Notas sobre el pago, número de aprobación, banco, etc."
@@ -308,8 +301,8 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
           />
 
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-            Realiza el pago en la pasarela externa. Cuando termines, indica si fue
-            exitoso o no. Si el tiempo se agota, se considerará como <strong>no exitoso</strong>.
+            Solo si marcas <strong>Pago exitoso</strong> la pasarela pasará a Trámites Finalizados.
+            Si marcas <strong>No éxito</strong> o el tiempo se agota, la pasarela queda igual.
           </Typography>
         </Stack>
       </DialogContent>
@@ -330,7 +323,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
           variant="contained"
           startIcon={<CheckCircleIcon />}
           fullWidth
-          disabled={!tarjetaId}
         >
           Pago exitoso
         </Button>
@@ -339,4 +331,4 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
   );
 };
 
-export default PagoTimerDialog;
+export default FinalizadosTimerDialog;

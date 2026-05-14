@@ -589,3 +589,79 @@ export const guardarRegistroDesdeCotizadorThunk = () => {
     }
   };
 };
+
+/**
+ * Enviar un registro de Base de Datos a Trámites.
+ *
+ * Doble confirmación → POST a /api/tramites/crear-desde-base-de-datos/.
+ * El backend copia titular+vehículo, deja vacíos los campos SOAT/financieros
+ * (los completa el usuario después en Trámites) y emite `tramite_added` por
+ * WS para que el listado de Trámites se refresque en tiempo real en todas
+ * las sesiones. El registro en Base de Datos queda intacto (es base maestra).
+ */
+const TRAMITES_API = {
+  crearDesdeBaseDeDatos: '/api/tramites/crear-desde-base-de-datos/',
+};
+
+export const enviarATramitesDesdeBaseDeDatosThunk = (registro) => {
+  return async (dispatch) => {
+    if (!registro?.id) {
+      AlertService.error('Registro inválido', 'No se pudo identificar el registro.');
+      return null;
+    }
+
+    const placa = registro.placa || '(sin placa)';
+    const clienteNombre = registro.cliente?.nombre || '(sin cliente)';
+    const titular = registro.nombre_completo || '(sin titular)';
+    const documento = registro.numero_documento || '-';
+
+    try {
+      const primera = await AlertService.confirm(
+        '¿Enviar este registro a Trámites?',
+        `
+          <div style="text-align: left; background: #f5f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #1976d2;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #1976d2;">Se creará un trámite con titular y vehículo. Los campos de tarifa y precio quedarán vacíos para completarlos en el módulo de Trámites:</p>
+            <p style="margin: 4px 0;"><strong>Registro:</strong> #${registro.id}</p>
+            <p style="margin: 4px 0;"><strong>Cliente:</strong> ${clienteNombre}</p>
+            <p style="margin: 4px 0;"><strong>Titular:</strong> ${titular}</p>
+            <p style="margin: 4px 0;"><strong>Documento:</strong> ${documento}</p>
+            <p style="margin: 4px 0;"><strong>Placa:</strong> ${placa}</p>
+          </div>
+        `,
+        { icon: 'question', confirmText: 'Sí, continuar', cancelText: 'Cancelar' }
+      );
+      if (!primera.isConfirmed) return null;
+
+      const segunda = await AlertService.confirm(
+        '¿Confirmar creación del trámite?',
+        `
+          <div style="text-align: left; background: #fff8e1; padding: 16px; border-radius: 8px; border-left: 4px solid #ff9800;">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #e65100;">⚠ El trámite aparecerá inmediatamente en el listado para todos los usuarios</p>
+            <p style="margin: 4px 0;">Recuerda completar después <strong>grupo SOAT, tarifa y precio</strong> en el módulo de Trámites.</p>
+          </div>
+        `,
+        { icon: 'warning', confirmText: 'Sí, crear trámite', cancelText: 'Revisar nuevamente' }
+      );
+      if (!segunda.isConfirmed) return null;
+
+      dispatch(showBackdrop('Enviando a Trámites...'));
+      const response = await api.post(TRAMITES_API.crearDesdeBaseDeDatos, {
+        registro_id: registro.id,
+      });
+      dispatch(hideBackdrop());
+
+      await AlertService.success(
+        '¡Trámite creado!',
+        `Se creó el trámite #${response.data?.id} para la placa <strong>${response.data?.placa || '-'}</strong>. Completa la tarifa y el precio en el módulo de Trámites.`,
+        { timer: 3500 }
+      );
+
+      return response.data;
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};

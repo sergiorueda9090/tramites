@@ -57,48 +57,61 @@ import {
 import { ROUTES, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '../../utils/constants';
 import usePermissions from '../../hooks/usePermissions';
 
+// Cada item tiene un `color` (hex) asignado por funcionalidad. Se aplica al
+// icono cuando el ítem NO está activo. Cuando está activo, se respeta el
+// color de contraste del fondo seleccionado (blanco/contrastText).
+//
+// Convenciones de color (Material):
+//   Core workflow:        azules y verdes intensos
+//   Ingresos:             verdes
+//   Egresos:              rojos
+//   Riesgo / atención:    naranjas
+//   Catálogos / maestros: púrpura, teal, rosa
+//   Cálculo:              violeta
+//   Infra / técnico:      púrpuras oscuros / azul-gris
+//   Admin:                púrpura admin, azul, gris
 const menuItems = [
   {
     section: 'Principal',
     items: [
-      { text: 'Dashboard', icon: DashboardIcon, path: ROUTES.DASHBOARD, moduleCode: 'dashboard' },
+      { text: 'Dashboard', icon: DashboardIcon, path: ROUTES.DASHBOARD, moduleCode: 'dashboard', color: '#1976d2' },
     ],
   },
   {
     section: 'Operaciones',
     items: [
-      { text: 'Clientes',               icon: AssignmentIcon,       path: ROUTES.CLIENTES,               moduleCode: 'clientes' },
-      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,      path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat' },
-      { text: 'Cotizador',              icon: CalculateIcon,        path: ROUTES.COTIZADOR,              moduleCode: 'cotizador' },
-      { text: 'Base de Datos',          icon: StorageIcon,          path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos' },
-      { text: 'Casos Especiales',       icon: ReportProblemIcon,    path: ROUTES.CASOS_ESPECIALES,       moduleCode: 'casos_especiales' },
-      { text: 'Trámites',               icon: AssignmentTurnedInIcon, path: ROUTES.TRAMITES,             moduleCode: 'tramites' },
-      { text: 'Pasarela de Pago',       icon: PaymentIcon,          path: ROUTES.PASARELA_DE_PAGO,       moduleCode: 'pasarela_de_pago' },
-      { text: 'Trámites finalizados',   icon: TaskAltIcon,          path: ROUTES.TRAMITES_FINALIZADOS,   moduleCode: 'finalizados_tramites' },
-      { text: 'API Endpoints',          icon: ApiIcon,              path: ROUTES.API_ENDPOINTS,          moduleCode: 'api_app' },
-      { text: 'Etiquetas',              icon: LocalOfferIcon,       path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas' },
-      { text: 'Tarjetas',               icon: CreditCardIcon,       path: ROUTES.TARJETAS,               moduleCode: 'tarjetas' },
-      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,      path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos' },
-      { text: 'Devoluciones',           icon: UndoIcon,             path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones' },
-      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,    path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados' },
-      { text: 'Ajuste de Saldo',        icon: BalanceIcon,          path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo' },
-      { text: 'Gastos',                 icon: TrendingDownIcon ,    path: ROUTES.GASTOS,                 moduleCode: 'gastos' },
-      { text: 'Categorías de gasto',    icon: CategoryIcon,         path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria' },
-      { text: '4 x 1000',               icon: PercentIcon,          path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil' },
-      { text: 'Utilidades',             icon: MonetizationOnIcon,   path: ROUTES.UTILIDADES,             moduleCode: 'utilidades' },
-      { text: 'Utilidad ocasional',     icon: SavingsIcon,          path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional' },
-      { text: 'Conmutador de IPs',      icon: LanIcon,              path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips' },
-      { text: 'Inspecciones',           icon: AssignmentIcon,       path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones' },
-      { text: 'Vehículos',              icon: DirectionsCarIcon,    path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos' },
-      { text: 'Certificados',           icon: VerifiedIcon,         path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados' },
+      { text: 'Clientes',               icon: AssignmentIcon,         path: ROUTES.CLIENTES,               moduleCode: 'clientes',             color: '#9c27b0' },
+      { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,        path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat',       color: '#00897b' },
+      { text: 'Cotizador',              icon: CalculateIcon,          path: ROUTES.COTIZADOR,              moduleCode: 'cotizador',            color: '#7c4dff' },
+      { text: 'Base de Datos',          icon: StorageIcon,            path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos',        color: '#607d8b' },
+      { text: 'Casos Especiales',       icon: ReportProblemIcon,      path: ROUTES.CASOS_ESPECIALES,       moduleCode: 'casos_especiales',     color: '#ff9800' },
+      { text: 'Trámites',               icon: AssignmentTurnedInIcon, path: ROUTES.TRAMITES,               moduleCode: 'tramites',             color: '#1976d2' },
+      { text: 'Pasarela de Pago',       icon: PaymentIcon,            path: ROUTES.PASARELA_DE_PAGO,       moduleCode: 'pasarela_de_pago',     color: '#2e7d32' },
+      { text: 'Trámites finalizados',   icon: TaskAltIcon,            path: ROUTES.TRAMITES_FINALIZADOS,   moduleCode: 'finalizados_tramites', color: '#43a047' },
+      { text: 'API Endpoints',          icon: ApiIcon,                path: ROUTES.API_ENDPOINTS,          moduleCode: 'api_app',              color: '#5e35b1' },
+      { text: 'Etiquetas',              icon: LocalOfferIcon,         path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas',            color: '#e91e63' },
+      { text: 'Tarjetas',               icon: CreditCardIcon,         path: ROUTES.TARJETAS,               moduleCode: 'tarjetas',             color: '#6a1b9a' },
+      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,        path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos',      color: '#00897b' },
+      { text: 'Devoluciones',           icon: UndoIcon,               path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones',         color: '#f44336' },
+      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,      path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados', color: '#d32f2f' },
+      { text: 'Ajuste de Saldo',        icon: BalanceIcon,            path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo',         color: '#0288d1' },
+      { text: 'Gastos',                 icon: TrendingDownIcon,       path: ROUTES.GASTOS,                 moduleCode: 'gastos',               color: '#c62828' },
+      { text: 'Categorías de gasto',    icon: CategoryIcon,           path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria',     color: '#ef5350' },
+      { text: '4 x 1000',               icon: PercentIcon,            path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil',       color: '#fb8c00' },
+      { text: 'Utilidades',             icon: MonetizationOnIcon,     path: ROUTES.UTILIDADES,             moduleCode: 'utilidades',           color: '#2e7d32' },
+      { text: 'Utilidad ocasional',     icon: SavingsIcon,            path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional',   color: '#66bb6a' },
+      { text: 'Conmutador de IPs',      icon: LanIcon,                path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips',       color: '#455a64' },
+      { text: 'Inspecciones',           icon: AssignmentIcon,         path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones',         color: '#fbc02d' },
+      { text: 'Vehículos',              icon: DirectionsCarIcon,      path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos',            color: '#1565c0' },
+      { text: 'Certificados',           icon: VerifiedIcon,           path: ROUTES.CERTIFICADOS,           moduleCode: 'certificados',         color: '#388e3c' },
     ],
   },
   {
     section: 'Administración',
     items: [
-      { text: 'Usuarios', icon: PeopleIcon, path: ROUTES.USUARIOS, moduleCode: 'usuarios' },
-      { text: 'Reportes', icon: BarChartIcon, path: ROUTES.REPORTES, moduleCode: 'reportes' },
-      { text: 'Configuración', icon: SettingsIcon, path: ROUTES.CONFIGURACION, moduleCode: 'configuracion' },
+      { text: 'Usuarios',      icon: PeopleIcon,   path: ROUTES.USUARIOS,      moduleCode: 'usuarios',      color: '#7b1fa2' },
+      { text: 'Reportes',      icon: BarChartIcon, path: ROUTES.REPORTES,      moduleCode: 'reportes',      color: '#1976d2' },
+      { text: 'Configuración', icon: SettingsIcon, path: ROUTES.CONFIGURACION, moduleCode: 'configuracion', color: '#455a64' },
     ],
   },
 ];
@@ -182,10 +195,24 @@ const Sidebar = () => {
               bgcolor: active ? 'primary.dark' : 'action.hover',
             },
           },
-    menuIcon: (active) =>
-      isColored
-        ? { color: active ? 'white' : 'rgba(255,255,255,0.7)' }
-        : { color: active ? 'primary.contrastText' : 'text.secondary' },
+    // Cuando el item NO está activo aplicamos su color personalizado para
+    // que se identifique visualmente la funcionalidad. Cuando está activo,
+    // dejamos el color de contraste del fondo seleccionado (blanco en
+    // modo colored, primary.contrastText en estándar) para que el icono
+    // siga siendo legible sobre la pastilla activa.
+    menuIcon: (active, customColor) => {
+      if (active) {
+        return isColored
+          ? { color: 'white' }
+          : { color: 'primary.contrastText' };
+      }
+      if (customColor) {
+        return { color: customColor };
+      }
+      return isColored
+        ? { color: 'rgba(255,255,255,0.7)' }
+        : { color: 'text.secondary' };
+    },
     collapseIcon: isColored ? { color: 'white' } : { color: 'text.primary' },
   };
 
@@ -297,7 +324,7 @@ const Sidebar = () => {
                         <ListItemIcon
                           sx={{
                             minWidth: sidebarCollapsed && !isMobile ? 0 : 40,
-                            ...styles.menuIcon(active),
+                            ...styles.menuIcon(active, item.color),
                           }}
                         >
                           <Icon />

@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import websocketService from '../services/websocketService';
 import { removePasarelaById } from '../store/pasarelaDePagoStore/pasarelaDePagoStore';
-import { fetchPasarelaSilentThunk } from '../store/pasarelaDePagoStore/pasarelaDePagoThunks';
+import {
+  fetchPasarelaSilentThunk,
+  refetchPasarelaSilentThunk,
+} from '../store/pasarelaDePagoStore/pasarelaDePagoThunks';
 import notificationService from '../services/notificationService';
 
 /**
@@ -15,6 +18,9 @@ import notificationService from '../services/notificationService';
  *     recarga la lista entera.
  *   - pasarela_removed: el registro ya no debe aparecer (devuelto a tramites
  *     o eliminado por otro usuario) -> remueve del store sin refetch.
+ *   - pasarela_updated: un campo del registro cambió (ej. pago_estado tras
+ *     el modal de timer) -> refetch silencioso y reemplazo del item en el
+ *     store.
  */
 export const usePasarelaRealtime = () => {
   const dispatch = useDispatch();
@@ -41,6 +47,12 @@ export const usePasarelaRealtime = () => {
           duration: 5000,
         });
       });
+      return;
+    }
+
+    if (data.type === 'pasarela_updated' && data.pasarela_id != null) {
+      console.log('[usePasarelaRealtime] pasarela_updated (silencioso)', data);
+      dispatch(refetchPasarelaSilentThunk(data.pasarela_id));
     }
   };
 

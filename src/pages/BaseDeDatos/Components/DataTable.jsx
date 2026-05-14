@@ -17,6 +17,7 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SendIcon from '@mui/icons-material/Send';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
@@ -177,6 +178,7 @@ const BaseDeDatosDataTable = ({
   onView,
   onEdit,
   onDelete,
+  onEnviarATramites,
   emptyMessage = 'No se encontraron registros',
   stickyHeader = true,
   maxHeight = 600,
@@ -251,7 +253,7 @@ const BaseDeDatosDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onDelete) && (
+              {showActions && (onView || onEdit || onDelete || onEnviarATramites) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -281,7 +283,7 @@ const BaseDeDatosDataTable = ({
                       {renderCellContent(column, row)}
                     </TableCell>
                   ))}
-                  {showActions && (onView || onEdit || onDelete) && (
+                  {showActions && (onView || onEdit || onDelete || onEnviarATramites) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -295,6 +297,13 @@ const BaseDeDatosDataTable = ({
                           <Tooltip title="Editar">
                             <IconButton size="small" onClick={() => onEdit(row)} color="primary">
                               <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onEnviarATramites && (
+                          <Tooltip title="Enviar a Trámites">
+                            <IconButton size="small" onClick={() => onEnviarATramites(row)} color="success">
+                              <SendIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}

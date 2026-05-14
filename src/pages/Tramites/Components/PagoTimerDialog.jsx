@@ -247,11 +247,19 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               registradas en el módulo /tarjetas. */}
           <TextField
             select
-            label="Tarjeta utilizada (opcional)"
+            required
+            error={!tarjetaId}
+            label="Tarjeta utilizada"
             value={tarjetaId}
             onChange={(e) => setTarjetaId(e.target.value)}
             fullWidth
-            helperText={tarjetas.length === 0 ? 'No hay tarjetas registradas' : 'Selecciona la tarjeta con la que se realizó el pago'}
+            helperText={
+              tarjetas.length === 0
+                ? 'No hay tarjetas registradas'
+                : !tarjetaId
+                  ? 'Obligatorio para marcar el pago como exitoso'
+                  : 'Selecciona la tarjeta con la que se realizó el pago'
+            }
             InputProps={{
               startAdornment: (
                 <Box sx={{ pr: 1, color: 'action.active', display: 'flex' }}>
@@ -260,9 +268,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               ),
             }}
           >
-            <MenuItem value="">
-              <em>Sin especificar</em>
-            </MenuItem>
             {tarjetas.map((t) => (
               <MenuItem key={t.id} value={t.id}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
@@ -324,6 +329,7 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
           variant="contained"
           startIcon={<CheckCircleIcon />}
           fullWidth
+          disabled={!tarjetaId}
         >
           Pago exitoso
         </Button>

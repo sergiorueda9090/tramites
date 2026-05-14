@@ -40,6 +40,7 @@ import {
   showThunk,
   loadAuxDataThunk,
   exportExcelThunk,
+  enviarATramitesDesdeBaseDeDatosThunk,
 } from '../../store/baseDeDatosStore/baseDeDatosThunks';
 
 import {
@@ -176,6 +177,10 @@ const BaseDeDatos = () => {
     dispatch(deleteThunk(registro));
   };
 
+  const handleEnviarATramites = (registro) => {
+    dispatch(enviarATramitesDesdeBaseDeDatosThunk(registro));
+  };
+
   const handleCreate = () => {
     dispatch(openCreateModal());
   };
@@ -261,6 +266,7 @@ const BaseDeDatos = () => {
         onSort={handleSort}
         onView={handleView}
         onEdit={canEdit('base_de_datos') ? handleEdit : undefined}
+        onEnviarATramites={canCreate('tramites') ? handleEnviarATramites : undefined}
         onDelete={canDelete('base_de_datos') ? handleDelete : undefined}
       />
 

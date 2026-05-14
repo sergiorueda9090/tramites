@@ -19,6 +19,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 import CellPresenceOverlay from '../../../components/common/CellPresenceOverlay';
@@ -110,8 +111,32 @@ const GRUPO_SOAT_COLORS = {
 // ============================================
 // Columns Configuration
 // ============================================
+const PAGO_ESTADO_META = {
+  pendiente: { color: 'default', label: 'Pendiente' },
+  exitoso: { color: 'success', label: 'Exitoso' },
+  no_exitoso: { color: 'error', label: 'No exitoso' },
+};
+
 const columns = [
   { field: 'id', headerName: 'ID', width: 70 },
+  {
+    field: 'pago_estado',
+    headerName: 'Pago',
+    minWidth: 120,
+    sortable: false,
+    renderCell: ({ row }) => {
+      const meta = PAGO_ESTADO_META[row.pago_estado] || PAGO_ESTADO_META.pendiente;
+      return (
+        <Chip
+          label={row.pago_estado_display || meta.label}
+          size="small"
+          color={meta.color}
+          variant={row.pago_estado === 'pendiente' ? 'outlined' : 'filled'}
+          sx={{ fontWeight: 600 }}
+        />
+      );
+    },
+  },
   {
     field: 'placa',
     headerName: 'Placa',
@@ -241,6 +266,7 @@ const TramitesDataTable = ({
   onHistory,
   onDelete,
   onDevolverATramites,
+  onEnviarAFinalizados,
   emptyMessage = 'No se encontraron registros de pasarela',
   stickyHeader = true,
   maxHeight = 600,
@@ -304,7 +330,7 @@ const TramitesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites || onEnviarAFinalizados) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -352,7 +378,7 @@ const TramitesDataTable = ({
                       </TableCell>
                     );
                   })}
-                  {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onDevolverATramites || onEnviarAFinalizados) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -373,6 +399,13 @@ const TramitesDataTable = ({
                           <Tooltip title="Ver historial">
                             <IconButton size="small" onClick={() => onHistory(row)} color="warning">
                               <HistoryIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onEnviarAFinalizados && (
+                          <Tooltip title="Enviar a Trámites Finalizados">
+                            <IconButton size="small" onClick={() => onEnviarAFinalizados(row)} color="success">
+                              <TaskAltIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}
