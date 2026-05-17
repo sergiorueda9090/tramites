@@ -310,6 +310,36 @@ const RegistroVehiculoDialog = ({
               />
             </Grid>
           </Grid>
+
+          {/* Cotización (auto-completado desde Cotizador, editable) */}
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Cotización
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Precio de Ley"
+                value={form.precio_lay ?? ''}
+                onChange={handleChange('precio_lay')}
+                placeholder="Ej: 250000"
+                inputProps={{ min: 0, step: '0.01' }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Comisión"
+                value={form.comision ?? ''}
+                onChange={handleChange('comision')}
+                placeholder="Ej: 15000"
+                inputProps={{ min: 0, step: '0.01' }}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
       <DialogActions>

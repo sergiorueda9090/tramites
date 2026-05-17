@@ -84,6 +84,12 @@ const initialState = {
   error: null,
   cotizacionGuardada: false,
   casoEspecialGuardado: false,
+
+  // Base de Datos — registro creado automáticamente en Step4→Step7. Se guarda
+  // el ID para que Step7 lo actualice con precio_lay y comision una vez
+  // resuelta la tarifa (solo si no es caso especial).
+  registroBaseDeDatosId: null,
+  registroBaseDeDatosActualizado: false,
 };
 
 export const cotizadorStore = createSlice({
@@ -145,6 +151,8 @@ export const cotizadorStore = createSlice({
       state.tarifaManual = false;
       state.preciosCliente = [];
       state.casoEspecialGuardado = false;
+      state.registroBaseDeDatosId = null;
+      state.registroBaseDeDatosActualizado = false;
     },
 
     // Step 3 - Tipo de vehículo
@@ -276,6 +284,12 @@ export const cotizadorStore = createSlice({
     setCasoEspecialGuardado: (state, action) => {
       state.casoEspecialGuardado = action.payload;
     },
+    setRegistroBaseDeDatosId: (state, action) => {
+      state.registroBaseDeDatosId = action.payload;
+    },
+    setRegistroBaseDeDatosActualizado: (state, action) => {
+      state.registroBaseDeDatosActualizado = action.payload;
+    },
 
     // UI
     setLoading: (state, action) => {
@@ -326,6 +340,8 @@ export const {
   setTarifariosDisponibles,
   setPreciosCliente,
   setCasoEspecialGuardado,
+  setRegistroBaseDeDatosId,
+  setRegistroBaseDeDatosActualizado,
   setLoading,
   setError,
   resetCotizador,
@@ -368,12 +384,18 @@ export const selectTarifaManual = (state) => state.cotizadorStore.tarifaManual;
 export const selectTarifariosDisponibles = (state) => state.cotizadorStore.tarifariosDisponibles;
 export const selectPreciosCliente = (state) => state.cotizadorStore.preciosCliente;
 export const selectCasoEspecialGuardado = (state) => state.cotizadorStore.casoEspecialGuardado;
+export const selectRegistroBaseDeDatosId = (state) => state.cotizadorStore.registroBaseDeDatosId;
+export const selectRegistroBaseDeDatosActualizado = (state) => state.cotizadorStore.registroBaseDeDatosActualizado;
 
 /**
  * Selector que determina si el vehículo es un "caso especial":
  * - Clase RUNT no mapeada (grupoRequiereRevision)
  * - Capacidad de carga inválida para grupo CARGA (tarifaManual)
  * - Validaciones base del vehículo fallan: cilindraje <= 0, pasajeros <= 0, capacidad_carga no numérica
+ *
+ * Excepción: si la clase es AUTOMOVIL, una capacidad_carga no numérica NO marca
+ * el trámite como caso especial — los automóviles no transportan carga, así que
+ * un valor sucio en ese campo del RUNT es esperable y no debe bloquear el flujo.
  */
 export const selectEsCasoEspecial = (state) => {
   const s = state.cotizadorStore;
@@ -390,8 +412,11 @@ export const selectEsCasoEspecial = (state) => {
   const pas = parseFloat(runt.pasajeros_sentados);
   if (isNaN(pas) || pas <= 0) return true;
 
+  const claseRunt = (s.grupoClaseRunt || runt.clase || '').toUpperCase();
+  const esAutomovil = claseRunt === 'AUTOMOVIL';
+
   const cap = runt.capacidad_carga;
-  if (cap !== null && cap !== undefined && cap !== '') {
+  if (!esAutomovil && cap !== null && cap !== undefined && cap !== '') {
     // Validación estricta: rechaza letras o símbolos (ej. "16000 K", "16000KG", "ABC").
     // parseFloat no sirve aquí porque ignora el sufijo no numérico.
     if (!/^-?\d+(\.\d+)?$/.test(String(cap).trim())) return true;
@@ -402,7 +427,7 @@ export const selectEsCasoEspecial = (state) => {
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;
 
-// Selector: ¿Es flujo SOAT? (requiere steps 3, 4, 5)
+// Selector: ¿Es flujo SOAT? (define los steps adicionales del wizard)
 export const selectEsFlujoSoat = (state) => {
   const tipo = state.cotizadorStore.tipoTramite;
   return tipo === 'SOAT' || tipo === 'SOAT_ESPECIAL';
@@ -417,8 +442,6 @@ export const selectSteps = (state) => {
       'Tipo de Trámite',
       'Tipo de Vehículo',
       'Método de Consulta',
-      'Datos del Vehículo',
-      'Cotización',
       'Grupo SOAT',
     ];
   }

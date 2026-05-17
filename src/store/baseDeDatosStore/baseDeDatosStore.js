@@ -69,6 +69,8 @@ const initialState = {
     cilindraje: '',
     color: '',
     organismo_transito: '',
+    precio_lay: '',
+    comision: '',
   },
 
   // Datos auxiliares para selects
@@ -109,6 +111,8 @@ const emptyForm = {
   cilindraje: '',
   color: '',
   organismo_transito: '',
+  precio_lay: '',
+  comision: '',
 };
 
 export const baseDeDatosStore = createSlice({
@@ -219,6 +223,8 @@ export const baseDeDatosStore = createSlice({
         cilindraje: r.cilindraje || '',
         color: r.color || '',
         organismo_transito: r.organismo_transito || '',
+        precio_lay: r.precio_lay ?? '',
+        comision: r.comision ?? '',
       };
     },
     closeModal: (state) => {

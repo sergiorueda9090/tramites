@@ -264,13 +264,6 @@ const PasarelaDePago = () => {
             Gestión de registros enviados desde Trámites
           </Typography>
         </Box>
-        {canCreate('pasarela_de_pago') && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo registro
-            </Button>
-          </Box>
-        )}
       </Box>
 
       {/* Filters */}

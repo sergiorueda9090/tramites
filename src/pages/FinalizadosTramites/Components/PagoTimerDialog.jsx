@@ -23,6 +23,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const TOTAL_SECONDS = 180; // 3 minutos
 
@@ -136,6 +137,46 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             />
           </Box>
 
+          {/* Placa destacada: tipografía grande para que el cajero la lea sin
+              equivocarse al digitarla en la pasarela. */}
+          <Box
+            sx={{
+              p: { xs: 2, sm: 2.5 },
+              border: '2px solid',
+              borderColor: 'info.main',
+              borderRadius: 2,
+              backgroundColor: 'rgba(2, 136, 209, 0.06)',
+              textAlign: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+              <DirectionsCarIcon sx={{ fontSize: 20, color: 'info.main' }} />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'info.main',
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Placa
+              </Typography>
+            </Box>
+            <Typography
+              fontWeight={900}
+              sx={{
+                fontFamily: 'monospace',
+                color: 'info.dark',
+                lineHeight: 1,
+                fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
+                letterSpacing: { xs: 2, sm: 4 },
+              }}
+            >
+              {placa}
+            </Typography>
+          </Box>
+
           <Box
             sx={{
               border: '1px solid',
@@ -162,7 +203,6 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               {[
                 { icon: <ReceiptLongIcon sx={{ fontSize: 16 }} color="action" />, label: 'Trámite', value: `#${tramite?.id ?? '-'}` },
                 { icon: <PersonIcon sx={{ fontSize: 16 }} color="action" />, label: 'Cliente', value: clienteNombre },
-                { icon: <DirectionsCarIcon sx={{ fontSize: 16 }} color="action" />, label: 'Placa', value: placa, mono: true },
                 { icon: <LocalOfferIcon sx={{ fontSize: 16 }} color="action" />, label: 'Tarifa', chip: tarifaCod },
               ].map((row) => (
                 <Box
@@ -227,7 +267,7 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
                 mb: 1,
               }}
             >
-              Valor a cobrar
+              Valor a pagar en (PSE)
             </Typography>
             <Typography
               fontWeight={900}
@@ -241,6 +281,30 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             >
               {tarifaValor}
             </Typography>
+            {/* Aviso de validación: el cajero debe confirmar que la pasarela PSE
+                muestra exactamente este mismo valor antes de continuar. */}
+            <Box
+              sx={{
+                mt: 2,
+                px: 1.5,
+                py: 1,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'warning.main',
+                backgroundColor: 'rgba(237, 108, 2, 0.10)',
+              }}
+            >
+              <WarningAmberIcon sx={{ color: 'warning.dark', fontSize: 22, mt: 0.2 }} />
+              <Typography
+                variant="body2"
+                sx={{ color: 'warning.dark', fontWeight: 700, textAlign: 'left' }}
+              >
+                Validar que el valor a pagar en PSE coincida con este valor a pagar.
+              </Typography>
+            </Box>
           </Box>
 
           {/* Selección de tarjeta usada para el pago. Obligatoria para marcar

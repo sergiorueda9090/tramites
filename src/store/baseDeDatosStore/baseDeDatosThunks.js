@@ -10,6 +10,10 @@ import {
   closeModal,
   openEditModal,
 } from './baseDeDatosStore';
+import {
+  setRegistroBaseDeDatosId,
+  setRegistroBaseDeDatosActualizado,
+} from '../cotizadorStore/cotizadorSlice';
 
 // URLs del módulo base de datos
 const API_URLS = {
@@ -577,14 +581,60 @@ export const guardarRegistroDesdeCotizadorThunk = () => {
         organismo_transito: runt.organismo_transito || '',
       };
 
-      await api.post(API_URLS.create, payload);
-      console.log('BaseDeDatos: Registro guardado automáticamente desde Cotizador.');
+      const response = await api.post(API_URLS.create, payload);
+      const registroId = response?.data?.id || null;
+      if (registroId) {
+        dispatch(setRegistroBaseDeDatosId(registroId));
+      }
+      console.log('BaseDeDatos: Registro guardado automáticamente desde Cotizador. ID:', registroId);
 
-      return true;
+      return registroId;
 
     } catch (error) {
       // No bloquear el flujo del cotizador si falla el guardado en base_de_datos
       console.error('BaseDeDatos: Error al guardar registro desde Cotizador:', error);
+      return null;
+    }
+  };
+};
+
+/**
+ * Actualizar el registro de base_de_datos creado durante el flujo del Cotizador
+ * con el precio (precio_lay) y la comisión, una vez Step7 resolvió la tarifa
+ * y el caso NO es especial (sin anomalías).
+ *
+ * Se controla con el flag `registroBaseDeDatosActualizado` para evitar dobles
+ * envíos. Si falla, no se bloquea el flujo: el registro queda sin precio.
+ */
+export const actualizarPrecioComisionRegistroBaseDeDatosThunk = () => {
+  return async (dispatch, getState) => {
+    try {
+      const state = getState();
+      const cotizador = state.cotizadorStore;
+
+      const registroId = cotizador.registroBaseDeDatosId;
+      if (!registroId) return null;
+      if (cotizador.registroBaseDeDatosActualizado) return null;
+
+      const precioCliente = Array.isArray(cotizador.preciosCliente) && cotizador.preciosCliente.length > 0
+        ? cotizador.preciosCliente[0]
+        : null;
+
+      const precioLay = cotizador.tarifaDetalle?.valor || precioCliente?.precio_lay || null;
+      const comision = precioCliente?.comision || null;
+
+      if (precioLay === null && comision === null) return null;
+
+      await api.put(API_URLS.update(registroId), {
+        precio_lay: precioLay,
+        comision: comision,
+      });
+
+      dispatch(setRegistroBaseDeDatosActualizado(true));
+      console.log('BaseDeDatos: Precio y comisión actualizados para registro', registroId);
+      return true;
+    } catch (error) {
+      console.error('BaseDeDatos: Error al actualizar precio/comisión:', error);
       return null;
     }
   };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -13,6 +13,7 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Collapse,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -44,6 +45,9 @@ import PercentIcon from '@mui/icons-material/Percent';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import SavingsIcon from '@mui/icons-material/Savings';
 import LanIcon from '@mui/icons-material/Lan';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 
 
@@ -94,12 +98,20 @@ const menuItems = [
       { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,        path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos',      color: '#00897b' },
       { text: 'Devoluciones',           icon: UndoIcon,               path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones',         color: '#f44336' },
       { text: 'Cargos No Registrados',  icon: ReportProblemIcon,      path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados', color: '#d32f2f' },
-      { text: 'Ajuste de Saldo',        icon: BalanceIcon,            path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo',         color: '#0288d1' },
-      { text: 'Gastos',                 icon: TrendingDownIcon,       path: ROUTES.GASTOS,                 moduleCode: 'gastos',               color: '#c62828' },
-      { text: 'Categorías de gasto',    icon: CategoryIcon,           path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria',     color: '#ef5350' },
-      { text: '4 x 1000',               icon: PercentIcon,            path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil',       color: '#fb8c00' },
-      { text: 'Utilidades',             icon: MonetizationOnIcon,     path: ROUTES.UTILIDADES,             moduleCode: 'utilidades',           color: '#2e7d32' },
-      { text: 'Utilidad ocasional',     icon: SavingsIcon,            path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional',   color: '#66bb6a' },
+      {
+        text: 'Movimientos Financieros',
+        icon: AccountBalanceWalletIcon,
+        groupKey: 'movimientos_financieros',
+        color: '#1565c0',
+        children: [
+          { text: 'Ajuste de Saldo',     icon: BalanceIcon,        path: ROUTES.AJUSTE_SALDO,       moduleCode: 'ajuste_saldo',       color: '#0288d1' },
+          { text: 'Gastos',              icon: TrendingDownIcon,   path: ROUTES.GASTOS,             moduleCode: 'gastos',             color: '#c62828' },
+          { text: 'Categorías de pagos', icon: CategoryIcon,       path: ROUTES.GASTOS_CATEGORIA,   moduleCode: 'gastos_categoria',   color: '#ef5350' },
+          { text: '4 x 1000',            icon: PercentIcon,        path: ROUTES.CUATRO_POR_MIL,     moduleCode: 'cuatro_por_mil',     color: '#fb8c00' },
+          { text: 'Utilidades',          icon: MonetizationOnIcon, path: ROUTES.UTILIDADES,         moduleCode: 'utilidades',         color: '#2e7d32' },
+          { text: 'Utilidad ocasional',  icon: SavingsIcon,        path: ROUTES.UTILIDAD_OCASIONAL, moduleCode: 'utilidad_ocasional', color: '#66bb6a' },
+        ],
+      },
       { text: 'Conmutador de IPs',      icon: LanIcon,                path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips',       color: '#455a64' },
       { text: 'Inspecciones',           icon: AssignmentIcon,         path: ROUTES.INSPECCIONES,           moduleCode: 'inspecciones',         color: '#fbc02d' },
       { text: 'Vehículos',              icon: DirectionsCarIcon,      path: ROUTES.VEHICULOS,              moduleCode: 'vehiculos',            color: '#1565c0' },
@@ -128,13 +140,42 @@ const Sidebar = () => {
   const layoutStyle = useSelector(selectLayoutStyle);
   const { canView } = usePermissions();
 
-  // Filtrar secciones y items según permisos del usuario
+  // Filtrar secciones y items según permisos. Los items-grupo (con `children`)
+  // conservan solo los hijos visibles y se eliminan si todos sus hijos quedan
+  // fuera.
   const filteredMenuItems = menuItems
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => canView(item.moduleCode)),
+      items: section.items
+        .map((item) => {
+          if (item.children) {
+            const visibleChildren = item.children.filter((child) => canView(child.moduleCode));
+            return visibleChildren.length > 0 ? { ...item, children: visibleChildren } : null;
+          }
+          return canView(item.moduleCode) ? item : null;
+        })
+        .filter(Boolean),
     }))
     .filter((section) => section.items.length > 0);
+
+  // Auto-abrir un grupo si alguno de sus hijos está activo, para que la ruta
+  // actual sea siempre visible al cargar el sidebar.
+  const initialOpenGroups = () => {
+    const open = {};
+    filteredMenuItems.forEach((section) => {
+      section.items.forEach((item) => {
+        if (item.children && item.children.some((child) => location.pathname.startsWith(child.path))) {
+          open[item.groupKey] = true;
+        }
+      });
+    });
+    return open;
+  };
+  const [openGroups, setOpenGroups] = useState(initialOpenGroups);
+
+  const toggleGroup = (groupKey) => {
+    setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
+  };
 
   const isColored = layoutStyle === 'colored';
 
@@ -304,6 +345,97 @@ const Sidebar = () => {
             <List disablePadding>
               {section.items.map((item) => {
                 const Icon = item.icon;
+
+                // Item-grupo (contiene `children`): renderizar como botón
+                // expandible con submenú. Cuando el sidebar está colapsado,
+                // el click expande el sidebar y abre el grupo para que los
+                // hijos sean visibles.
+                if (item.children) {
+                  const isOpen = !!openGroups[item.groupKey];
+                  const groupActive = item.children.some((child) => isActive(child.path));
+                  const collapsedView = sidebarCollapsed && !isMobile;
+
+                  const handleGroupClick = () => {
+                    if (collapsedView) {
+                      dispatch(toggleSidebarCollapsed());
+                      if (!isOpen) toggleGroup(item.groupKey);
+                    } else {
+                      toggleGroup(item.groupKey);
+                    }
+                  };
+
+                  return (
+                    <React.Fragment key={item.text}>
+                      <ListItem disablePadding sx={{ px: 1 }}>
+                        <Tooltip title={collapsedView ? item.text : ''} placement="right">
+                          <ListItemButton
+                            onClick={handleGroupClick}
+                            sx={{
+                              borderRadius: 0,
+                              mb: 0.5,
+                              justifyContent: collapsedView ? 'center' : 'flex-start',
+                              ...styles.menuItem(groupActive),
+                            }}
+                          >
+                            <ListItemIcon
+                              sx={{
+                                minWidth: collapsedView ? 0 : 40,
+                                ...styles.menuIcon(groupActive, item.color),
+                              }}
+                            >
+                              <Icon />
+                            </ListItemIcon>
+                            {!collapsedView && (
+                              <>
+                                <ListItemText
+                                  primary={item.text}
+                                  primaryTypographyProps={{
+                                    fontSize: '0.875rem',
+                                    fontWeight: groupActive ? 600 : 400,
+                                  }}
+                                />
+                                {isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                              </>
+                            )}
+                          </ListItemButton>
+                        </Tooltip>
+                      </ListItem>
+                      <Collapse in={!collapsedView && isOpen} timeout="auto" unmountOnExit>
+                        <List disablePadding>
+                          {item.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const childActive = isActive(child.path);
+                            return (
+                              <ListItem key={child.text} disablePadding sx={{ px: 1 }}>
+                                <ListItemButton
+                                  onClick={() => handleNavigation(child.path)}
+                                  sx={{
+                                    borderRadius: 0,
+                                    mb: 0.5,
+                                    pl: 4,
+                                    ...styles.menuItem(childActive),
+                                  }}
+                                >
+                                  <ListItemIcon sx={{ minWidth: 36, ...styles.menuIcon(childActive, child.color) }}>
+                                    <ChildIcon fontSize="small" />
+                                  </ListItemIcon>
+                                  <ListItemText
+                                    primary={child.text}
+                                    primaryTypographyProps={{
+                                      fontSize: '0.8125rem',
+                                      fontWeight: childActive ? 600 : 400,
+                                    }}
+                                  />
+                                </ListItemButton>
+                              </ListItem>
+                            );
+                          })}
+                        </List>
+                      </Collapse>
+                    </React.Fragment>
+                  );
+                }
+
                 const active = isActive(item.path);
 
                 return (

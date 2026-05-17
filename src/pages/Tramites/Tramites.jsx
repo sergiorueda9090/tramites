@@ -272,13 +272,6 @@ const Tramites = () => {
             Gestión de trámites SOAT del sistema
           </Typography>
         </Box>
-        {canCreate('tramites') && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo trámite
-            </Button>
-          </Box>
-        )}
       </Box>
 
       {/* Filters */}

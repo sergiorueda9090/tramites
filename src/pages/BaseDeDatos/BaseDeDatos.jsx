@@ -234,11 +234,6 @@ const BaseDeDatos = () => {
           >
             Exportar Excel
           </Button>
-          {canCreate('base_de_datos') && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo registro
-            </Button>
-          )}
         </Box>
       </Box>
 

@@ -229,13 +229,6 @@ const CasosEspeciales = () => {
             Gestión de casos especiales del sistema
           </Typography>
         </Box>
-        {canCreate('casos_especiales') && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-              Nuevo caso especial
-            </Button>
-          </Box>
-        )}
       </Box>
 
       {/* Filters */}

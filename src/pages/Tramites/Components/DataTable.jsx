@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -13,6 +13,9 @@ import {
   Tooltip,
   Typography,
   Chip,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -78,22 +81,6 @@ const formatCurrency = (value) => {
   }).format(num);
 };
 
-const ESTADO_LABELS = {
-  tramite_estado: 'Trámite',
-  confirmacion_estado: 'Confirmación',
-  cargar_pdf_estado: 'PDF',
-};
-
-const EstadoChip = ({ field, value }) => (
-  <Chip
-    size="small"
-    label={ESTADO_LABELS[field]}
-    color={value === '1' ? 'success' : 'default'}
-    variant={value === '1' ? 'filled' : 'outlined'}
-    sx={{ fontWeight: 500 }}
-  />
-);
-
 const GRUPO_SOAT_COLORS = {
   MOTOS: 'primary',
   MOTOCARROS: 'primary',
@@ -105,6 +92,72 @@ const GRUPO_SOAT_COLORS = {
   TAXI: 'warning',
   BUS_URBANO: 'secondary',
   '6_PASAJEROS': 'secondary',
+};
+
+// ============================================
+// Entidad — catálogos y sub-componente de celda
+// (mirror de tramites/Components/ModalDialog.jsx)
+// ============================================
+const ENTIDAD_LABELS = {
+  MUNDIAL: 'Mundial',
+  PREVISORA: 'Previsora',
+  SOLIDARIA: 'Solidaria',
+  MANUAL: 'Manual',
+};
+const ENTIDADES_POR_TIPO_VEHICULO = {
+  USADO:   ['MUNDIAL', 'PREVISORA', 'MANUAL'],
+  CERO_KM: ['PREVISORA', 'SOLIDARIA', 'MANUAL'],
+};
+const ENTIDAD_COLOR = {
+  MUNDIAL:   'primary',
+  PREVISORA: 'info',
+  SOLIDARIA: 'secondary',
+  MANUAL:    'warning',
+};
+
+const EntidadSelectCell = ({ row }) => {
+  const opciones = ENTIDADES_POR_TIPO_VEHICULO[row.tipo_vehiculo] || [];
+  // Valor inicial: el del backend si pertenece al catálogo del tipo_vehiculo,
+  // o el primero (default) si no, o '' cuando el tipo_vehiculo no resuelve.
+  const initial =
+    row.entidad && opciones.includes(row.entidad)
+      ? row.entidad
+      : opciones[0] || '';
+  const [value, setValue] = useState(initial);
+
+  if (opciones.length === 0) {
+    return <Typography variant="body2" color="text.secondary">-</Typography>;
+  }
+
+  return (
+    <FormControl size="small" fullWidth onClick={(e) => e.stopPropagation()}>
+      <Select
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        variant="outlined"
+        sx={{
+          fontSize: '0.8125rem',
+          fontWeight: 500,
+          '& .MuiSelect-select': { py: 0.5 },
+        }}
+        renderValue={(selected) => (
+          <Chip
+            label={ENTIDAD_LABELS[selected] || selected}
+            size="small"
+            color={ENTIDAD_COLOR[selected] || 'default'}
+            variant="outlined"
+            sx={{ fontWeight: 500 }}
+          />
+        )}
+      >
+        {opciones.map((opt) => (
+          <MenuItem key={opt} value={opt} dense>
+            {ENTIDAD_LABELS[opt]}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
 };
 
 // ============================================
@@ -131,9 +184,35 @@ const columns = [
   },
   {
     field: 'tipo_tramite',
-    headerName: 'Tipo',
+    headerName: 'Trámite',
     minWidth: 100,
     renderCell: ({ row }) => row.tipo_tramite_display || row.tipo_tramite || '-',
+  },
+  {
+    field: 'tipo_vehiculo',
+    headerName: 'Tipo',
+    minWidth: 110,
+    renderCell: ({ row }) => {
+      const value = row.tipo_vehiculo;
+      if (!value) return '-';
+      const label = value === 'CERO_KM' ? '0 KM' : (row.tipo_vehiculo_display || value);
+      return (
+        <Chip
+          label={label}
+          size="small"
+          color={value === 'CERO_KM' ? 'success' : 'default'}
+          variant="outlined"
+          sx={{ fontWeight: 500 }}
+        />
+      );
+    },
+  },
+  {
+    field: 'entidad',
+    headerName: 'Entidad',
+    minWidth: 160,
+    sortable: false,
+    renderCell: ({ row }) => <EntidadSelectCell row={row} />,
   },
   {
     field: 'grupo_soat',
@@ -192,19 +271,6 @@ const columns = [
       <Typography variant="body2" fontWeight={600} color="secondary">
         {formatCurrency(value)}
       </Typography>
-    ),
-  },
-  {
-    field: 'estados',
-    headerName: 'Estados',
-    minWidth: 200,
-    sortable: false,
-    renderCell: ({ row }) => (
-      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-        <EstadoChip field="tramite_estado" value={row.tramite_estado} />
-        <EstadoChip field="confirmacion_estado" value={row.confirmacion_estado} />
-        <EstadoChip field="cargar_pdf_estado" value={row.cargar_pdf_estado} />
-      </Box>
     ),
   },
   {

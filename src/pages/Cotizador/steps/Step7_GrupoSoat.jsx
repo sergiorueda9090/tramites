@@ -28,6 +28,11 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PersonIcon from '@mui/icons-material/Person';
 import SendIcon from '@mui/icons-material/Send';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import GppBadIcon from '@mui/icons-material/GppBad';
+import BuildIcon from '@mui/icons-material/Build';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 
 import {
   selectGrupoClaseRunt,
@@ -66,6 +71,7 @@ import {
 
 import { guardarCasoEspecialDesdeCotizadorThunk } from '../../../store/casosEspecialesStore/casosEspecialesThunks';
 import { enviarTramiteDesdeCotizadorThunk } from '../../../store/tamitesStore/tamitesThunks';
+import { actualizarPrecioComisionRegistroBaseDeDatosThunk } from '../../../store/baseDeDatosStore/baseDeDatosThunks';
 
 import {
   selectClase,
@@ -79,6 +85,8 @@ import {
   selectPlaca,
   selectMarca,
   selectLinea,
+  selectSoat,
+  selectRtms,
 } from '../../../store/apisExternasStore/apisExternasRuntStore';
 
 // ═══════════════════════════════════════════════════════════
@@ -557,6 +565,8 @@ const Step7_GrupoSoat = () => {
   const runtColor = useSelector(selectColor);
   const runtMarca = useSelector(selectMarca);
   const runtLinea = useSelector(selectLinea);
+  const runtSoat = useSelector(selectSoat);
+  const runtRtms = useSelector(selectRtms);
 
   const tipoSubcriterio = obtenerTipoSubcriterio(claseRunt);
   const necesitaSubcriterio = tipoSubcriterio && tipoSubcriterio !== 'DIRECTO' && tipoSubcriterio !== 'NO_MAPEADA';
@@ -685,6 +695,16 @@ const Step7_GrupoSoat = () => {
     }
   }, [cliente?.id, dispatch]);
 
+  // ── Actualizar el registro de Base de Datos con precio_lay y comisión cuando
+  // la tarifa esté resuelta y NO sea caso especial. El thunk se autoguarda con
+  // el flag `registroBaseDeDatosActualizado` para evitar dobles envíos.
+  useEffect(() => {
+    if (esCasoEspecial) return;
+    if (!tarifaCodigo) return;
+    if (preciosCliente.length === 0) return;
+    dispatch(actualizarPrecioComisionRegistroBaseDeDatosThunk());
+  }, [esCasoEspecial, tarifaCodigo, preciosCliente, dispatch]);
+
   // ── Handler: selección manual de tarifa desde el listado ──
   const handleSeleccionManualTarifa = (tarifario) => {
     if (!tarifario) {
@@ -708,6 +728,47 @@ const Step7_GrupoSoat = () => {
       maximumFractionDigits: 0,
     }).format(value);
   };
+
+  const formatFecha = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  // Calcula el estado de vigencia: días restantes (positivo si vigente, negativo
+  // si vencido). Devuelve null si no hay fecha o si la fecha es inválida.
+  const calcularVigencia = (fechaStr) => {
+    if (!fechaStr) return null;
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha.getTime())) return null;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    fecha.setHours(0, 0, 0, 0);
+    const diffDias = Math.round((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      fechaFmt: formatFecha(fechaStr),
+      vigente: diffDias >= 0,
+      diasRestantes: Math.max(0, diffDias),
+      diasVencido: Math.max(0, -diffDias),
+    };
+  };
+
+  // Selección del SOAT/RTM "actual": el VIGENTE si existe; en su defecto, la
+  // entrada más reciente por fecha de vencimiento.
+  const elegirMasReciente = (lista, campoFecha) => {
+    if (!Array.isArray(lista) || lista.length === 0) return null;
+    return [...lista]
+      .sort((a, b) => new Date(b?.[campoFecha] || 0) - new Date(a?.[campoFecha] || 0))[0];
+  };
+
+  const soatActual = (Array.isArray(runtSoat) ? runtSoat.find((s) => s?.estado === 'VIGENTE') : null)
+    || elegirMasReciente(runtSoat, 'fechaVencimSoat');
+  const rtmActual = (Array.isArray(runtRtms?.revisiones) ? runtRtms.revisiones.find((r) => r?.vigente === 'SI') : null)
+    || elegirMasReciente(runtRtms?.revisiones, 'fechaVencimientoRvt');
+
+  const soatVigencia = calcularVigencia(soatActual?.fechaVencimSoat);
+  const rtmVigencia = calcularVigencia(rtmActual?.fechaVencimientoRvt);
 
   return (
     <Box>
@@ -1061,6 +1122,130 @@ const Step7_GrupoSoat = () => {
                     </Typography>
                   </Box>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Card: Vigencias y estado (SOAT + Tecnomecánica) ── */}
+          {(soatVigencia || rtmVigencia) && (
+            <Card
+              variant="outlined"
+              sx={{
+                mt: 2,
+                borderLeft: 4,
+                borderLeftColor: (soatVigencia?.vigente && (!rtmVigencia || rtmVigencia.vigente))
+                  ? 'success.main'
+                  : 'error.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<EventAvailableIcon />}
+                  title="Vigencias y estado"
+                  color="primary"
+                />
+                <Divider sx={{ mb: 1.5 }} />
+
+                {/* SOAT */}
+                {soatVigencia && (
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      mb: rtmVigencia ? 1.5 : 0,
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: soatVigencia.vigente ? 'success.light' : 'error.light',
+                      bgcolor: soatVigencia.vigente ? 'success.lighter' : 'error.lighter',
+                      backgroundColor: soatVigencia.vigente ? 'rgba(46, 125, 50, 0.06)' : 'rgba(211, 47, 47, 0.06)',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      {soatVigencia.vigente
+                        ? <VerifiedUserIcon sx={{ color: 'success.main' }} />
+                        : <GppBadIcon sx={{ color: 'error.main' }} />}
+                      <Typography variant="subtitle2" fontWeight={700} sx={{ flexGrow: 1, color: soatVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                        SOAT
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={soatVigencia.vigente ? 'VIGENTE' : 'VENCIDO'}
+                        color={soatVigencia.vigente ? 'success' : 'error'}
+                        sx={{ fontWeight: 700 }}
+                      />
+                    </Box>
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                          Vence
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: soatVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                          {soatVigencia.fechaFmt}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                          {soatVigencia.vigente ? 'Días vigentes' : 'Días vencido'}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: soatVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                          {soatVigencia.vigente ? soatVigencia.diasRestantes : soatVigencia.diasVencido}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* Tecnomecánica */}
+                {rtmVigencia && (
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: rtmVigencia.vigente ? 'success.light' : 'error.light',
+                      backgroundColor: rtmVigencia.vigente ? 'rgba(46, 125, 50, 0.06)' : 'rgba(211, 47, 47, 0.06)',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      {rtmVigencia.vigente
+                        ? <BuildCircleIcon sx={{ color: 'success.main' }} />
+                        : <BuildIcon sx={{ color: 'error.main' }} />}
+                      <Typography variant="subtitle2" fontWeight={700} sx={{ flexGrow: 1, color: rtmVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                        Tecnomecánica
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={rtmVigencia.vigente ? 'VIGENTE' : 'VENCIDO'}
+                        color={rtmVigencia.vigente ? 'success' : 'error'}
+                        sx={{ fontWeight: 700 }}
+                      />
+                    </Box>
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                          Vence
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: rtmVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                          {rtmVigencia.fechaFmt}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                          {rtmVigencia.vigente ? 'Días vigentes' : 'Días vencido'}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} sx={{ color: rtmVigencia.vigente ? 'success.dark' : 'error.dark' }}>
+                          {rtmVigencia.vigente ? rtmVigencia.diasRestantes : rtmVigencia.diasVencido}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* Descripción */}
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, fontStyle: 'italic', lineHeight: 1.5 }}>
+                  <strong>VIGENTE:</strong> aún cuenta con días vigentes hasta la fecha de vencimiento.
+                  <br />
+                  <strong>VENCIDO:</strong> se muestra la cantidad de días transcurridos desde la fecha de vencimiento.
+                </Typography>
               </CardContent>
             </Card>
           )}

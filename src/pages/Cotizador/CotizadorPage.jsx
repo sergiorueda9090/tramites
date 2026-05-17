@@ -37,14 +37,13 @@ import {
   setActiveStep,
   resetCotizador,
 } from '../../store/cotizadorStore/cotizadorSlice';
-import { selectPlaca, resetStore as resetRuntStore } from '../../store/apisExternasStore/apisExternasRuntStore';
+import { resetStore as resetRuntStore } from '../../store/apisExternasStore/apisExternasRuntStore';
 import { guardarRegistroDesdeCotizadorThunk } from '../../store/baseDeDatosStore/baseDeDatosThunks';
 
 import Step1_Cliente from './steps/Step1_Cliente';
 import Step2_TipoTramite from './steps/Step2_TipoTramite';
 import Step3_TipoVehiculo from './steps/Step3_TipoVehiculo';
 import Step4_MetodoConsulta from './steps/Step4_MetodoConsulta';
-import Step5_DatosVehiculo from './steps/Step5_DatosVehiculo';
 import Step6_Cotizacion from './steps/Step6_Cotizacion';
 import Step7_GrupoSoat from './steps/Step7_GrupoSoat';
 
@@ -68,7 +67,6 @@ const CotizadorPage = () => {
   const consultaDocumento = useSelector(selectConsultaDocumento);
   const imagenLista = useSelector(selectImagenLista);
   const datosManual = useSelector(selectDatosManual);
-  const runtPlaca = useSelector(selectPlaca);
   const grupoSoat = useSelector(selectGrupoSoat);
   const grupoRequiereRevision = useSelector(selectGrupoRequiereRevision);
   const tarifaCodigo = useSelector(selectTarifaCodigo);
@@ -112,11 +110,7 @@ const CotizadorPage = () => {
           if (metodoConsulta === 'PLACA_FALABELLA') return !!consultaPlaca && !!consultaDocumento;
           if (metodoConsulta === 'MANUAL') return !!datosManual.placa && !!datosManual.clase && !!datosManual.tipoServicio && !!datosManual.cilindraje && !!datosManual.modelo && !!datosManual.marca && !!datosManual.linea;
           return false;
-        case 4: // Datos vehículo
-          return !!runtPlaca;
-        case 5: // Cotización
-          return true;
-        case 6: // Grupo SOAT + Módulo tarifa
+        case 4: // Grupo SOAT + Módulo tarifa
           return !!grupoSoat && !grupoRequiereRevision && !!tarifaCodigo;
         default:
           return false;
@@ -135,7 +129,7 @@ const CotizadorPage = () => {
           return false;
       }
     }
-  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, titularCotizacion, terceroDocumento, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, datosManual, runtPlaca, grupoSoat, grupoRequiereRevision, tarifaCodigo]);
+  }, [activeStep, esFlujoSoat, clienteSeleccionado, modoCliente, nuevoCliente, tipoTramite, tipoVehiculo, titularCotizacion, terceroDocumento, metodoConsulta, consultaPlaca, consultaDocumento, imagenLista, datosManual, grupoSoat, grupoRequiereRevision, tarifaCodigo]);
 
   const handleNext = async () => {
     if (activeStep >= steps.length - 1) return;
@@ -173,9 +167,7 @@ const CotizadorPage = () => {
         case 1: return <Step2_TipoTramite onAutoAdvance={handleNext} />;
         case 2: return <Step3_TipoVehiculo onAutoAdvance={handleNext} />;
         case 3: return <Step4_MetodoConsulta consultarRef={consultarRef} />;
-        case 4: return <Step5_DatosVehiculo />;
-        case 5: return <Step6_Cotizacion onReset={handleReset} />;
-        case 6: return <Step7_GrupoSoat />;
+        case 4: return <Step7_GrupoSoat />;
         default: return null;
       }
     } else {

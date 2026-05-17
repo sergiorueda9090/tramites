@@ -33,6 +33,20 @@ const TIPOS_VEHICULO = [
   { value: 'CERO_KM', label: 'Cero Kilómetros' },
 ];
 
+// Catálogo de entidades por tipo de vehículo. La primera opción es el default
+// que se aplica al cambiar `tipo_vehiculo` (mirror del backend en
+// tramites/models.py → ENTIDAD_POR_TIPO_VEHICULO).
+const ENTIDAD_LABELS = {
+  MUNDIAL: 'Mundial',
+  PREVISORA: 'Previsora',
+  SOLIDARIA: 'Solidaria',
+  MANUAL: 'Manual',
+};
+const ENTIDADES_POR_TIPO_VEHICULO = {
+  USADO:   ['MUNDIAL', 'PREVISORA', 'MANUAL'],
+  CERO_KM: ['PREVISORA', 'SOLIDARIA', 'MANUAL'],
+};
+
 const GRUPOS_SOAT = [
   { value: '', label: 'Sin especificar' },
   { value: 'MOTOS', label: 'Motos' },
@@ -160,11 +174,44 @@ const TramiteDialog = ({
               size="small"
               label="Tipo de vehículo"
               value={form.tipo_vehiculo || ''}
-              onChange={handleChange('tipo_vehiculo')}
+              onChange={(event) => {
+                const nuevoTipo = event.target.value;
+                onFormChange('tipo_vehiculo', nuevoTipo);
+                // Al cambiar tipo_vehiculo, alinear `entidad` con su default si
+                // la actual no aplica al nuevo tipo.
+                const opciones = ENTIDADES_POR_TIPO_VEHICULO[nuevoTipo] || [];
+                if (!opciones.includes(form.entidad)) {
+                  onFormChange('entidad', opciones[0] || '');
+                }
+              }}
             >
               {TIPOS_VEHICULO.map((t) => (
                 <MenuItem key={t.value || 'none'} value={t.value}>
                   {t.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Entidad"
+              value={form.entidad || ''}
+              onChange={handleChange('entidad')}
+              helperText={form.tipo_vehiculo ? '' : 'Sin tipo de vehículo: opciones generales'}
+            >
+              {/* Si hay tipo_vehiculo, mostrar solo sus opciones permitidas;
+                  si no, mostrar la unión de todas (4 entidades) para que el
+                  usuario pueda elegir antes de definir tipo. */}
+              {(form.tipo_vehiculo
+                ? (ENTIDADES_POR_TIPO_VEHICULO[form.tipo_vehiculo] || [])
+                : Object.keys(ENTIDAD_LABELS)
+              ).map((value) => (
+                <MenuItem key={value} value={value}>
+                  {ENTIDAD_LABELS[value]}
                 </MenuItem>
               ))}
             </TextField>

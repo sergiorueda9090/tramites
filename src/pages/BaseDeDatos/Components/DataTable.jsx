@@ -18,7 +18,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SendIcon from '@mui/icons-material/Send';
-import { formatDateTime } from '../../../utils/helpers';
+import { formatDateTime, formatCurrency } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
 // ============================================
@@ -145,6 +145,26 @@ const columns = [
         size="small"
         color={value ? 'success' : 'warning'}
       />
+    ),
+  },
+  {
+    field: 'precio_lay',
+    headerName: 'Precio de Ley',
+    minWidth: 130,
+    renderCell: ({ value }) => (
+      value
+        ? <Typography variant="body2" fontWeight={600} color="primary.main">{formatCurrency(value)}</Typography>
+        : <Typography variant="caption" color="text.disabled">—</Typography>
+    ),
+  },
+  {
+    field: 'comision',
+    headerName: 'Comisión',
+    minWidth: 120,
+    renderCell: ({ value }) => (
+      value
+        ? <Typography variant="body2" fontWeight={600} color="secondary.main">{formatCurrency(value)}</Typography>
+        : <Typography variant="caption" color="text.disabled">—</Typography>
     ),
   },
   {

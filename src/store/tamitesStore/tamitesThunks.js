@@ -635,6 +635,8 @@ const construirPayloadTramite = (cotizador, runt) => {
 
     tipo_tramite: cotizador.tipoTramite || 'SOAT',
     tipo_vehiculo: cotizador.tipoVehiculo || '',
+    // El backend deriva la entidad por defecto del tipo_vehiculo si no se envía
+    // (USADO → MUNDIAL, CERO_KM → PREVISORA).
 
     grupo_soat: cotizador.grupoSoat || '',
     grupo_clase_runt: cotizador.grupoClaseRunt || '',

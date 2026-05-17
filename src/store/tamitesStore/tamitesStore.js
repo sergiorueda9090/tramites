@@ -24,6 +24,7 @@ const emptyForm = {
 
   tipo_tramite: 'SOAT',
   tipo_vehiculo: '',
+  entidad: '',
 
   grupo_soat: '',
   grupo_clase_runt: '',
@@ -232,6 +233,7 @@ export const tramitesStore = createSlice({
 
         tipo_tramite: t.tipo_tramite || 'SOAT',
         tipo_vehiculo: t.tipo_vehiculo || '',
+        entidad: t.entidad || '',
 
         grupo_soat: t.grupo_soat || '',
         grupo_clase_runt: t.grupo_clase_runt || '',
