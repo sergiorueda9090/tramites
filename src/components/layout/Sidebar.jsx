@@ -46,6 +46,8 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import SavingsIcon from '@mui/icons-material/Savings';
 import LanIcon from '@mui/icons-material/Lan';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -110,6 +112,8 @@ const menuItems = [
           { text: '4 x 1000',            icon: PercentIcon,        path: ROUTES.CUATRO_POR_MIL,     moduleCode: 'cuatro_por_mil',     color: '#fb8c00' },
           { text: 'Utilidades',          icon: MonetizationOnIcon, path: ROUTES.UTILIDADES,         moduleCode: 'utilidades',         color: '#2e7d32' },
           { text: 'Utilidad ocasional',  icon: SavingsIcon,        path: ROUTES.UTILIDAD_OCASIONAL, moduleCode: 'utilidad_ocasional', color: '#66bb6a' },
+          { text: 'Plan de cuentas',     icon: AccountTreeIcon,    path: ROUTES.PLAN_DE_CUENTAS,    moduleCode: 'plan_de_cuentas',    color: '#00695c' },
+          { text: 'Sub-cuentas',         icon: SubdirectoryArrowRightIcon, path: ROUTES.SUB_CUENTAS, moduleCode: 'sub_cuentas',        color: '#00897b' },
         ],
       },
       { text: 'Conmutador de IPs',      icon: LanIcon,                path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips',       color: '#455a64' },

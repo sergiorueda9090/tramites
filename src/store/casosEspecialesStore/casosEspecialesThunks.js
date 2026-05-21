@@ -1,6 +1,7 @@
 import api from '../../services/api';
 import AlertService from '../../services/alertService';
 import { showBackdrop, hideBackdrop } from '../uiStore/uiStore';
+import { selectMotivosCasoEspecial } from '../cotizadorStore/cotizadorSlice';
 import {
   setLoading,
   setError,
@@ -518,38 +519,13 @@ export const cambiarEstadoThunk = (casoId, paso) => {
 
 /**
  * Construye una descripción amigable explicando el motivo por el cual
- * este vehículo fue clasificado como caso especial.
+ * este vehículo fue clasificado como caso especial, reutilizando la lista
+ * de motivos calculada por el selector del cotizador.
  */
-const construirDescripcionCasoEspecial = (cotizador, runt) => {
-  const motivos = [];
-
-  if (cotizador.grupoRequiereRevision) {
-    motivos.push(cotizador.grupoMotivo || 'Clase RUNT no mapeada en el sistema');
-  }
-
-  if (cotizador.tarifaManual) {
-    motivos.push('Capacidad de carga no disponible o inválida - tarifa asignada manualmente');
-  }
-
-  const cc = parseFloat(runt?.cilindraje);
-  if (isNaN(cc) || cc <= 0) {
-    motivos.push('Cilindraje inválido o igual a 0');
-  }
-
-  const pas = parseFloat(runt?.pasajeros_sentados);
-  if (isNaN(pas) || pas <= 0) {
-    motivos.push('Pasajeros sentados inválido o igual a 0');
-  }
-
-  const cap = runt?.capacidad_carga;
-  if (cap !== null && cap !== undefined && cap !== '' && isNaN(parseFloat(cap))) {
-    motivos.push('Capacidad de carga no numérica');
-  }
-
-  if (motivos.length === 0) {
+const construirDescripcionCasoEspecial = (motivos) => {
+  if (!Array.isArray(motivos) || motivos.length === 0) {
     return 'Caso especial detectado desde Cotizador.';
   }
-
   return `Caso especial detectado: ${motivos.join('; ')}.`;
 };
 
@@ -601,11 +577,13 @@ export const guardarCasoEspecialDesdeCotizadorThunk = () => {
         ? cotizador.preciosCliente[0]
         : null;
 
+      const motivos = selectMotivosCasoEspecial(state);
+
       const payload = {
         cliente: clienteId,
         etiqueta: null,
         precio_cliente: precioCliente?.id || null,
-        descripcion: construirDescripcionCasoEspecial(cotizador, runt),
+        descripcion: construirDescripcionCasoEspecial(motivos),
         precio_lay: cotizador.tarifaDetalle?.valor || precioCliente?.precio_lay || null,
         comision: precioCliente?.comision || null,
 

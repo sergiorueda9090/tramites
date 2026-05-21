@@ -20,6 +20,8 @@ export const ROUTES = {
   AJUSTE_SALDO: '/ajuste-saldo',
   GASTOS: '/gastos',
   GASTOS_CATEGORIA: '/gastos-categoria',
+  PLAN_DE_CUENTAS: '/plan-de-cuentas',
+  SUB_CUENTAS: '/sub-cuentas',
   CUATRO_POR_MIL: '/cuatro-por-mil',
   UTILIDADES: '/utilidades',
   UTILIDAD_OCASIONAL: '/utilidad-ocasional',

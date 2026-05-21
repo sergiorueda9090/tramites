@@ -388,41 +388,73 @@ export const selectRegistroBaseDeDatosId = (state) => state.cotizadorStore.regis
 export const selectRegistroBaseDeDatosActualizado = (state) => state.cotizadorStore.registroBaseDeDatosActualizado;
 
 /**
- * Selector que determina si el vehículo es un "caso especial":
- * - Clase RUNT no mapeada (grupoRequiereRevision)
- * - Capacidad de carga inválida para grupo CARGA (tarifaManual)
- * - Validaciones base del vehículo fallan: cilindraje <= 0, pasajeros <= 0, capacidad_carga no numérica
+ * Devuelve la lista de motivos por los que el vehículo fue marcado como
+ * "caso especial". Es la fuente única de verdad consumida tanto por la UI
+ * del Step 7 (alerta de selección manual) como por el thunk que registra
+ * el caso en `/api/casos_especiales/create/`.
  *
- * Excepción: si la clase es AUTOMOVIL, una capacidad_carga no numérica NO marca
- * el trámite como caso especial — los automóviles no transportan carga, así que
- * un valor sucio en ese campo del RUNT es esperable y no debe bloquear el flujo.
+ * Excepción AUTOMOVIL: una capacidad_carga no numérica no marca el trámite
+ * como caso especial — los automóviles no transportan carga y un valor sucio
+ * del RUNT en ese campo es esperable.
  */
-export const selectEsCasoEspecial = (state) => {
+export const selectMotivosCasoEspecial = (state) => {
   const s = state.cotizadorStore;
   const runt = state.apisExternasRuntStore;
-  if (!s || !runt) return false;
+  if (!s || !runt) return [];
 
-  if (s.grupoRequiereRevision) return true;
-  if (s.tarifaManual) return true;
+  const motivos = [];
 
-  // Validaciones base del vehículo (mismas reglas que ValidacionesBaseVehiculo en Step5)
+  if (s.grupoRequiereRevision) {
+    motivos.push(s.grupoMotivo || 'Clase RUNT no mapeada en el sistema');
+  }
+
   const cc = parseFloat(runt.cilindraje);
-  if (isNaN(cc) || cc <= 0) return true;
+  if (isNaN(cc) || cc <= 0) {
+    const valor = runt.cilindraje === null || runt.cilindraje === undefined || runt.cilindraje === ''
+      ? 'sin datos'
+      : String(runt.cilindraje);
+    motivos.push(`Cilindraje inválido (${valor})`);
+  }
 
   const pas = parseFloat(runt.pasajeros_sentados);
-  if (isNaN(pas) || pas <= 0) return true;
+  if (isNaN(pas) || pas <= 0) {
+    const valor = runt.pasajeros_sentados === null || runt.pasajeros_sentados === undefined || runt.pasajeros_sentados === ''
+      ? 'sin datos'
+      : String(runt.pasajeros_sentados);
+    motivos.push(`Pasajeros sentados inválido (${valor})`);
+  }
 
   const claseRunt = (s.grupoClaseRunt || runt.clase || '').toUpperCase();
   const esAutomovil = claseRunt === 'AUTOMOVIL';
-
   const cap = runt.capacidad_carga;
   if (!esAutomovil && cap !== null && cap !== undefined && cap !== '') {
     // Validación estricta: rechaza letras o símbolos (ej. "16000 K", "16000KG", "ABC").
     // parseFloat no sirve aquí porque ignora el sufijo no numérico.
-    if (!/^-?\d+(\.\d+)?$/.test(String(cap).trim())) return true;
+    if (!/^-?\d+(\.\d+)?$/.test(String(cap).trim())) {
+      motivos.push(`Capacidad de carga no numérica ("${cap}")`);
+    }
   }
 
-  return false;
+  // Grupo CARGA sin capacidad de carga válida (>0): la tarifa exige selección manual.
+  if (s.grupoSoat === 'CARGA') {
+    const capNum = parseFloat(cap);
+    if (cap === null || cap === undefined || cap === '' || isNaN(capNum) || capNum <= 0) {
+      motivos.push('Grupo Carga sin capacidad de carga válida — la tarifa requiere selección manual');
+    }
+  }
+
+  return motivos;
+};
+
+/**
+ * Indicador booleano de caso especial. Verdadero si hay motivos detectados o
+ * si el flag `tarifaManual` ya fue activado por el flujo del Step 7.
+ */
+export const selectEsCasoEspecial = (state) => {
+  const s = state.cotizadorStore;
+  if (!s) return false;
+  if (s.tarifaManual) return true;
+  return selectMotivosCasoEspecial(state).length > 0;
 };
 export const selectLoading = (state) => state.cotizadorStore.loading;
 export const selectError = (state) => state.cotizadorStore.error;

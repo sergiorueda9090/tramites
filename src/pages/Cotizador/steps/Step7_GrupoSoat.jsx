@@ -51,6 +51,7 @@ import {
   selectModoCliente,
   selectNuevoCliente,
   selectEsCasoEspecial,
+  selectMotivosCasoEspecial,
   selectCasoEspecialGuardado,
   setGrupoClaseRunt,
   setGrupoSubcriterio,
@@ -545,6 +546,7 @@ const Step7_GrupoSoat = () => {
   const tarifariosDisponibles = useSelector(selectTarifariosDisponibles);
   const preciosCliente = useSelector(selectPreciosCliente);
   const esCasoEspecial = useSelector(selectEsCasoEspecial);
+  const motivosCasoEspecial = useSelector(selectMotivosCasoEspecial);
   const casoEspecialGuardado = useSelector(selectCasoEspecialGuardado);
 
   // Datos del cliente
@@ -978,7 +980,27 @@ const Step7_GrupoSoat = () => {
                 <Divider sx={{ mb: 1.5 }} />
                 <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
                   <AlertTitle>Caso especial — selección manual requerida</AlertTitle>
-                  Este vehículo tiene inconsistencias en sus datos base y fue marcado como caso especial. Selecciona la tarifa manualmente del listado.
+                  <Typography variant="body2" sx={{ mb: motivosCasoEspecial.length > 0 ? 1 : 0 }}>
+                    Este vehículo fue marcado como caso especial por los siguientes motivos:
+                  </Typography>
+                  {motivosCasoEspecial.length > 0 ? (
+                    <Box component="ul" sx={{ m: 0, mb: 1, pl: 2.5, '& li': { mb: 0.25 } }}>
+                      {motivosCasoEspecial.map((motivo, idx) => (
+                        <li key={idx}>
+                          <Typography variant="body2" component="span">
+                            {motivo}
+                          </Typography>
+                        </li>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Sus datos base presentan inconsistencias.
+                    </Typography>
+                  )}
+                  <Typography variant="body2">
+                    Selecciona la tarifa manualmente del listado.
+                  </Typography>
                 </Alert>
                 <Autocomplete
                   fullWidth

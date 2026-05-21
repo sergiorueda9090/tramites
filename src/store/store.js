@@ -25,8 +25,12 @@ import { cuatroPorMilStore }        from './cuatroPorMilStore/cuatroPorMilStore'
 import { utilidadesStore }         from './utilidadesStore/utilidadesStore';
 import { utilidadOcasionalStore }   from './utilidadOcasionalStore/utilidadOcasionalStore';
 import { conmutadorIpsStore }      from './conmutadorIpsStore/conmutadorIpsStore';
+import { planDeCuotasStore } from './planDeCuotasStore/planDeCuotasStore';
+import { subCuentasStore } from './subCuentasStore/subCuentasStore';
+
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
+
 
 export const store = configureStore({
   reducer: {
@@ -58,5 +62,7 @@ export const store = configureStore({
     utilidadesStore: utilidadesStore.reducer,
     utilidadOcasionalStore: utilidadOcasionalStore.reducer,
     conmutadorIpsStore: conmutadorIpsStore.reducer,
+    planDeCuotasStore: planDeCuotasStore.reducer,
+    subCuentasStore: subCuentasStore.reducer,
   },
 });
