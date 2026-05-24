@@ -163,6 +163,25 @@ const columns = [
     ),
   },
   {
+    field: 'sub_cuenta',
+    headerName: 'Sub-cuenta',
+    minWidth: 200,
+    sortable: false,
+    renderCell: ({ row }) => {
+      if (!row.sub_cuenta_codigo && !row.sub_cuenta_nombre) return '-';
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+            {row.sub_cuenta_codigo || '-'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {row.sub_cuenta_nombre || '-'}
+          </Typography>
+        </Box>
+      );
+    },
+  },
+  {
     field: 'created_at',
     headerName: 'Creado',
     minWidth: 150,

@@ -6,6 +6,8 @@ import {
   setError,
   setUtilidades,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -22,6 +24,21 @@ const API_URLS = {
   history:    (id) => `/api/utilidad_ocasional/${id}/history/`,
   // Auxiliares
   tarjetas:   '/api/tarjetas/list/',
+  subCuentas: '/api/sub_cuentas/list/',
+};
+
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
 };
 
 const formatCurrency = (value) => {
@@ -144,6 +161,7 @@ export const loadTarjetasThunk = () => {
 export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadTarjetasThunk());
+    dispatch(loadSubCuentasThunk());
   };
 };
 

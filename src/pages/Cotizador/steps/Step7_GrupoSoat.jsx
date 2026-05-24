@@ -1114,27 +1114,33 @@ const Step7_GrupoSoat = () => {
                         borderColor: 'divider',
                       }}
                     >
-                      <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
-                        {precio.descripcion}
-                      </Typography>
-                      <Grid container spacing={1}>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
-                            Precio de Ley
-                          </Typography>
-                          <Typography variant="body2" fontWeight={700} color="primary.main">
-                            {formatCurrency(precio.precio_lay)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
-                            Comisión
-                          </Typography>
-                          <Typography variant="body2" fontWeight={700} color="secondary.main">
-                            {formatCurrency(precio.comision)}
-                          </Typography>
-                        </Grid>
-                      </Grid>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, gap: 1 }}>
+                        <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ flex: 1 }}>
+                          {precio.descripcion}
+                        </Typography>
+                        {precio.codigo_tarifa_codigo && (
+                          <Chip
+                            label={precio.codigo_tarifa_codigo}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontFamily: 'monospace', fontWeight: 600 }}
+                          />
+                        )}
+                      </Box>
+                      {precio.codigo_tarifa_descripcion && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                          {precio.codigo_tarifa_descripcion}
+                        </Typography>
+                      )}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                          Precio de Ley
+                        </Typography>
+                        <Typography variant="body2" fontWeight={700} color="primary.main">
+                          {formatCurrency(precio.codigo_tarifa_valor)}
+                        </Typography>
+                      </Box>
                     </Box>
                   ))
                 ) : (

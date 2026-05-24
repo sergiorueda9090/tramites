@@ -18,7 +18,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
 // ============================================
@@ -105,16 +104,51 @@ const columns = [
     ),
   },
   {
-    field: 'usuario_name',
-    headerName: 'Usuario Asociado',
-    minWidth: 150,
-    renderCell: ({ value }) => value || '-',
+    field: 'debito',
+    headerName: 'Débito',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => {
+      const num = parseFloat(value) || 0;
+      return (
+        <Typography variant="body2" fontWeight={500} color="primary.main">
+          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(num)}
+        </Typography>
+      );
+    },
   },
   {
-    field: 'created_at',
-    headerName: 'Fecha de Creación',
-    minWidth: 180,
-    renderCell: ({ value }) => formatDateTime(value),
+    field: 'credito',
+    headerName: 'Crédito',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => {
+      const num = parseFloat(value) || 0;
+      return (
+        <Typography variant="body2" fontWeight={500} color="secondary.main">
+          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(num)}
+        </Typography>
+      );
+    },
+  },
+  {
+    field: 'sub_cuenta',
+    headerName: 'Sub-cuenta',
+    minWidth: 200,
+    sortable: false,
+    renderCell: ({ row }) => {
+      if (!row.sub_cuenta_codigo && !row.sub_cuenta_nombre) return '-';
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+            {row.sub_cuenta_codigo || '-'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {row.sub_cuenta_nombre || '-'}
+          </Typography>
+        </Box>
+      );
+    },
   },
 ];
 

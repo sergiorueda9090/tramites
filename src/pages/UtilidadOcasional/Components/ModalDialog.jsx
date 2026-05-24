@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Autocomplete,
   Button,
   Box,
   FormControl,
@@ -37,12 +38,15 @@ const UtilidadOcasionalDialog = ({
   form,
   onFormChange,
   tarjetas = [],
+  subCuentas = [],
 }) => {
   const isEditing = !!selectedUtilidad;
 
   const handleChange = (field) => (event) => {
     onFormChange(field, event.target.value);
   };
+
+  const selectedSubCuenta = subCuentas.find((s) => String(s.id) === String(form.sub_cuenta)) || null;
 
   // Preview en vivo del 4x1000 y total — replica el cálculo del backend.
   const { tarjetaSeleccionada, aplica4x1000, cuatroPorMilCalc, totalCalc } = useMemo(() => {
@@ -123,6 +127,47 @@ const UtilidadOcasionalDialog = ({
             rows={3}
           />
 
+          <Autocomplete
+            fullWidth
+            options={subCuentas}
+            value={selectedSubCuenta}
+            onChange={(_, newValue) => onFormChange('sub_cuenta', newValue ? newValue.id : '')}
+            getOptionLabel={(option) =>
+              option ? `${option.codigo} — ${option.nombre_sub_cuenta}` : ''
+            }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Sub-cuenta"
+                required
+                placeholder="Buscar por código o nombre..."
+                helperText="Obligatoria y única: no se puede repetir entre registros"
+              />
+            )}
+          />
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Débito"
+              type="number"
+              value={form.debito ?? '0'}
+              onChange={handleChange('debito')}
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ min: 0, step: '0.01' }}
+            />
+            <TextField
+              fullWidth
+              label="Crédito"
+              type="number"
+              value={form.credito ?? '0'}
+              onChange={handleChange('credito')}
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ min: 0, step: '0.01' }}
+            />
+          </Box>
+
           {/* Preview del cálculo */}
           {tarjetaSeleccionada && (
             <Alert
@@ -163,7 +208,11 @@ const UtilidadOcasionalDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={onSave}>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          disabled={!form.tarjeta || !form.valor || !form.fecha || !form.sub_cuenta}
+        >
           {isEditing ? 'Guardar cambios' : 'Crear utilidad'}
         </Button>
       </DialogActions>

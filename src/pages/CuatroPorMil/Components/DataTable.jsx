@@ -115,6 +115,47 @@ const columns = [
     ),
   },
   {
+    field: 'debito',
+    headerName: 'Débito',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={500} color="primary.main">
+        {formatCurrency(value)}
+      </Typography>
+    ),
+  },
+  {
+    field: 'credito',
+    headerName: 'Crédito',
+    minWidth: 120,
+    align: 'right',
+    renderCell: ({ value }) => (
+      <Typography variant="body2" fontWeight={500} color="secondary.main">
+        {formatCurrency(value)}
+      </Typography>
+    ),
+  },
+  {
+    field: 'sub_cuenta',
+    headerName: 'Sub-cuenta',
+    minWidth: 200,
+    sortable: false,
+    renderCell: ({ row }) => {
+      if (!row.sub_cuenta_codigo && !row.sub_cuenta_nombre) return '-';
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+            {row.sub_cuenta_codigo || '-'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {row.sub_cuenta_nombre || '-'}
+          </Typography>
+        </Box>
+      );
+    },
+  },
+  {
     field: 'tarjeta',
     headerName: 'Tarjeta',
     minWidth: 180,

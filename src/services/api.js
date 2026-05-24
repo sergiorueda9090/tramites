@@ -2,6 +2,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
 import { store } from '../store/store';
 import { loginFail } from '../store/authStore/authStore';
+import { addMetric } from '../store/apiMetricsStore/apiMetricsStore';
 import AlertService from './alertService';
 
 // Crear instancia de axios
@@ -13,7 +14,7 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor - Agregar token a cada petición
+// Request interceptor - Agregar token + marcar tiempo de inicio
 api.interceptors.request.use(
   (config) => {
     const infoUser = JSON.parse(localStorage.getItem('infoUser')) || {};
@@ -22,6 +23,8 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Timing: marca de inicio para medir duracion de la request
+    config.metadata = { startTime: performance.now() };
     return config;
   },
   (error) => {
@@ -29,12 +32,40 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - Manejar errores y expiración de token
+// Helper: extrae info relevante de una response/error para metricas
+const _recordMetric = (configOrResponse, status, errorMessage = null) => {
+  try {
+    const config = configOrResponse.config || configOrResponse;
+    const startTime = config?.metadata?.startTime;
+    if (startTime == null) return;
+    const duration = Math.round(performance.now() - startTime);
+    store.dispatch(addMetric({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      url: config.url || '',
+      baseURL: config.baseURL || '',
+      method: (config.method || 'get').toUpperCase(),
+      status: status ?? 0,
+      duration_ms: duration,
+      timestamp: Date.now(),
+      error: errorMessage,
+    }));
+  } catch (_) {
+    // No interrumpir el flujo si las metricas fallan
+  }
+};
+
+// Response interceptor - Manejar errores, timing y expiración de token
 api.interceptors.response.use(
   (response) => {
+    _recordMetric(response, response.status);
     return response;
   },
   async (error) => {
+    _recordMetric(
+      error,
+      error.response?.status ?? 0,
+      error.message || 'Network error',
+    );
     const originalRequest = error.config;
 
     // Handle 401 Unauthorized - Token expirado o inválido

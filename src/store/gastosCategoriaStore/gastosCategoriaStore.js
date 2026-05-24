@@ -33,7 +33,14 @@ const initialState = {
     id: null,
     nombre: '',
     descripcion: '',
+    debito: '0',
+    credito: '0',
+    sub_cuenta: '',
   },
+
+  // Datos auxiliares para selects
+  subCuentas: [],
+  loadingSubCuentas: false,
 };
 
 export const gastosCategoriaStore = createSlice({
@@ -49,6 +56,13 @@ export const gastosCategoriaStore = createSlice({
     setCategorias: (state, action) => {
       state.categorias = action.payload;
       state.loading = false;
+    },
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
     },
 
     setPagination: (state, action) => {
@@ -99,7 +113,7 @@ export const gastosCategoriaStore = createSlice({
     openCreateModal: (state) => {
       state.openModal = true;
       state.selectedCategoria = null;
-      state.form = { id: null, nombre: '', descripcion: '' };
+      state.form = { id: null, nombre: '', descripcion: '', debito: '0', credito: '0', sub_cuenta: '' };
     },
     openEditModal: (state, action) => {
       state.openModal = true;
@@ -108,6 +122,9 @@ export const gastosCategoriaStore = createSlice({
         id: action.payload.id,
         nombre: action.payload.nombre || '',
         descripcion: action.payload.descripcion || '',
+        debito: action.payload.debito ?? '0',
+        credito: action.payload.credito ?? '0',
+        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
@@ -130,6 +147,8 @@ export const {
   setLoading,
   setError,
   setCategorias,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   setPage,
   setPageSize,
@@ -148,6 +167,7 @@ export const {
 
 // Selectores
 export const selectCategorias = (state) => state.gastosCategoriaStore.categorias;
+export const selectSubCuentas = (state) => state.gastosCategoriaStore.subCuentas;
 export const selectLoading = (state) => state.gastosCategoriaStore.loading;
 export const selectError = (state) => state.gastosCategoriaStore.error;
 export const selectPagination = (state) => state.gastosCategoriaStore.pagination;

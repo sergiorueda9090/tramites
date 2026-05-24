@@ -46,6 +46,7 @@ import Step3_TipoVehiculo from './steps/Step3_TipoVehiculo';
 import Step4_MetodoConsulta from './steps/Step4_MetodoConsulta';
 import Step6_Cotizacion from './steps/Step6_Cotizacion';
 import Step7_GrupoSoat from './steps/Step7_GrupoSoat';
+import ApiMetricsPanel from './Components/ApiMetricsPanel';
 
 const CotizadorPage = () => {
   const dispatch = useDispatch();
@@ -264,6 +265,9 @@ const CotizadorPage = () => {
           </Button>
         )}
       </Box>
+
+      {/* Panel de metricas: tiempos de respuesta de las APIs consumidas en el flujo */}
+      <ApiMetricsPanel />
     </Box>
   );
 };

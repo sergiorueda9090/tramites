@@ -44,7 +44,14 @@ const initialState = {
     titular: '',
     descripcion: '',
     cuatro_por_mil: '0',
+    debito: '0',
+    credito: '0',
+    sub_cuenta: '',
   },
+
+  // Datos auxiliares para selects
+  subCuentas: [],
+  loadingSubCuentas: false,
 };
 
 export const tarjetasStore = createSlice({
@@ -64,6 +71,15 @@ export const tarjetasStore = createSlice({
     setTarjetas: (state, action) => {
       state.tarjetas = action.payload;
       state.loading = false;
+    },
+
+    // Sub-cuentas para select
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
     },
 
     // Paginación (formato DRF: count, next, previous)
@@ -127,6 +143,9 @@ export const tarjetasStore = createSlice({
         titular: '',
         descripcion: '',
         cuatro_por_mil: '0',
+        debito: '0',
+        credito: '0',
+        sub_cuenta: '',
       };
     },
     openEditModal: (state, action) => {
@@ -139,6 +158,9 @@ export const tarjetasStore = createSlice({
         titular: action.payload.titular || '',
         descripcion: action.payload.descripcion || '',
         cuatro_por_mil: action.payload.cuatro_por_mil || '0',
+        debito: action.payload.debito ?? '0',
+        credito: action.payload.credito ?? '0',
+        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
@@ -165,6 +187,8 @@ export const {
   setLoading,
   setError,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   setPage,
   setPageSize,
@@ -183,6 +207,7 @@ export const {
 
 // Selectores
 export const selectTarjetas = (state) => state.tarjetasStore.tarjetas;
+export const selectSubCuentas = (state) => state.tarjetasStore.subCuentas;
 export const selectLoading = (state) => state.tarjetasStore.loading;
 export const selectError = (state) => state.tarjetasStore.error;
 export const selectPagination = (state) => state.tarjetasStore.pagination;

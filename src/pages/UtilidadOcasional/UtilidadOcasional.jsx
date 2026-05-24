@@ -19,6 +19,7 @@ import {
   selectForm,
   selectLoading,
   selectTarjetas,
+  selectSubCuentas,
   setPage,
   setPageSize,
   setSort,
@@ -64,6 +65,7 @@ const UtilidadOcasional = () => {
   const form             = useSelector(selectForm);
   const loading          = useSelector(selectLoading);
   const tarjetas         = useSelector(selectTarjetas);
+  const subCuentas       = useSelector(selectSubCuentas);
 
   const buildQueryParams = useCallback(() => {
     const params = { page, page_size: pageSize };
@@ -177,6 +179,7 @@ const UtilidadOcasional = () => {
         form={form}
         onFormChange={handleFormChange}
         tarjetas={tarjetas}
+        subCuentas={subCuentas}
       />
     </Box>
   );

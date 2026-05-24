@@ -7,6 +7,8 @@ import {
   setRecepcionesPago,
   setClientes,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -25,6 +27,7 @@ const API_URLS = {
   // URLs auxiliares para cargar datos de selects
   clientes: '/api/clientes/list/',
   tarjetas: '/api/tarjetas/list/',
+  subCuentas: '/api/sub_cuentas/list/',
 };
 
 /**
@@ -115,6 +118,9 @@ const formatFieldName = (field) => {
     fecha: 'Fecha',
     cuatro_por_mil: '4x1000',
     total: 'Total',
+    debito: 'Débito',
+    credito: 'Crédito',
+    sub_cuenta: 'Sub-cuenta',
     usuario: 'Usuario',
     detail: 'Detalle',
     non_field_errors: 'Error',
@@ -208,12 +214,30 @@ export const loadTarjetasThunk = () => {
 };
 
 /**
- * Cargar datos auxiliares (clientes y tarjetas) para los formularios
+ * Cargar sub-cuentas para el select del formulario
+ */
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
+/**
+ * Cargar datos auxiliares (clientes, tarjetas, sub-cuentas) para los formularios
  */
 export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadClientesThunk());
     dispatch(loadTarjetasThunk());
+    dispatch(loadSubCuentasThunk());
   };
 };
 

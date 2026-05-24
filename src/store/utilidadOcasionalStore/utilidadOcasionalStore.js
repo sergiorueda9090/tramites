@@ -14,6 +14,9 @@ const initialForm = {
   valor: '',
   observacion: '',
   fecha: '',
+  debito: '0',
+  credito: '0',
+  sub_cuenta: '',
 };
 
 const initialState = {
@@ -48,6 +51,8 @@ const initialState = {
 
   // Datos auxiliares para selects
   tarjetas: [],
+  subCuentas: [],
+  loadingSubCuentas: false,
 };
 
 export const utilidadOcasionalStore = createSlice({
@@ -69,6 +74,13 @@ export const utilidadOcasionalStore = createSlice({
 
     setTarjetas: (state, action) => {
       state.tarjetas = action.payload;
+    },
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
     },
 
     setPagination: (state, action) => {
@@ -136,6 +148,9 @@ export const utilidadOcasionalStore = createSlice({
         valor: action.payload.valor || '',
         observacion: action.payload.observacion || '',
         fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
+        debito: action.payload.debito ?? '0',
+        credito: action.payload.credito ?? '0',
+        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
@@ -161,6 +176,8 @@ export const {
   setError,
   setUtilidades,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   setPage,
   setPageSize,
@@ -182,6 +199,7 @@ export const selectUtilidades       = (state) => state.utilidadOcasionalStore.ut
 export const selectLoading          = (state) => state.utilidadOcasionalStore.loading;
 export const selectError            = (state) => state.utilidadOcasionalStore.error;
 export const selectTarjetas         = (state) => state.utilidadOcasionalStore.tarjetas;
+export const selectSubCuentas       = (state) => state.utilidadOcasionalStore.subCuentas;
 export const selectPagination       = (state) => state.utilidadOcasionalStore.pagination;
 export const selectPage             = (state) => state.utilidadOcasionalStore.pagination.page;
 export const selectPageSize         = (state) => state.utilidadOcasionalStore.pagination.pageSize;

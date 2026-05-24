@@ -45,10 +45,15 @@ const initialState = {
     valor: '',
     observacion: '',
     fecha: '',
+    debito: '0',
+    credito: '0',
+    sub_cuenta: '',
   },
 
   // Datos auxiliares para selects
   clientes: [],
+  subCuentas: [],
+  loadingSubCuentas: false,
 };
 
 export const ajusteSaldoStore = createSlice({
@@ -73,6 +78,13 @@ export const ajusteSaldoStore = createSlice({
     // Datos auxiliares
     setClientes: (state, action) => {
       state.clientes = action.payload;
+    },
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
     },
 
     // Paginación (formato DRF: count, next, previous)
@@ -135,6 +147,9 @@ export const ajusteSaldoStore = createSlice({
         valor: '',
         observacion: '',
         fecha: new Date().toISOString().slice(0, 16),
+        debito: '0',
+        credito: '0',
+        sub_cuenta: '',
       };
     },
     openEditModal: (state, action) => {
@@ -146,6 +161,9 @@ export const ajusteSaldoStore = createSlice({
         valor: action.payload.valor || '',
         observacion: action.payload.observacion || '',
         fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
+        debito: action.payload.debito ?? '0',
+        credito: action.payload.credito ?? '0',
+        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
@@ -173,6 +191,8 @@ export const {
   setError,
   setAjustesSaldo,
   setClientes,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   setPage,
   setPageSize,
@@ -194,6 +214,7 @@ export const selectAjustesSaldo = (state) => state.ajusteSaldoStore.ajustesSaldo
 export const selectLoading = (state) => state.ajusteSaldoStore.loading;
 export const selectError = (state) => state.ajusteSaldoStore.error;
 export const selectClientes = (state) => state.ajusteSaldoStore.clientes;
+export const selectSubCuentas = (state) => state.ajusteSaldoStore.subCuentas;
 export const selectPagination = (state) => state.ajusteSaldoStore.pagination;
 export const selectPage = (state) => state.ajusteSaldoStore.pagination.page;
 export const selectPageSize = (state) => state.ajusteSaldoStore.pagination.pageSize;

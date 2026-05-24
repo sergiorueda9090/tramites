@@ -61,8 +61,15 @@ const initialState = {
     direccion: '',
     tipo_cliente: 'particular',
     medio_comunicacion: 'email',
+    sub_cuenta: '',
     precios: [],
   },
+
+  // Datos auxiliares para selects
+  subCuentas: [],
+  loadingSubCuentas: false,
+  tarifariosSoat: [],
+  loadingTarifariosSoat: false,
 };
 
 export const clientesStore = createSlice({
@@ -91,6 +98,24 @@ export const clientesStore = createSlice({
     },
     setTopLoading: (state, action) => {
       state.topLoading = action.payload;
+    },
+
+    // Sub-cuentas (auxiliar para el select del formulario)
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
+    },
+
+    // Tarifarios SOAT (auxiliar para el select del codigo_tarifa en precios)
+    setTarifariosSoat: (state, action) => {
+      state.tarifariosSoat = action.payload;
+      state.loadingTarifariosSoat = false;
+    },
+    setLoadingTarifariosSoat: (state, action) => {
+      state.loadingTarifariosSoat = action.payload;
     },
 
     // Paginación (formato DRF: count, next, previous)
@@ -156,6 +181,7 @@ export const clientesStore = createSlice({
         direccion: '',
         tipo_cliente: 'particular',
         medio_comunicacion: 'email',
+        sub_cuenta: '',
         precios: [],
       };
     },
@@ -171,6 +197,7 @@ export const clientesStore = createSlice({
         direccion: action.payload.direccion || '',
         tipo_cliente: action.payload.tipo_cliente || 'particular',
         medio_comunicacion: action.payload.medio_comunicacion || 'email',
+        sub_cuenta: action.payload.sub_cuenta || '',
         precios: action.payload.precios || [],
       };
     },
@@ -215,6 +242,10 @@ export const {
   setClientes,
   setTopClientes,
   setTopLoading,
+  setSubCuentas,
+  setLoadingSubCuentas,
+  setTarifariosSoat,
+  setLoadingTarifariosSoat,
   setPagination,
   setPage,
   setPageSize,
@@ -240,6 +271,8 @@ export const selectLoading = (state) => state.clientesStore.loading;
 export const selectError = (state) => state.clientesStore.error;
 export const selectTopClientes = (state) => state.clientesStore.topClientes;
 export const selectTopLoading = (state) => state.clientesStore.topLoading;
+export const selectSubCuentas = (state) => state.clientesStore.subCuentas;
+export const selectTarifariosSoat = (state) => state.clientesStore.tarifariosSoat;
 export const selectPagination = (state) => state.clientesStore.pagination;
 export const selectPage = (state) => state.clientesStore.pagination.page;
 export const selectPageSize = (state) => state.clientesStore.pagination.pageSize;

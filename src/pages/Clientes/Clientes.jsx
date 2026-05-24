@@ -18,6 +18,8 @@ import {
   selectForm,
   selectLoading,
   selectAppliedFilters,
+  selectSubCuentas,
+  selectTarifariosSoat,
   setPage,
   setPageSize,
   setSort,
@@ -39,6 +41,8 @@ import {
   deleteThunk,
   viewThunk,
   showThunk,
+  loadSubCuentasThunk,
+  loadTarifariosSoatThunk,
 } from '../../store/clientesStore/clientesThunks';
 
 import {
@@ -65,6 +69,15 @@ const Clientes = () => {
   const selectedCliente = useSelector(selectSelectedCliente);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
+  const subCuentas = useSelector(selectSubCuentas);
+  const tarifariosSoat = useSelector(selectTarifariosSoat);
+
+  // Cargar selects auxiliares al montar (sub-cuentas obligatoria del cliente,
+  // tarifarios SOAT para el codigo_tarifa de cada PrecioCliente)
+  useEffect(() => {
+    dispatch(loadSubCuentasThunk());
+    dispatch(loadTarifariosSoatThunk());
+  }, [dispatch]);
 
   /**
    * Construye los parámetros de consulta para el backend
@@ -255,6 +268,8 @@ const Clientes = () => {
         onAddPrecio={handleAddPrecio}
         onUpdatePrecio={handleUpdatePrecio}
         onRemovePrecio={handleRemovePrecio}
+        subCuentas={subCuentas}
+        tarifariosSoat={tarifariosSoat}
       />
     </Box>
   );

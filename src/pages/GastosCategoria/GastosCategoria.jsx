@@ -18,6 +18,7 @@ import {
   selectForm,
   selectLoading,
   selectAppliedFilters,
+  selectSubCuentas,
   setPage,
   setPageSize,
   setSort,
@@ -36,6 +37,7 @@ import {
   deleteThunk,
   viewThunk,
   showThunk,
+  loadSubCuentasThunk,
 } from '../../store/gastosCategoriaStore/gastosCategoriaThunks';
 
 import {
@@ -61,6 +63,11 @@ const GastosCategoria = () => {
   const selectedCategoria = useSelector(selectSelectedCategoria);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
+  const subCuentas = useSelector(selectSubCuentas);
+
+  useEffect(() => {
+    dispatch(loadSubCuentasThunk());
+  }, [dispatch]);
 
   const buildQueryParams = useCallback(() => {
     const params = { page, page_size: pageSize };
@@ -163,6 +170,7 @@ const GastosCategoria = () => {
         selectedCategoria={selectedCategoria}
         form={form}
         onFormChange={handleFormChange}
+        subCuentas={subCuentas}
       />
     </Box>
   );

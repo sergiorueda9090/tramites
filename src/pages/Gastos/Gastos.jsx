@@ -20,6 +20,7 @@ import {
   selectAppliedFilters,
   selectGastos,
   selectTarjetas,
+  selectSubCuentas,
   setPage,
   setPageSize,
   setSort,
@@ -67,6 +68,7 @@ const Gastos = () => {
   const loading = useSelector(selectLoading);
   const gastos = useSelector(selectGastos);
   const tarjetas = useSelector(selectTarjetas);
+  const subCuentas = useSelector(selectSubCuentas);
 
   /**
    * Construye los parámetros de consulta para el backend
@@ -251,6 +253,7 @@ const Gastos = () => {
         onFormChange={handleFormChange}
         gastos={gastos}
         tarjetas={tarjetas}
+        subCuentas={subCuentas}
       />
     </Box>
   );

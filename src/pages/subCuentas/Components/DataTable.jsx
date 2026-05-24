@@ -151,7 +151,7 @@ const columns = [
   },
   {
     field: 'acumulado',
-    headerName: 'Acumulado',
+    headerName: 'Total Acumulado',
     minWidth: 140,
     align: 'right',
     renderCell: ({ value }) => (

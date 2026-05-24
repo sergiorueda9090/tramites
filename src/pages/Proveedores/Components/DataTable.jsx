@@ -12,7 +12,6 @@ import {
   IconButton,
   Tooltip,
   Typography,
-  Chip,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,112 +19,75 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
-// ============================================
-// TableLoadingSkeleton Component
-// ============================================
-const TableLoadingSkeleton = ({ rows = 5, columns = 5 }) => {
-  return (
-    <Box sx={{ width: '100%' }}>
-      {[...Array(rows)].map((_, rowIndex) => (
-        <Box
-          key={rowIndex}
-          sx={{
-            display: 'flex',
-            gap: 2,
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          {[...Array(columns)].map((_, colIndex) => (
-            <Box
-              key={colIndex}
-              sx={{
-                flex: 1,
-                height: 20,
-                bgcolor: 'action.hover',
-                borderRadius: 1,
-                animation: 'pulse 1.5s ease-in-out infinite',
-                '@keyframes pulse': {
-                  '0%': { opacity: 1 },
-                  '50%': { opacity: 0.5 },
-                  '100%': { opacity: 1 },
-                },
-              }}
-            />
-          ))}
-        </Box>
-      ))}
-    </Box>
-  );
-};
+const TableLoadingSkeleton = ({ rows = 5, columns = 5 }) => (
+  <Box sx={{ width: '100%' }}>
+    {[...Array(rows)].map((_, rowIndex) => (
+      <Box
+        key={rowIndex}
+        sx={{
+          display: 'flex',
+          gap: 2,
+          p: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {[...Array(columns)].map((_, colIndex) => (
+          <Box
+            key={colIndex}
+            sx={{
+              flex: 1,
+              height: 20,
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%': { opacity: 1 },
+                '50%': { opacity: 0.5 },
+                '100%': { opacity: 1 },
+              },
+            }}
+          />
+        ))}
+      </Box>
+    ))}
+  </Box>
+);
 
-// ============================================
-// Format currency helper
-// ============================================
-const formatCurrency = (value) => {
-  if (!value) return '$0';
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-// ============================================
-// AjusteSaldo Columns Configuration
-// ============================================
 const columns = [
-  { field: 'id', headerName: 'ID', width: 70 },
+  { field: 'id', headerName: 'ID', width: 80 },
   {
-    field: 'cliente',
-    headerName: 'Cliente',
+    field: 'nombre',
+    headerName: 'Nombre',
     minWidth: 200,
-    renderCell: ({ row }) => row.cliente?.nombre || '-',
-  },
-  {
-    field: 'valor',
-    headerName: 'Valor',
-    minWidth: 150,
-    align: 'right',
-    renderCell: ({ value }) => (
-      <Typography variant="body2" fontWeight={600} color="primary">
-        {formatCurrency(value)}
-      </Typography>
-    ),
-  },
-  {
-    field: 'debito',
-    headerName: 'Débito',
-    minWidth: 120,
-    align: 'right',
-    renderCell: ({ value }) => (
-      <Typography variant="body2" fontWeight={500} color="primary.main">
-        {formatCurrency(value)}
-      </Typography>
-    ),
-  },
-  {
-    field: 'credito',
-    headerName: 'Crédito',
-    minWidth: 120,
-    align: 'right',
-    renderCell: ({ value }) => (
-      <Typography variant="body2" fontWeight={500} color="secondary.main">
-        {formatCurrency(value)}
-      </Typography>
+    renderCell: ({ row, value }) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{
+            width: 14,
+            height: 14,
+            borderRadius: '50%',
+            bgcolor: row.color || '#1976d2',
+            border: '1px solid',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        />
+        <Typography variant="body2" fontWeight={500}>
+          {value || '-'}
+        </Typography>
+      </Box>
     ),
   },
   {
     field: 'sub_cuenta',
     headerName: 'Sub-cuenta',
-    minWidth: 200,
+    minWidth: 260,
     sortable: false,
     renderCell: ({ row }) => {
       if (!row.sub_cuenta_codigo && !row.sub_cuenta_nombre) return '-';
       return (
-        <Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
             {row.sub_cuenta_codigo || '-'}
           </Typography>
@@ -137,29 +99,21 @@ const columns = [
     },
   },
   {
-    field: 'fecha',
-    headerName: 'Fecha',
-    minWidth: 160,
-    renderCell: ({ value }) => formatDateTime(value),
-  },
-  {
-    field: 'observacion',
-    headerName: 'Observación',
-    minWidth: 200,
+    field: 'user_name',
+    headerName: 'Creado por',
+    minWidth: 150,
+    sortable: false,
     renderCell: ({ value }) => value || '-',
   },
   {
-    field: 'usuario',
-    headerName: 'Registrado por',
-    minWidth: 150,
-    renderCell: ({ row }) => row.usuario?.name || '-',
+    field: 'created_at',
+    headerName: 'Fecha de creación',
+    minWidth: 180,
+    renderCell: ({ value }) => formatDateTime(value),
   },
 ];
 
-// ============================================
-// AjusteSaldoDataTable Component
-// ============================================
-const AjusteSaldoDataTable = ({
+const ProveedoresDataTable = ({
   data,
   loading = false,
   page = 0,
@@ -173,38 +127,14 @@ const AjusteSaldoDataTable = ({
   onView,
   onEdit,
   onDelete,
-  emptyMessage = 'No se encontraron ajustes de saldo',
+  emptyMessage = 'No se encontraron proveedores',
   stickyHeader = true,
   maxHeight = 600,
   showActions = true,
 }) => {
   const renderCellContent = (column, row) => {
     const value = row[column.field];
-
-    if (column.renderCell) {
-      return column.renderCell({ row, value });
-    }
-
-    if (column.type === 'chip' && value) {
-      return (
-        <Chip
-          label={value}
-          size="small"
-          color={column.getChipColor ? column.getChipColor(value) : 'default'}
-        />
-      );
-    }
-
-    if (column.type === 'boolean') {
-      return (
-        <Chip
-          label={value ? 'Sí' : 'No'}
-          size="small"
-          color={value ? 'success' : 'default'}
-        />
-      );
-    }
-
+    if (column.renderCell) return column.renderCell({ row, value });
     return value ?? '-';
   };
 
@@ -218,7 +148,7 @@ const AjusteSaldoDataTable = ({
 
   return (
     <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-      <TableContainer sx={{ maxHeight: maxHeight }}>
+      <TableContainer sx={{ maxHeight }}>
         <Table stickyHeader={stickyHeader} size="medium">
           <TableHead>
             <TableRow>
@@ -323,4 +253,4 @@ const AjusteSaldoDataTable = ({
 };
 
 export { columns };
-export default AjusteSaldoDataTable;
+export default ProveedoresDataTable;

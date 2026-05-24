@@ -7,6 +7,8 @@ import {
   setGastosRelaciones,
   setGastos,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -26,6 +28,7 @@ const API_URLS = {
   // El select de "Categoría" se alimenta desde el nuevo módulo gastos_categoria.
   gastos: '/api/gastos_categoria/list/',
   tarjetas: '/api/tarjetas/list/',
+  subCuentas: '/api/sub_cuentas/list/',
 };
 
 /**
@@ -211,10 +214,25 @@ export const loadTarjetasThunk = () => {
 /**
  * Cargar datos auxiliares (gastos y tarjetas) para los formularios
  */
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
 export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadGastosThunk());
     dispatch(loadTarjetasThunk());
+    dispatch(loadSubCuentasThunk());
   };
 };
 

@@ -35,7 +35,6 @@ import {
   listAllThunk,
   loadCuentasThunk,
   saveThunk,
-  deleteThunk,
   viewThunk,
   showThunk,
 } from '../../store/subCuentasStore/subCuentasThunks';
@@ -48,7 +47,7 @@ import {
 
 const SubCuentas = () => {
   const dispatch = useDispatch();
-  const { canCreate, canEdit, canDelete } = usePermissions();
+  const { canCreate, canEdit } = usePermissions();
 
   // Selectores
   const filters = useSelector(selectFilters);
@@ -120,15 +119,14 @@ const SubCuentas = () => {
     dispatch(clearFilter(field));
   };
 
-  // CRUD handlers
+  // CRUD handlers — edicion parcial: solo codigo, cuenta y nombre_sub_cuenta.
+  // Los campos financieros (debito/credito/acumulado) son inmutables.
+  // Eliminar sigue bloqueado en el backend (405).
   const handleView = (sub) => {
     dispatch(viewThunk(sub));
   };
   const handleEdit = (sub) => {
     dispatch(showThunk(sub.id));
-  };
-  const handleDelete = (sub) => {
-    dispatch(deleteThunk(sub));
   };
   const handleCreate = () => {
     dispatch(openCreateModal());
@@ -182,7 +180,7 @@ const SubCuentas = () => {
         onClearFilter={handleClearFilter}
       />
 
-      {/* Data Table */}
+      {/* Data Table — Ver + Editar (solo 3 campos); sin Eliminar (bloqueado en backend) */}
       <SubCuentasDataTable
         data={paginatedData}
         loading={loading}
@@ -196,10 +194,9 @@ const SubCuentas = () => {
         onSort={handleSort}
         onView={handleView}
         onEdit={canEdit('sub_cuentas') ? handleEdit : undefined}
-        onDelete={canDelete('sub_cuentas') ? handleDelete : undefined}
       />
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog — en modo edit solo se permiten codigo, cuenta y nombre */}
       <SubCuentaDialog
         open={openModal}
         onClose={handleCloseModal}

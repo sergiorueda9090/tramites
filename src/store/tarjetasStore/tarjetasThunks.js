@@ -5,6 +5,8 @@ import {
   setLoading,
   setError,
   setTarjetas,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -20,6 +22,21 @@ const API_URLS = {
   restore: (id) => `/api/tarjetas/${id}/restore/`,
   hardDelete: (id) => `/api/tarjetas/${id}/hard-delete/`,
   history: (id) => `/api/tarjetas/${id}/history/`,
+  subCuentas: '/api/sub_cuentas/list/',
+};
+
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
 };
 
 /**
@@ -107,6 +124,9 @@ const formatFieldName = (field) => {
     titular: 'Titular',
     descripcion: 'Descripción',
     cuatro_por_mil: '4x1000',
+    debito: 'Débito',
+    credito: 'Crédito',
+    sub_cuenta: 'Sub-cuenta',
     usuario: 'Usuario',
     detail: 'Detalle',
     non_field_errors: 'Error',

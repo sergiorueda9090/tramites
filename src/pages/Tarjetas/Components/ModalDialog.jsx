@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Autocomplete,
   Button,
   Box,
   FormControl,
@@ -25,6 +26,7 @@ const TarjetaDialog = ({
   selectedTarjeta,
   form,
   onFormChange,
+  subCuentas = [],
 }) => {
   const isEditing = !!selectedTarjeta;
 
@@ -32,6 +34,8 @@ const TarjetaDialog = ({
     const value = event.target.value;
     onFormChange(field, value);
   };
+
+  const selectedSubCuenta = subCuentas.find((s) => String(s.id) === String(form.sub_cuenta)) || null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -127,11 +131,56 @@ const TarjetaDialog = ({
               <MenuItem value="1">Activo - Aplica impuesto del 4x1000</MenuItem>
             </Select>
           </FormControl>
+
+          <Autocomplete
+            fullWidth
+            options={subCuentas}
+            value={selectedSubCuenta}
+            onChange={(_, newValue) => onFormChange('sub_cuenta', newValue ? newValue.id : '')}
+            getOptionLabel={(option) =>
+              option ? `${option.codigo} — ${option.nombre_sub_cuenta}` : ''
+            }
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Sub-cuenta"
+                required
+                placeholder="Buscar por código o nombre..."
+                helperText="Obligatoria y única: no se puede repetir entre tarjetas"
+              />
+            )}
+          />
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Débito"
+              type="number"
+              value={form.debito ?? '0'}
+              onChange={handleChange('debito')}
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ min: 0, step: '0.01' }}
+            />
+            <TextField
+              fullWidth
+              label="Crédito"
+              type="number"
+              value={form.credito ?? '0'}
+              onChange={handleChange('credito')}
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ min: 0, step: '0.01' }}
+            />
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" onClick={onSave}>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          disabled={!form.numero || !form.titular || !form.descripcion || !form.sub_cuenta}
+        >
           {isEditing ? 'Guardar cambios' : 'Crear tarjeta'}
         </Button>
       </DialogActions>

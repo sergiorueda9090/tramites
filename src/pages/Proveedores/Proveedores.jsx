@@ -11,14 +11,13 @@ import {
   selectPageSize,
   selectSortField,
   selectSortOrder,
-  selectPaginatedAjustesSaldo,
+  selectPaginatedProveedores,
   selectFilteredTotalRows,
   selectOpenModal,
-  selectSelectedAjusteSaldo,
+  selectSelectedProveedor,
   selectForm,
   selectLoading,
   selectAppliedFilters,
-  selectClientes,
   selectSubCuentas,
   setPage,
   setPageSize,
@@ -30,24 +29,24 @@ import {
   openCreateModal,
   closeModal,
   updateForm,
-} from '../../store/ajusteSaldoStore/ajusteSaldoStore';
+} from '../../store/proveedoresStore/proveedoresStore';
 
 import {
   listAllThunk,
+  loadSubCuentasThunk,
   saveThunk,
   deleteThunk,
   viewThunk,
   showThunk,
-  loadAuxDataThunk,
-} from '../../store/ajusteSaldoStore/ajusteSaldoThunks';
+} from '../../store/proveedoresStore/proveedoresThunks';
 
 import {
-  AjusteSaldoFilters,
-  AjusteSaldoDataTable,
-  AjusteSaldoDialog,
+  ProveedoresFilters,
+  ProveedoresDataTable,
+  ProveedorDialog,
 } from './Components';
 
-const AjusteSaldo = () => {
+const Proveedores = () => {
   const dispatch = useDispatch();
   const { canCreate, canEdit, canDelete } = usePermissions();
 
@@ -59,126 +58,57 @@ const AjusteSaldo = () => {
   const pageSize = useSelector(selectPageSize);
   const sortField = useSelector(selectSortField);
   const sortOrder = useSelector(selectSortOrder);
-  const paginatedData = useSelector(selectPaginatedAjustesSaldo);
+  const paginatedData = useSelector(selectPaginatedProveedores);
   const totalRows = useSelector(selectFilteredTotalRows);
   const openModal = useSelector(selectOpenModal);
-  const selectedAjusteSaldo = useSelector(selectSelectedAjusteSaldo);
+  const selectedProveedor = useSelector(selectSelectedProveedor);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
-  const clientes = useSelector(selectClientes);
   const subCuentas = useSelector(selectSubCuentas);
 
-  /**
-   * Construye los parámetros de consulta para el backend
-   */
   const buildQueryParams = useCallback(() => {
-    const params = {
-      page,
-      page_size: pageSize,
-    };
-
-    if (appliedFilters.search) {
-      params.search = appliedFilters.search;
-    }
-
-    if (appliedFilters.cliente) {
-      params.cliente = appliedFilters.cliente;
-    }
-
-    if (appliedFilters.fecha_desde) {
-      params.fecha_start = appliedFilters.fecha_desde;
-    }
-
-    if (appliedFilters.fecha_hasta) {
-      params.fecha_end = appliedFilters.fecha_hasta;
-    }
-
+    const params = { page, page_size: pageSize };
+    if (appliedFilters.search) params.search = appliedFilters.search;
+    if (appliedFilters.sub_cuenta) params.sub_cuenta = appliedFilters.sub_cuenta;
     if (sortField) {
       params.ordering = sortOrder === 'desc' ? `-${sortField}` : sortField;
     }
-
     return params;
   }, [page, pageSize, appliedFilters, sortField, sortOrder]);
 
-  /**
-   * Cargar ajustes de saldo del backend
-   */
-  const fetchAjustesSaldo = useCallback(() => {
-    const params = buildQueryParams();
-    dispatch(listAllThunk(params));
+  const fetchProveedores = useCallback(() => {
+    dispatch(listAllThunk(buildQueryParams()));
   }, [dispatch, buildQueryParams]);
 
-  // Cargar datos auxiliares al montar
+  // Cargar selects auxiliares al montar
   useEffect(() => {
-    dispatch(loadAuxDataThunk());
+    dispatch(loadSubCuentasThunk());
   }, [dispatch]);
 
-  // Cargar ajustes al montar y cuando cambian los parámetros
   useEffect(() => {
-    fetchAjustesSaldo();
-  }, [fetchAjustesSaldo]);
+    fetchProveedores();
+  }, [fetchProveedores]);
 
-  // Handlers de paginación
-  const handlePageChange = (newPage) => {
-    dispatch(setPage(newPage + 1));
-  };
-
-  const handlePageSizeChange = (newPageSize) => {
-    dispatch(setPageSize(newPageSize));
-  };
-
+  // Handlers de paginación (componente base 0, store/backend base 1)
+  const handlePageChange = (newPage) => dispatch(setPage(newPage + 1));
+  const handlePageSizeChange = (newPageSize) => dispatch(setPageSize(newPageSize));
   const pageForComponent = page - 1;
 
-  // Handler de ordenamiento
-  const handleSort = (field) => {
-    dispatch(setSort({ field }));
-  };
+  const handleSort = (field) => dispatch(setSort({ field }));
 
-  // Handlers de filtros
-  const handleFilterChange = (field, value) => {
-    dispatch(updateFilter({ field, value }));
-  };
+  const handleFilterChange = (field, value) => dispatch(updateFilter({ field, value }));
+  const handleApplyFilters = () => dispatch(applyFilters());
+  const handleClearFilters = () => dispatch(clearFilters());
+  const handleClearFilter = (field) => dispatch(clearFilter(field));
 
-  const handleApplyFilters = () => {
-    dispatch(applyFilters());
-  };
-
-  const handleClearFilters = () => {
-    dispatch(clearFilters());
-  };
-
-  const handleClearFilter = (field) => {
-    dispatch(clearFilter(field));
-  };
-
-  // Handlers de CRUD
-  const handleView = (ajuste) => {
-    dispatch(viewThunk(ajuste));
-  };
-
-  const handleEdit = (ajuste) => {
-    dispatch(showThunk(ajuste.id));
-  };
-
-  const handleDelete = (ajuste) => {
-    dispatch(deleteThunk(ajuste));
-  };
-
-  const handleCreate = () => {
-    dispatch(openCreateModal());
-  };
-
-  const handleCloseModal = () => {
-    dispatch(closeModal());
-  };
-
-  const handleFormChange = (field, value) => {
-    dispatch(updateForm({ field, value }));
-  };
-
-  const handleSave = () => {
-    dispatch(saveThunk(form));
-  };
+  // CRUD handlers
+  const handleView = (proveedor) => dispatch(viewThunk(proveedor));
+  const handleEdit = (proveedor) => dispatch(showThunk(proveedor.id));
+  const handleDelete = (proveedor) => dispatch(deleteThunk(proveedor));
+  const handleCreate = () => dispatch(openCreateModal());
+  const handleCloseModal = () => dispatch(closeModal());
+  const handleFormChange = (field, value) => dispatch(updateForm({ field, value }));
+  const handleSave = () => dispatch(saveThunk(form));
 
   return (
     <Box>
@@ -195,24 +125,24 @@ const AjusteSaldo = () => {
       >
         <Box>
           <Typography variant="h4" fontWeight={600} gutterBottom>
-            Ajustes de Saldo
+            Proveedores
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gestión de ajustes de saldo del sistema
+            Gestión de proveedores y su sub-cuenta contable asociada
           </Typography>
         </Box>
-        {canCreate('ajuste_saldo') && (
+        {canCreate('proveedores') && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>
-            Nuevo ajuste
+            Nuevo proveedor
           </Button>
         )}
       </Box>
 
       {/* Filters */}
-      <AjusteSaldoFilters
+      <ProveedoresFilters
         filters={filters}
         activeFilters={activeFilters}
-        clientes={clientes}
+        subCuentas={subCuentas}
         onFilterChange={handleFilterChange}
         onApply={handleApplyFilters}
         onClear={handleClearFilters}
@@ -220,7 +150,7 @@ const AjusteSaldo = () => {
       />
 
       {/* Data Table */}
-      <AjusteSaldoDataTable
+      <ProveedoresDataTable
         data={paginatedData}
         loading={loading}
         page={pageForComponent}
@@ -232,23 +162,22 @@ const AjusteSaldo = () => {
         onPageSizeChange={handlePageSizeChange}
         onSort={handleSort}
         onView={handleView}
-        onEdit={canEdit('ajuste_saldo') ? handleEdit : undefined}
-        onDelete={canDelete('ajuste_saldo') ? handleDelete : undefined}
+        onEdit={canEdit('proveedores') ? handleEdit : undefined}
+        onDelete={canDelete('proveedores') ? handleDelete : undefined}
       />
 
       {/* Create/Edit Dialog */}
-      <AjusteSaldoDialog
+      <ProveedorDialog
         open={openModal}
         onClose={handleCloseModal}
         onSave={handleSave}
-        selectedAjusteSaldo={selectedAjusteSaldo}
+        selectedProveedor={selectedProveedor}
         form={form}
         onFormChange={handleFormChange}
-        clientes={clientes}
         subCuentas={subCuentas}
       />
     </Box>
   );
 };
 
-export default AjusteSaldo;
+export default Proveedores;

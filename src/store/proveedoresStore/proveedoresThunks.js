@@ -4,27 +4,26 @@ import { showBackdrop, hideBackdrop } from '../uiStore/uiStore';
 import {
   setLoading,
   setError,
+  setProveedores,
+  setLoadingSubCuentas,
   setSubCuentas,
-  setLoadingCuentas,
-  setCuentas,
   setPagination,
   closeModal,
   openEditModal,
-  TIPO_CUENTA_LABELS,
-} from './subCuentasStore';
+} from './proveedoresStore';
 
-// URLs del modulo Sub-cuentas (backend: tramitesbackend/sub_cuentas)
+// URLs del modulo Proveedores (backend: tramitesbackend/proveedores)
 const API_URLS = {
-  list: '/api/sub_cuentas/list/',
-  detail: (id) => `/api/sub_cuentas/${id}/`,
-  create: '/api/sub_cuentas/create/',
-  update: (id) => `/api/sub_cuentas/${id}/update/`,
-  delete: (id) => `/api/sub_cuentas/${id}/delete/`,
-  restore: (id) => `/api/sub_cuentas/${id}/restore/`,
-  hardDelete: (id) => `/api/sub_cuentas/${id}/hard-delete/`,
-  history: (id) => `/api/sub_cuentas/${id}/history/`,
-  // Auxiliar: listar Plan de cuentas para el select de "Cuenta"
-  cuentas: '/api/plan_de_cuentas/list/',
+  list: '/api/proveedores/list/',
+  detail: (id) => `/api/proveedores/${id}/`,
+  create: '/api/proveedores/create/',
+  update: (id) => `/api/proveedores/${id}/update/`,
+  delete: (id) => `/api/proveedores/${id}/delete/`,
+  restore: (id) => `/api/proveedores/${id}/restore/`,
+  hardDelete: (id) => `/api/proveedores/${id}/hard-delete/`,
+  history: (id) => `/api/proveedores/${id}/history/`,
+  // Auxiliares para los selects del formulario y de los filtros
+  subCuentas: '/api/sub_cuentas/list/',
 };
 
 const extractApiError = (error) => {
@@ -73,12 +72,9 @@ const extractApiError = (error) => {
 
 const formatFieldName = (field) => {
   const fieldNames = {
-    codigo: 'ID',
-    cuenta: 'Cuenta',
-    nombre_sub_cuenta: 'Nombre de sub-cuenta',
-    debito: 'Débito',
-    credito: 'Crédito',
-    acumulado: 'Acumulado',
+    nombre: 'Nombre',
+    color: 'Color',
+    sub_cuenta: 'Sub-cuenta',
     user: 'Usuario',
     detail: 'Detalle',
     non_field_errors: 'Error',
@@ -86,28 +82,15 @@ const formatFieldName = (field) => {
   return fieldNames[field] || field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ');
 };
 
-// Formato moneda colombiana (para vista de detalles)
-const formatCurrency = (value) => {
-  const num = parseFloat(value);
-  if (isNaN(num)) return '$0';
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-};
-
 /**
- * Listar sub-cuentas con paginación
- * @param {Object} params - page, page_size, search, cuenta, tipo, start_date, end_date, ordering
+ * Listar proveedores con paginación y filtros del servidor
  */
 export const listAllThunk = (params = {}) => {
   return async (dispatch, getState) => {
     try {
       dispatch(setLoading(true));
 
-      const { pagination } = getState().subCuentasStore;
+      const { pagination } = getState().proveedoresStore;
       const page = params.page || 1;
       const pageSize = params.page_size || pagination.pageSize;
 
@@ -116,7 +99,7 @@ export const listAllThunk = (params = {}) => {
       const response = await api.get(API_URLS.list, { params: queryParams });
       const { count, next, previous, results } = response.data;
 
-      dispatch(setSubCuentas(results));
+      dispatch(setProveedores(results));
       dispatch(setPagination({ count, next, previous, page, pageSize }));
     } catch (error) {
       const { title, message, htmlMessage } = extractApiError(error);
@@ -127,27 +110,27 @@ export const listAllThunk = (params = {}) => {
 };
 
 /**
- * Cargar cuentas del PUC (para el select de "Cuenta" del formulario)
+ * Cargar sub-cuentas para el select del formulario y del filtro
  */
-export const loadCuentasThunk = () => {
+export const loadSubCuentasThunk = () => {
   return async (dispatch) => {
     try {
-      dispatch(setLoadingCuentas(true));
-      const response = await api.get(API_URLS.cuentas, { params: { page_size: 1000 } });
-      const cuentas = response.data.results || response.data;
-      dispatch(setCuentas(cuentas));
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
     } catch (error) {
-      console.error('Error cargando Plan de cuentas:', error);
-      dispatch(setLoadingCuentas(false));
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
     }
   };
 };
 
-export const showThunk = (subId) => {
+export const showThunk = (proveedorId) => {
   return async (dispatch) => {
     try {
-      dispatch(showBackdrop('Cargando sub-cuenta...'));
-      const response = await api.get(API_URLS.detail(subId));
+      dispatch(showBackdrop('Cargando proveedor...'));
+      const response = await api.get(API_URLS.detail(proveedorId));
       dispatch(hideBackdrop());
       dispatch(openEditModal(response.data));
     } catch (error) {
@@ -162,7 +145,7 @@ export const showThunk = (subId) => {
 export const createThunk = (data) => {
   return async (dispatch) => {
     try {
-      dispatch(showBackdrop('Creando sub-cuenta...'));
+      dispatch(showBackdrop('Creando proveedor...'));
 
       const cleanData = {};
       Object.entries(data).forEach(([key, value]) => {
@@ -178,8 +161,8 @@ export const createThunk = (data) => {
       dispatch(hideBackdrop());
 
       await AlertService.success(
-        '¡Sub-cuenta creada!',
-        'La sub-cuenta ha sido creada correctamente.',
+        '¡Proveedor creado!',
+        'El proveedor ha sido creado correctamente.',
         { timer: 3000 }
       );
 
@@ -193,30 +176,27 @@ export const createThunk = (data) => {
   };
 };
 
-export const updateThunk = (subId, data) => {
+export const updateThunk = (proveedorId, data) => {
   return async (dispatch) => {
     try {
-      dispatch(showBackdrop('Actualizando sub-cuenta...'));
+      dispatch(showBackdrop('Actualizando proveedor...'));
 
-      // Regla de negocio: en edicion solo se permiten codigo, cuenta y nombre_sub_cuenta.
-      // Los financieros (debito/credito/acumulado) son inmutables y el backend los rechaza.
-      const CAMPOS_EDITABLES = ['codigo', 'cuenta', 'nombre_sub_cuenta'];
       const cleanData = {};
-      CAMPOS_EDITABLES.forEach((key) => {
-        const value = data[key];
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'id') return;
         if (value === null || value === undefined) return;
         cleanData[key] = value;
       });
 
-      const response = await api.put(API_URLS.update(subId), cleanData);
+      const response = await api.put(API_URLS.update(proveedorId), cleanData);
 
       dispatch(listAllThunk());
       dispatch(closeModal());
       dispatch(hideBackdrop());
 
       await AlertService.success(
-        '¡Sub-cuenta actualizada!',
-        'Los datos de la sub-cuenta han sido actualizados correctamente.',
+        '¡Proveedor actualizado!',
+        'Los datos del proveedor han sido actualizados correctamente.',
         { timer: 3000 }
       );
 
@@ -230,21 +210,21 @@ export const updateThunk = (subId, data) => {
   };
 };
 
-export const deleteThunk = (sub) => {
+export const deleteThunk = (proveedor) => {
   return async (dispatch) => {
     try {
-      const subName = `${sub.codigo} - ${sub.nombre_sub_cuenta || 'Sub-cuenta'}`;
-      const result = await AlertService.confirmDelete(subName);
+      const nombre = `${proveedor.nombre || 'Proveedor'} #${proveedor.id}`;
+      const result = await AlertService.confirmDelete(nombre);
       if (!result.isConfirmed) return false;
 
-      dispatch(showBackdrop('Eliminando sub-cuenta...'));
-      await api.delete(API_URLS.delete(sub.id));
+      dispatch(showBackdrop('Eliminando proveedor...'));
+      await api.delete(API_URLS.delete(proveedor.id));
       dispatch(listAllThunk());
       dispatch(hideBackdrop());
 
       await AlertService.success(
-        '¡Sub-cuenta eliminada!',
-        `La sub-cuenta <strong>${subName}</strong> ha sido eliminada correctamente.`,
+        '¡Proveedor eliminado!',
+        `El proveedor <strong>${nombre}</strong> ha sido eliminado correctamente.`,
         { timer: 3000 }
       );
       return true;
@@ -257,24 +237,24 @@ export const deleteThunk = (sub) => {
   };
 };
 
-export const restoreThunk = (sub) => {
+export const restoreThunk = (proveedor) => {
   return async (dispatch) => {
     try {
-      const subName = `${sub.codigo} - ${sub.nombre_sub_cuenta || 'Sub-cuenta'}`;
+      const nombre = `${proveedor.nombre || 'Proveedor'} #${proveedor.id}`;
       const result = await AlertService.confirm(
-        '¿Restaurar sub-cuenta?',
-        `¿Está seguro que desea restaurar la sub-cuenta <strong>${subName}</strong>?`
+        '¿Restaurar proveedor?',
+        `¿Está seguro que desea restaurar el proveedor <strong>${nombre}</strong>?`
       );
       if (!result.isConfirmed) return false;
 
-      dispatch(showBackdrop('Restaurando sub-cuenta...'));
-      await api.post(API_URLS.restore(sub.id));
+      dispatch(showBackdrop('Restaurando proveedor...'));
+      await api.post(API_URLS.restore(proveedor.id));
       dispatch(listAllThunk());
       dispatch(hideBackdrop());
 
       await AlertService.success(
-        '¡Sub-cuenta restaurada!',
-        `La sub-cuenta <strong>${subName}</strong> ha sido restaurada correctamente.`,
+        '¡Proveedor restaurado!',
+        `El proveedor <strong>${nombre}</strong> ha sido restaurado correctamente.`,
         { timer: 3000 }
       );
       return true;
@@ -287,25 +267,25 @@ export const restoreThunk = (sub) => {
   };
 };
 
-export const hardDeleteThunk = (sub) => {
+export const hardDeleteThunk = (proveedor) => {
   return async (dispatch) => {
     try {
-      const subName = `${sub.codigo} - ${sub.nombre_sub_cuenta || 'Sub-cuenta'}`;
+      const nombre = `${proveedor.nombre || 'Proveedor'} #${proveedor.id}`;
       const result = await AlertService.confirm(
         '¿Eliminar permanentemente?',
-        `<strong>Esta acción no se puede deshacer.</strong><br><br>¿Está seguro que desea eliminar permanentemente la sub-cuenta <strong>${subName}</strong>?`,
+        `<strong>Esta acción no se puede deshacer.</strong><br><br>¿Está seguro que desea eliminar permanentemente el proveedor <strong>${nombre}</strong>?`,
         { confirmButtonText: 'Eliminar permanentemente', confirmButtonColor: '#d33' }
       );
       if (!result.isConfirmed) return false;
 
       dispatch(showBackdrop('Eliminando permanentemente...'));
-      await api.delete(API_URLS.hardDelete(sub.id));
+      await api.delete(API_URLS.hardDelete(proveedor.id));
       dispatch(listAllThunk());
       dispatch(hideBackdrop());
 
       await AlertService.success(
-        '¡Sub-cuenta eliminada permanentemente!',
-        `La sub-cuenta <strong>${subName}</strong> ha sido eliminada permanentemente.`,
+        '¡Proveedor eliminado permanentemente!',
+        `El proveedor <strong>${nombre}</strong> ha sido eliminado permanentemente.`,
         { timer: 3000 }
       );
       return true;
@@ -327,36 +307,33 @@ export const saveThunk = (formData) => {
   };
 };
 
-export const viewThunk = (sub) => {
+export const viewThunk = (proveedor) => {
   return async () => {
-    const tipoLabel = TIPO_CUENTA_LABELS[sub.cuenta_tipo] || sub.cuenta_tipo_display || sub.cuenta_tipo || '-';
+    const subCuentaInfo = proveedor.sub_cuenta_codigo
+      ? `${proveedor.sub_cuenta_codigo} — ${proveedor.sub_cuenta_nombre || ''}`
+      : '-';
 
     await AlertService.info(
-      `${sub.codigo} — ${sub.nombre_sub_cuenta || 'Sub-cuenta'}`,
+      proveedor.nombre || `Proveedor #${proveedor.id}`,
       `
         <div style="text-align: left;">
-          <p><strong>ID:</strong> ${sub.codigo || '-'}</p>
-          <p><strong>Nombre sub-cuenta:</strong> ${sub.nombre_sub_cuenta || '-'}</p>
-          <p><strong>Cuenta PUC:</strong> ${sub.cuenta_codigo_puc || '-'} — ${sub.cuenta_nombre || '-'}</p>
-          <p><strong>Tipo:</strong> ${tipoLabel}</p>
+          <p><strong>Nombre:</strong> ${proveedor.nombre || '-'}</p>
+          <p><strong>Color:</strong> <span style="display:inline-block;width:18px;height:18px;background:${proveedor.color};border-radius:4px;border:1px solid #ccc;vertical-align:middle;"></span> <code>${proveedor.color || '-'}</code></p>
+          <p><strong>Sub-cuenta:</strong> ${subCuentaInfo}</p>
           <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
-          <p><strong>Débito:</strong> ${formatCurrency(sub.debito)}</p>
-          <p><strong>Crédito:</strong> ${formatCurrency(sub.credito)}</p>
-          <p><strong>Acumulado:</strong> ${formatCurrency(sub.acumulado)}</p>
-          <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
-          <p><strong>Creado por:</strong> ${sub.user_name || '-'}</p>
-          <p><strong>Fecha de creación:</strong> ${sub.created_at ? new Date(sub.created_at).toLocaleString('es-CO') : '-'}</p>
+          <p><strong>Creado por:</strong> ${proveedor.user_name || '-'}</p>
+          <p><strong>Fecha de creación:</strong> ${proveedor.created_at ? new Date(proveedor.created_at).toLocaleString('es-CO') : '-'}</p>
         </div>
       `
     );
   };
 };
 
-export const getHistoryThunk = (subId) => {
+export const getHistoryThunk = (proveedorId) => {
   return async (dispatch) => {
     try {
       dispatch(showBackdrop('Cargando historial...'));
-      const response = await api.get(API_URLS.history(subId));
+      const response = await api.get(API_URLS.history(proveedorId));
       dispatch(hideBackdrop());
       return response.data;
     } catch (error) {

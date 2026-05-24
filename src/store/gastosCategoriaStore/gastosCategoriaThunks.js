@@ -5,6 +5,8 @@ import {
   setLoading,
   setError,
   setCategorias,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -19,6 +21,21 @@ const API_URLS = {
   restore: (id) => `/api/gastos_categoria/${id}/restore/`,
   hardDelete: (id) => `/api/gastos_categoria/${id}/hard-delete/`,
   history: (id) => `/api/gastos_categoria/${id}/history/`,
+  subCuentas: '/api/sub_cuentas/list/',
+};
+
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
 };
 
 const formatFieldName = (field) => {

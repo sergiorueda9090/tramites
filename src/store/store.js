@@ -27,6 +27,8 @@ import { utilidadOcasionalStore }   from './utilidadOcasionalStore/utilidadOcasi
 import { conmutadorIpsStore }      from './conmutadorIpsStore/conmutadorIpsStore';
 import { planDeCuotasStore } from './planDeCuotasStore/planDeCuotasStore';
 import { subCuentasStore } from './subCuentasStore/subCuentasStore';
+import { proveedoresStore } from './proveedoresStore/proveedoresStore';
+import { apiMetricsStore } from './apiMetricsStore/apiMetricsStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
@@ -64,5 +66,7 @@ export const store = configureStore({
     conmutadorIpsStore: conmutadorIpsStore.reducer,
     planDeCuotasStore: planDeCuotasStore.reducer,
     subCuentasStore: subCuentasStore.reducer,
+    proveedoresStore: proveedoresStore.reducer,
+    apiMetricsStore: apiMetricsStore.reducer,
   },
 });

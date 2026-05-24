@@ -600,11 +600,16 @@ export const guardarRegistroDesdeCotizadorThunk = () => {
 
 /**
  * Actualizar el registro de base_de_datos creado durante el flujo del Cotizador
- * con el precio (precio_lay) y la comisión, una vez Step7 resolvió la tarifa
- * y el caso NO es especial (sin anomalías).
+ * con el precio resuelto por el Tarifario SOAT (precio_lay), una vez Step7
+ * determinó la tarifa y el caso NO es especial (sin anomalías).
+ *
+ * Nota: tras la refactorizacion de PrecioCliente (codigo_tarifa FK), ya no
+ * existe `precio_cliente.comision`. Se envia comision=0 para mantener el
+ * registro consistente. El precio_lay sale directo de tarifaDetalle.valor
+ * (el SOAT oficial resuelto por el cotizador).
  *
  * Se controla con el flag `registroBaseDeDatosActualizado` para evitar dobles
- * envíos. Si falla, no se bloquea el flujo: el registro queda sin precio.
+ * envios. Si falla, no se bloquea el flujo: el registro queda sin precio.
  */
 export const actualizarPrecioComisionRegistroBaseDeDatosThunk = () => {
   return async (dispatch, getState) => {
@@ -616,25 +621,19 @@ export const actualizarPrecioComisionRegistroBaseDeDatosThunk = () => {
       if (!registroId) return null;
       if (cotizador.registroBaseDeDatosActualizado) return null;
 
-      const precioCliente = Array.isArray(cotizador.preciosCliente) && cotizador.preciosCliente.length > 0
-        ? cotizador.preciosCliente[0]
-        : null;
-
-      const precioLay = cotizador.tarifaDetalle?.valor || precioCliente?.precio_lay || null;
-      const comision = precioCliente?.comision || null;
-
-      if (precioLay === null && comision === null) return null;
+      const precioLay = cotizador.tarifaDetalle?.valor || null;
+      if (precioLay === null) return null;
 
       await api.put(API_URLS.update(registroId), {
         precio_lay: precioLay,
-        comision: comision,
+        comision: 0,
       });
 
       dispatch(setRegistroBaseDeDatosActualizado(true));
-      console.log('BaseDeDatos: Precio y comisión actualizados para registro', registroId);
+      console.log('BaseDeDatos: Precio actualizado para registro', registroId);
       return true;
     } catch (error) {
-      console.error('BaseDeDatos: Error al actualizar precio/comisión:', error);
+      console.error('BaseDeDatos: Error al actualizar precio:', error);
       return null;
     }
   };

@@ -7,6 +7,10 @@ import {
   setClientes,
   setTopClientes,
   setTopLoading,
+  setSubCuentas,
+  setLoadingSubCuentas,
+  setTarifariosSoat,
+  setLoadingTarifariosSoat,
   setPagination,
   closeModal,
   openEditModal,
@@ -28,6 +32,37 @@ const API_URLS = {
   listPrecios: (id) => `/api/clientes/${id}/precios/`,
   updatePrecio: (id, precioId) => `/api/clientes/${id}/precios/${precioId}/update/`,
   deletePrecio: (id, precioId) => `/api/clientes/${id}/precios/${precioId}/delete/`,
+  // Auxiliares
+  subCuentas: '/api/sub_cuentas/list/',
+  tarifariosSoat: '/api/tarifario_soat/list/',
+};
+
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
+export const loadTarifariosSoatThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingTarifariosSoat(true));
+      const response = await api.get(API_URLS.tarifariosSoat, { params: { page_size: 1000 } });
+      const tarifarios = response.data.results || response.data;
+      dispatch(setTarifariosSoat(tarifarios));
+    } catch (error) {
+      console.error('Error cargando tarifarios SOAT:', error);
+      dispatch(setLoadingTarifariosSoat(false));
+    }
+  };
 };
 
 /**
@@ -118,11 +153,11 @@ const formatFieldName = (field) => {
     color: 'Color',
     tipo_cliente: 'Tipo de cliente',
     medio_comunicacion: 'Medio de comunicación',
+    sub_cuenta: 'Sub-cuenta',
     usuario: 'Usuario asignado',
     precios: 'Precios',
     descripcion: 'Descripción',
-    precio_lay: 'Precio ley',
-    comision: 'Comisión',
+    codigo_tarifa: 'Código tarifa',
     detail: 'Detalle',
     non_field_errors: 'Error',
   };

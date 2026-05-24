@@ -48,6 +48,7 @@ import LanIcon from '@mui/icons-material/Lan';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -87,6 +88,7 @@ const menuItems = [
     section: 'Operaciones',
     items: [
       { text: 'Clientes',               icon: AssignmentIcon,         path: ROUTES.CLIENTES,               moduleCode: 'clientes',             color: '#9c27b0' },
+      { text: 'Proveedores',            icon: LocalShippingIcon,      path: ROUTES.PROVEEDORES,            moduleCode: 'proveedores',          color: '#8e24aa' },
       { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,        path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat',       color: '#00897b' },
       { text: 'Cotizador',              icon: CalculateIcon,          path: ROUTES.COTIZADOR,              moduleCode: 'cotizador',            color: '#7c4dff' },
       { text: 'Base de Datos',          icon: StorageIcon,            path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos',        color: '#607d8b' },
@@ -95,25 +97,25 @@ const menuItems = [
       { text: 'Pasarela de Pago',       icon: PaymentIcon,            path: ROUTES.PASARELA_DE_PAGO,       moduleCode: 'pasarela_de_pago',     color: '#2e7d32' },
       { text: 'Trámites finalizados',   icon: TaskAltIcon,            path: ROUTES.TRAMITES_FINALIZADOS,   moduleCode: 'finalizados_tramites', color: '#43a047' },
       { text: 'API Endpoints',          icon: ApiIcon,                path: ROUTES.API_ENDPOINTS,          moduleCode: 'api_app',              color: '#5e35b1' },
-      { text: 'Etiquetas',              icon: LocalOfferIcon,         path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas',            color: '#e91e63' },
+      // { text: 'Etiquetas',              icon: LocalOfferIcon,         path: ROUTES.ETIQUETAS,              moduleCode: 'etiquetas',            color: '#e91e63' },
       { text: 'Tarjetas',               icon: CreditCardIcon,         path: ROUTES.TARJETAS,               moduleCode: 'tarjetas',             color: '#6a1b9a' },
-      { text: 'Recepción de Pagos',     icon: PointOfSaleIcon,        path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos',      color: '#00897b' },
-      { text: 'Devoluciones',           icon: UndoIcon,               path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones',         color: '#f44336' },
-      { text: 'Cargos No Registrados',  icon: ReportProblemIcon,      path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados', color: '#d32f2f' },
       {
         text: 'Movimientos Financieros',
         icon: AccountBalanceWalletIcon,
         groupKey: 'movimientos_financieros',
         color: '#1565c0',
         children: [
-          { text: 'Ajuste de Saldo',     icon: BalanceIcon,        path: ROUTES.AJUSTE_SALDO,       moduleCode: 'ajuste_saldo',       color: '#0288d1' },
-          { text: 'Gastos',              icon: TrendingDownIcon,   path: ROUTES.GASTOS,             moduleCode: 'gastos',             color: '#c62828' },
-          { text: 'Categorías de pagos', icon: CategoryIcon,       path: ROUTES.GASTOS_CATEGORIA,   moduleCode: 'gastos_categoria',   color: '#ef5350' },
-          { text: '4 x 1000',            icon: PercentIcon,        path: ROUTES.CUATRO_POR_MIL,     moduleCode: 'cuatro_por_mil',     color: '#fb8c00' },
-          { text: 'Utilidades',          icon: MonetizationOnIcon, path: ROUTES.UTILIDADES,         moduleCode: 'utilidades',         color: '#2e7d32' },
-          { text: 'Utilidad ocasional',  icon: SavingsIcon,        path: ROUTES.UTILIDAD_OCASIONAL, moduleCode: 'utilidad_ocasional', color: '#66bb6a' },
-          { text: 'Plan de cuentas',     icon: AccountTreeIcon,    path: ROUTES.PLAN_DE_CUENTAS,    moduleCode: 'plan_de_cuentas',    color: '#00695c' },
-          { text: 'Sub-cuentas',         icon: SubdirectoryArrowRightIcon, path: ROUTES.SUB_CUENTAS, moduleCode: 'sub_cuentas',        color: '#00897b' },
+          { text: 'Recepción de Pagos',    icon: PointOfSaleIcon,            path: ROUTES.RECEPCION_PAGOS,        moduleCode: 'recepcion_pagos',       color: '#00897b' },
+          { text: 'Devoluciones',          icon: UndoIcon,                   path: ROUTES.DEVOLUCIONES,           moduleCode: 'devoluciones',          color: '#f44336' },
+          { text: 'Cargos No Registrados', icon: ReportProblemIcon,          path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados', color: '#d32f2f' },
+          // { text: 'Ajuste de Saldo',       icon: BalanceIcon,                path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo',          color: '#0288d1' },
+          { text: 'Gastos',                icon: TrendingDownIcon,           path: ROUTES.GASTOS,                 moduleCode: 'gastos',                color: '#c62828' },
+          { text: 'Categorías de pagos',   icon: CategoryIcon,               path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria',      color: '#ef5350' },
+          { text: '4 x 1000',              icon: PercentIcon,                path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil',        color: '#fb8c00' },
+          { text: 'Utilidades',            icon: MonetizationOnIcon,         path: ROUTES.UTILIDADES,             moduleCode: 'utilidades',            color: '#2e7d32' },
+          { text: 'Utilidad ocasional',    icon: SavingsIcon,                path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional',    color: '#66bb6a' },
+          { text: 'Plan de cuentas',       icon: AccountTreeIcon,            path: ROUTES.PLAN_DE_CUENTAS,        moduleCode: 'plan_de_cuentas',       color: '#00695c' },
+          { text: 'Sub-cuentas',           icon: SubdirectoryArrowRightIcon, path: ROUTES.SUB_CUENTAS,            moduleCode: 'sub_cuentas',           color: '#00897b' },
         ],
       },
       { text: 'Conmutador de IPs',      icon: LanIcon,                path: ROUTES.CONMUTADOR_IPS,         moduleCode: 'computador_ips',       color: '#455a64' },
@@ -168,7 +170,7 @@ const Sidebar = () => {
     const open = {};
     filteredMenuItems.forEach((section) => {
       section.items.forEach((item) => {
-        if (item.children && item.children.some((child) => location.pathname.startsWith(child.path))) {
+        if (item.children && item.children.some((child) => location.pathname === child.path || location.pathname.startsWith(child.path + '/'))) {
           open[item.groupKey] = true;
         }
       });
@@ -202,7 +204,9 @@ const Sidebar = () => {
     if (path === ROUTES.DASHBOARD) {
       return location.pathname === path || location.pathname === '/';
     }
-    return location.pathname.startsWith(path);
+    // Match exacto o subruta legitima (con "/"); evita que /tramites matchee
+    // /tramites-finalizados o /gastos matchee /gastos-categoria.
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const drawerWidth = sidebarCollapsed && !isMobile ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;

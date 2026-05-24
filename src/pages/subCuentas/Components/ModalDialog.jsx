@@ -124,20 +124,24 @@ const SubCuentaDialog = ({
               label="Débito"
               value={form.debito ?? ''}
               onChange={handleNumericChange('debito')}
+              disabled={isEditing}
               InputProps={{
                 startAdornment: <InputAdornment position="start">$</InputAdornment>,
                 inputMode: 'decimal',
               }}
+              helperText={isEditing ? 'Inmutable después de creada' : undefined}
             />
             <TextField
               fullWidth
               label="Crédito"
               value={form.credito ?? ''}
               onChange={handleNumericChange('credito')}
+              disabled={isEditing}
               InputProps={{
                 startAdornment: <InputAdornment position="start">$</InputAdornment>,
                 inputMode: 'decimal',
               }}
+              helperText={isEditing ? 'Inmutable después de creada' : undefined}
             />
           </Box>
 
@@ -146,11 +150,16 @@ const SubCuentaDialog = ({
             label="Acumulado"
             value={form.acumulado ?? ''}
             onChange={handleNumericChange('acumulado')}
+            disabled={isEditing}
             InputProps={{
               startAdornment: <InputAdornment position="start">$</InputAdornment>,
               inputMode: 'decimal',
             }}
-            helperText="Saldo acumulado de la sub-cuenta"
+            helperText={
+              isEditing
+                ? 'Inmutable después de creada'
+                : 'Saldo acumulado de la sub-cuenta'
+            }
           />
         </Box>
       </DialogContent>

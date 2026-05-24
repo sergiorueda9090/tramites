@@ -6,6 +6,8 @@ import {
   setError,
   setAjustesSaldo,
   setClientes,
+  setSubCuentas,
+  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -23,6 +25,7 @@ const API_URLS = {
   history: (id) => `/api/ajuste_de_saldo/${id}/history/`,
   // URLs auxiliares para cargar datos de selects
   clientes: '/api/clientes/list/',
+  subCuentas: '/api/sub_cuentas/list/',
 };
 
 /**
@@ -190,9 +193,24 @@ export const loadClientesThunk = () => {
 /**
  * Cargar datos auxiliares (clientes) para los formularios
  */
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      const subCuentas = response.data.results || response.data;
+      dispatch(setSubCuentas(subCuentas));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
 export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadClientesThunk());
+    dispatch(loadSubCuentasThunk());
   };
 };
 

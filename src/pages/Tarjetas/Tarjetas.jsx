@@ -18,6 +18,7 @@ import {
   selectForm,
   selectLoading,
   selectAppliedFilters,
+  selectSubCuentas,
   setPage,
   setPageSize,
   setSort,
@@ -36,6 +37,7 @@ import {
   deleteThunk,
   viewThunk,
   showThunk,
+  loadSubCuentasThunk,
 } from '../../store/tarjetasStore/tarjetasThunks';
 
 import {
@@ -62,6 +64,12 @@ const Tarjetas = () => {
   const selectedTarjeta = useSelector(selectSelectedTarjeta);
   const form = useSelector(selectForm);
   const loading = useSelector(selectLoading);
+  const subCuentas = useSelector(selectSubCuentas);
+
+  // Cargar sub-cuentas al montar (para el select obligatorio del modal)
+  useEffect(() => {
+    dispatch(loadSubCuentasThunk());
+  }, [dispatch]);
 
   /**
    * Construye los parámetros de consulta para el backend
@@ -231,6 +239,7 @@ const Tarjetas = () => {
         selectedTarjeta={selectedTarjeta}
         form={form}
         onFormChange={handleFormChange}
+        subCuentas={subCuentas}
       />
     </Box>
   );
