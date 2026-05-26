@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Typography,
-  Grid,
   Card,
   CardContent,
   Divider,
@@ -15,6 +14,9 @@ import {
   TextField,
   Button,
 } from '@mui/material';
+// MUI 7: el `Grid` por defecto es el nuevo (ignora item/xs/md). Este archivo usa
+// la API clásica (item xs md), así que importamos GridLegacy para conservarla.
+import Grid from '@mui/material/GridLegacy';
 import CategoryIcon from '@mui/icons-material/Category';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -47,6 +49,9 @@ import {
   selectTarifaManual,
   selectTarifariosDisponibles,
   selectPreciosCliente,
+  selectPrecioClienteMatch,
+  selectComisionCliente,
+  selectTotalCotizacion,
   selectClienteSeleccionado,
   selectModoCliente,
   selectNuevoCliente,
@@ -545,6 +550,9 @@ const Step7_GrupoSoat = () => {
   const tarifaManual = useSelector(selectTarifaManual);
   const tarifariosDisponibles = useSelector(selectTarifariosDisponibles);
   const preciosCliente = useSelector(selectPreciosCliente);
+  const precioClienteMatch = useSelector(selectPrecioClienteMatch);
+  const comisionCliente = useSelector(selectComisionCliente);
+  const totalCotizacion = useSelector(selectTotalCotizacion);
   const esCasoEspecial = useSelector(selectEsCasoEspecial);
   const motivosCasoEspecial = useSelector(selectMotivosCasoEspecial);
   const casoEspecialGuardado = useSelector(selectCasoEspecialGuardado);
@@ -721,6 +729,10 @@ const Step7_GrupoSoat = () => {
   const tarifarioSeleccionadoManual = tarifaManual && tarifaCodigo
     ? tarifariosDisponibles.find((t) => String(t.codigo_tarifa) === String(tarifaCodigo)) || tarifaDetalle || null
     : null;
+
+  // La tarifa quedó resuelta pero el cliente tiene precios y NINGUNO coincide
+  // con esa tarifa → no hay comisión y debemos avisar al usuario.
+  const tarifaSinPrecioCliente = !!tarifaCodigo && preciosCliente.length > 0 && !precioClienteMatch;
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
@@ -957,202 +969,6 @@ const Step7_GrupoSoat = () => {
               )}
             </CardContent>
           </Card>
-        </Grid>
-
-        {/* ── Columna derecha: Detalle de tarifa y precios del cliente ── */}
-        <Grid item xs={12} md={6}>
-          {/* Card: Selección manual de tarifa (cuando capacidad_carga no es válida) */}
-          {tarifaManual && (
-            <Card
-              variant="outlined"
-              sx={{
-                mb: 2,
-                borderLeft: 4,
-                borderLeftColor: 'warning.main',
-              }}
-            >
-              <CardContent sx={{ pb: 2 }}>
-                <SectionHeader
-                  icon={<WarningAmberIcon />}
-                  title="Selección manual de tarifa"
-                  color="warning"
-                />
-                <Divider sx={{ mb: 1.5 }} />
-                <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
-                  <AlertTitle>Caso especial — selección manual requerida</AlertTitle>
-                  <Typography variant="body2" sx={{ mb: motivosCasoEspecial.length > 0 ? 1 : 0 }}>
-                    Este vehículo fue marcado como caso especial por los siguientes motivos:
-                  </Typography>
-                  {motivosCasoEspecial.length > 0 ? (
-                    <Box component="ul" sx={{ m: 0, mb: 1, pl: 2.5, '& li': { mb: 0.25 } }}>
-                      {motivosCasoEspecial.map((motivo, idx) => (
-                        <li key={idx}>
-                          <Typography variant="body2" component="span">
-                            {motivo}
-                          </Typography>
-                        </li>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      Sus datos base presentan inconsistencias.
-                    </Typography>
-                  )}
-                  <Typography variant="body2">
-                    Selecciona la tarifa manualmente del listado.
-                  </Typography>
-                </Alert>
-                <Autocomplete
-                  fullWidth
-                  size="small"
-                  options={tarifariosDisponibles}
-                  value={tarifarioSeleccionadoManual}
-                  onChange={(_, nuevo) => handleSeleccionManualTarifa(nuevo)}
-                  getOptionLabel={(opt) => {
-                    if (!opt) return '';
-                    const valorFmt = opt.valor != null ? formatCurrency(opt.valor) : '';
-                    return `Tarifa ${opt.codigo_tarifa} — ${opt.descripcion || ''}${valorFmt ? ` · ${valorFmt}` : ''}`;
-                  }}
-                  isOptionEqualToValue={(a, b) => String(a?.codigo_tarifa) === String(b?.codigo_tarifa)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Buscar y seleccionar tarifa"
-                      placeholder="Ej: Tarifa 310, Carga, etc."
-                    />
-                  )}
-                  noOptionsText={tarifariosDisponibles.length === 0 ? 'Cargando tarifarios...' : 'Sin resultados'}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Card: Detalle de la tarifa */}
-          {tarifaCodigo && tarifaDetalle && (
-            <Card
-              variant="outlined"
-              sx={{
-                mb: 2,
-                borderLeft: 4,
-                borderLeftColor: 'info.main',
-              }}
-            >
-              <CardContent sx={{ pb: 2 }}>
-                <SectionHeader
-                  icon={<ReceiptLongIcon />}
-                  title="Detalle de la tarifa"
-                  color="info"
-                  chip={<Chip icon={<CheckCircleIcon />} label={`Tarifa ${tarifaDetalle.codigo_tarifa}`} size="small" color="info" variant="outlined" sx={{ fontWeight: 600 }} />}
-                />
-                <Divider sx={{ mb: 1 }} />
-                <InfoRow label="Código" value={tarifaDetalle.codigo_tarifa} highlight />
-                <InfoRow label="Descripción" value={tarifaDetalle.descripcion} />
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 0.5 }}>
-                  <Typography variant="subtitle2" fontWeight={700}>
-                    Valor de Tarifa
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700} color="primary.main">
-                    {formatCurrency(tarifaDetalle.valor)}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Card: Tarifa no encontrada */}
-          {tarifaCodigo && !tarifaDetalle && (
-            <Card
-              variant="outlined"
-              sx={{
-                mb: 2,
-                borderLeft: 4,
-                borderLeftColor: 'warning.main',
-              }}
-            >
-              <CardContent sx={{ pb: 2 }}>
-                <SectionHeader
-                  icon={<ReceiptLongIcon />}
-                  title="Detalle de la tarifa"
-                  color="warning"
-                />
-                <Divider sx={{ mb: 1 }} />
-                <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
-                  Buscando información de la Tarifa {tarifaCodigo} en el tarifario...
-                </Alert>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Card: Precios del cliente */}
-          {cliente && (
-            <Card
-              variant="outlined"
-              sx={{
-                borderLeft: 4,
-                borderLeftColor: 'success.main',
-              }}
-            >
-              <CardContent sx={{ pb: 2 }}>
-                <SectionHeader
-                  icon={<PersonIcon />}
-                  title="Precios del cliente"
-                  color="success"
-                  chip={cliente.nombre ? <Chip label={cliente.nombre} size="small" color="success" variant="outlined" sx={{ fontWeight: 600 }} /> : null}
-                />
-                <Divider sx={{ mb: 1 }} />
-                {preciosCliente.length > 0 ? (
-                  preciosCliente.map((precio, index) => (
-                    <Box
-                      key={precio.id}
-                      sx={{
-                        mt: index > 0 ? 1.5 : 0.5,
-                        p: 1.5,
-                        bgcolor: 'action.hover',
-                        borderRadius: 1,
-                        border: 1,
-                        borderColor: 'divider',
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, gap: 1 }}>
-                        <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ flex: 1 }}>
-                          {precio.descripcion}
-                        </Typography>
-                        {precio.codigo_tarifa_codigo && (
-                          <Chip
-                            label={precio.codigo_tarifa_codigo}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ fontFamily: 'monospace', fontWeight: 600 }}
-                          />
-                        )}
-                      </Box>
-                      {precio.codigo_tarifa_descripcion && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                          {precio.codigo_tarifa_descripcion}
-                        </Typography>
-                      )}
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
-                          Precio de Ley
-                        </Typography>
-                        <Typography variant="body2" fontWeight={700} color="primary.main">
-                          {formatCurrency(precio.codigo_tarifa_valor)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Este cliente no tiene precios configurados.
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* ── Card: Vigencias y estado (SOAT + Tecnomecánica) ── */}
           {(soatVigencia || rtmVigencia) && (
@@ -1278,6 +1094,266 @@ const Step7_GrupoSoat = () => {
             </Card>
           )}
         </Grid>
+
+        {/* ── Columna derecha: Detalle de tarifa y precios del cliente ── */}
+        <Grid item xs={12} md={6}>
+          {/* Card: Selección manual de tarifa (cuando capacidad_carga no es válida) */}
+          {tarifaManual && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'warning.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<WarningAmberIcon />}
+                  title="Selección manual de tarifa"
+                  color="warning"
+                />
+                <Divider sx={{ mb: 1.5 }} />
+                <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
+                  <AlertTitle>Caso especial — selección manual requerida</AlertTitle>
+                  <Typography variant="body2" sx={{ mb: motivosCasoEspecial.length > 0 ? 1 : 0 }}>
+                    Este vehículo fue marcado como caso especial por los siguientes motivos:
+                  </Typography>
+                  {motivosCasoEspecial.length > 0 ? (
+                    <Box component="ul" sx={{ m: 0, mb: 1, pl: 2.5, '& li': { mb: 0.25 } }}>
+                      {motivosCasoEspecial.map((motivo, idx) => (
+                        <li key={idx}>
+                          <Typography variant="body2" component="span">
+                            {motivo}
+                          </Typography>
+                        </li>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Sus datos base presentan inconsistencias.
+                    </Typography>
+                  )}
+                  <Typography variant="body2">
+                    Selecciona la tarifa manualmente del listado.
+                  </Typography>
+                </Alert>
+                <Autocomplete
+                  fullWidth
+                  size="small"
+                  options={tarifariosDisponibles}
+                  value={tarifarioSeleccionadoManual}
+                  onChange={(_, nuevo) => handleSeleccionManualTarifa(nuevo)}
+                  getOptionLabel={(opt) => {
+                    if (!opt) return '';
+                    const valorFmt = opt.valor != null ? formatCurrency(opt.valor) : '';
+                    return `Tarifa ${opt.codigo_tarifa} — ${opt.descripcion || ''}${valorFmt ? ` · ${valorFmt}` : ''}`;
+                  }}
+                  isOptionEqualToValue={(a, b) => String(a?.codigo_tarifa) === String(b?.codigo_tarifa)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Buscar y seleccionar tarifa"
+                      placeholder="Ej: Tarifa 310, Carga, etc."
+                    />
+                  )}
+                  noOptionsText={tarifariosDisponibles.length === 0 ? 'Cargando tarifarios...' : 'Sin resultados'}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Card: Detalle de la tarifa */}
+          {tarifaCodigo && tarifaDetalle && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'info.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<ReceiptLongIcon />}
+                  title="Detalle de la tarifa"
+                  color="info"
+                  chip={<Chip icon={<CheckCircleIcon />} label={`Tarifa ${tarifaDetalle.codigo_tarifa}`} size="small" color="info" variant="outlined" sx={{ fontWeight: 600 }} />}
+                />
+                <Divider sx={{ mb: 1 }} />
+                <InfoRow label="Código" value={tarifaDetalle.codigo_tarifa} highlight />
+                <InfoRow label="Descripción" value={tarifaDetalle.descripcion} />
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 0.5 }}>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Precio de Ley
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    {formatCurrency(tarifaDetalle.valor)}
+                  </Typography>
+                </Box>
+
+                {/* Comisión + Total tomados del precio del cliente que coincide con la tarifa */}
+                {precioClienteMatch ? (
+                  <>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 0.5 }}>
+                      <Typography variant="subtitle2" fontWeight={700}>
+                        Comisión
+                      </Typography>
+                      <Typography variant="h6" fontWeight={700} color="success.main">
+                        {formatCurrency(comisionCliente)}
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, px: 0.5 }}>
+                      <Typography variant="subtitle1" fontWeight={800}>
+                        Total
+                      </Typography>
+                      <Typography variant="h5" fontWeight={800} color="text.primary">
+                        {formatCurrency(totalCotizacion)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 0.5 }}>
+                      Comisión tomada de los precios del cliente{cliente?.nombre ? ` «${cliente.nombre}»` : ''} para la tarifa {tarifaDetalle.codigo_tarifa}.
+                    </Typography>
+                  </>
+                ) : tarifaSinPrecioCliente ? (
+                  <Alert severity="warning" variant="outlined" icon={<WarningAmberIcon />} sx={{ mt: 1 }}>
+                    <AlertTitle sx={{ fontWeight: 700 }}>La tarifa no coincide con los precios del cliente</AlertTitle>
+                    La tarifa <strong>{tarifaDetalle.codigo_tarifa}</strong> ({tarifaDetalle.descripcion}) determinada para este vehículo
+                    no está entre los precios configurados del cliente{cliente?.nombre ? <> <strong>{cliente.nombre}</strong></> : ''}.
+                    No se puede calcular la comisión ni el total: revisa la sección «Precios del cliente» o agrega esta tarifa al cliente.
+                  </Alert>
+                ) : preciosCliente.length === 0 ? (
+                  <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
+                    El cliente no tiene precios configurados, por lo que no hay comisión para esta tarifa.
+                  </Alert>
+                ) : null}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Card: Tarifa no encontrada */}
+          {tarifaCodigo && !tarifaDetalle && (
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderLeft: 4,
+                borderLeftColor: 'warning.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<ReceiptLongIcon />}
+                  title="Detalle de la tarifa"
+                  color="warning"
+                />
+                <Divider sx={{ mb: 1 }} />
+                <Alert severity="info" variant="outlined" sx={{ mt: 1 }}>
+                  Buscando información de la Tarifa {tarifaCodigo} en el tarifario...
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Card: Precios del cliente */}
+          {cliente && (
+            <Card
+              variant="outlined"
+              sx={{
+                borderLeft: 4,
+                borderLeftColor: 'success.main',
+              }}
+            >
+              <CardContent sx={{ pb: 2 }}>
+                <SectionHeader
+                  icon={<PersonIcon />}
+                  title="Precios del cliente"
+                  color="success"
+                  chip={cliente.nombre ? <Chip label={cliente.nombre} size="small" color="success" variant="outlined" sx={{ fontWeight: 600 }} /> : null}
+                />
+                <Divider sx={{ mb: 1 }} />
+                {preciosCliente.length > 0 ? (
+                  <Box
+                    sx={{
+                      // Muestra ~3 precios; el resto queda accesible con scroll vertical.
+                      maxHeight: 300,
+                      overflowY: 'auto',
+                      // Espacio a la derecha para que las tarjetas no queden bajo la barra de scroll.
+                      pr: preciosCliente.length > 3 ? 0.5 : 0,
+                    }}
+                  >
+                    {preciosCliente.map((precio, index) => {
+                    const esSeleccionado = !!precioClienteMatch && precioClienteMatch.id === precio.id;
+                    return (
+                    <Box
+                      key={precio.id}
+                      sx={{
+                        mt: index > 0 ? 1.5 : 0.5,
+                        p: 1.5,
+                        bgcolor: esSeleccionado ? 'success.50' : 'action.hover',
+                        borderRadius: 1,
+                        border: esSeleccionado ? 2 : 1,
+                        borderColor: esSeleccionado ? 'success.main' : 'divider',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, gap: 1 }}>
+                        <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ flex: 1 }}>
+                          {precio.codigo_tarifa_descripcion || `Tarifa ${precio.codigo_tarifa_codigo || ''}`}
+                        </Typography>
+                        {esSeleccionado && (
+                          <Chip
+                            icon={<CheckCircleIcon />}
+                            label="Seleccionada"
+                            size="small"
+                            color="success"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        )}
+                        {precio.codigo_tarifa_codigo && (
+                          <Chip
+                            label={precio.codigo_tarifa_codigo}
+                            size="small"
+                            color={esSeleccionado ? 'success' : 'primary'}
+                            variant="outlined"
+                            sx={{ fontFamily: 'monospace', fontWeight: 600 }}
+                          />
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 3 }}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                            Precio de Ley
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="primary.main">
+                            {formatCurrency(precio.codigo_tarifa_valor)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: 0.5 }}>
+                            Comisión
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="success.main">
+                            {formatCurrency(precio.comision)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    );
+                  })}
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Este cliente no tiene precios configurados.
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
       </Grid>
 
       {/* ═══ Alerta resumen final ═══ */}
@@ -1294,6 +1370,17 @@ const Step7_GrupoSoat = () => {
           {tarifaManual
             ? <>Seleccionada manualmente para el vehículo <strong>{runtPlaca}</strong>.</>
             : <>Determinada automáticamente desde los datos RUNT del vehículo <strong>{runtPlaca}</strong>.</>}
+          {comisionCliente !== null && (
+            <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+              Comisión <strong>{formatCurrency(comisionCliente)}</strong>
+              {totalCotizacion !== null && <> — Total <strong>{formatCurrency(totalCotizacion)}</strong></>}
+            </Box>
+          )}
+          {tarifaSinPrecioCliente && (
+            <Box component="span" sx={{ display: 'block', mt: 0.5, color: 'warning.main', fontWeight: 600 }}>
+              ⚠ Sin comisión: la tarifa {tarifaCodigo} no está entre los precios configurados del cliente.
+            </Box>
+          )}
         </Alert>
       )}
 

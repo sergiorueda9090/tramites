@@ -184,7 +184,7 @@ const TramiteDialog = ({
               <MenuItem value="">Seleccionar...</MenuItem>
               {preciosCliente.map((p) => (
                 <MenuItem key={p.id} value={p.id}>
-                  {p.descripcion}
+                  {`${p.codigo_tarifa_codigo || ''} — ${p.codigo_tarifa_descripcion || ''}`}
                 </MenuItem>
               ))}
             </TextField>

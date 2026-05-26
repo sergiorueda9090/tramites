@@ -77,7 +77,7 @@ const initialState = {
   tarifaDetalle: null,       // Detalle de la tarifa desde TarifarioSoat { codigo_tarifa, descripcion, valor }
   tarifaManual: false,       // true cuando el usuario debe seleccionar la tarifa manualmente
   tarifariosDisponibles: [], // Listado completo de tarifarios para el selector manual
-  preciosCliente: [],        // Precios del cliente [{ descripcion, precio_lay, comision }]
+  preciosCliente: [],        // Precios del cliente [{ codigo_tarifa, codigo_tarifa_codigo, codigo_tarifa_descripcion, codigo_tarifa_valor, comision }]
 
   // UI States
   loading: false,
@@ -383,6 +383,46 @@ export const selectTarifaDetalle = (state) => state.cotizadorStore.tarifaDetalle
 export const selectTarifaManual = (state) => state.cotizadorStore.tarifaManual;
 export const selectTarifariosDisponibles = (state) => state.cotizadorStore.tarifariosDisponibles;
 export const selectPreciosCliente = (state) => state.cotizadorStore.preciosCliente;
+
+/**
+ * Precio del cliente que CORRESPONDE a la tarifa resuelta en Step 7.
+ * El cruce es por código de tarifa: `tarifaCodigo` (ej. 120) contra
+ * `precio.codigo_tarifa_codigo` de cada PrecioCliente. Devuelve el objeto
+ * precio coincidente o null si el cliente no tiene esa tarifa configurada.
+ */
+export const selectPrecioClienteMatch = (state) => {
+  const s = state.cotizadorStore;
+  if (!s || s.tarifaCodigo === null || s.tarifaCodigo === undefined || s.tarifaCodigo === '') return null;
+  const objetivo = String(s.tarifaCodigo).trim();
+  return (s.preciosCliente || []).find(
+    (p) => String(p.codigo_tarifa_codigo ?? '').trim() === objetivo
+  ) || null;
+};
+
+/**
+ * Comisión (número) que el cliente definió para la tarifa resuelta, o null si
+ * no hay precio coincidente / comisión inválida.
+ */
+export const selectComisionCliente = (state) => {
+  const match = selectPrecioClienteMatch(state);
+  if (!match || match.comision === null || match.comision === undefined || match.comision === '') return null;
+  const n = Number(match.comision);
+  return Number.isNaN(n) ? null : n;
+};
+
+/**
+ * Total de la cotización = precio de ley (tarifaDetalle.valor) + comisión del
+ * cliente. Devuelve null si falta el precio de ley o no hay comisión (sin match).
+ */
+export const selectTotalCotizacion = (state) => {
+  const s = state.cotizadorStore;
+  const precioLey = s?.tarifaDetalle?.valor != null && s.tarifaDetalle.valor !== ''
+    ? Number(s.tarifaDetalle.valor)
+    : null;
+  const comision = selectComisionCliente(state);
+  if (precioLey === null || Number.isNaN(precioLey) || comision === null) return null;
+  return precioLey + comision;
+};
 export const selectCasoEspecialGuardado = (state) => state.cotizadorStore.casoEspecialGuardado;
 export const selectRegistroBaseDeDatosId = (state) => state.cotizadorStore.registroBaseDeDatosId;
 export const selectRegistroBaseDeDatosActualizado = (state) => state.cotizadorStore.registroBaseDeDatosActualizado;

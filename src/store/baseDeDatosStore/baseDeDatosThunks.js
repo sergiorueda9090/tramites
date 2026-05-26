@@ -13,6 +13,7 @@ import {
 import {
   setRegistroBaseDeDatosId,
   setRegistroBaseDeDatosActualizado,
+  selectComisionCliente,
 } from '../cotizadorStore/cotizadorSlice';
 
 // URLs del módulo base de datos
@@ -603,10 +604,10 @@ export const guardarRegistroDesdeCotizadorThunk = () => {
  * con el precio resuelto por el Tarifario SOAT (precio_lay), una vez Step7
  * determinó la tarifa y el caso NO es especial (sin anomalías).
  *
- * Nota: tras la refactorizacion de PrecioCliente (codigo_tarifa FK), ya no
- * existe `precio_cliente.comision`. Se envia comision=0 para mantener el
- * registro consistente. El precio_lay sale directo de tarifaDetalle.valor
- * (el SOAT oficial resuelto por el cotizador).
+ * precio_lay sale directo de tarifaDetalle.valor (el SOAT oficial resuelto por
+ * el cotizador) y la comision del precio del cliente que COINCIDE con la tarifa
+ * resuelta (cruce por codigo_tarifa, via selectComisionCliente). Si el cliente
+ * no tiene esa tarifa configurada, se envia comision=0.
  *
  * Se controla con el flag `registroBaseDeDatosActualizado` para evitar dobles
  * envios. Si falla, no se bloquea el flujo: el registro queda sin precio.
@@ -624,9 +625,11 @@ export const actualizarPrecioComisionRegistroBaseDeDatosThunk = () => {
       const precioLay = cotizador.tarifaDetalle?.valor || null;
       if (precioLay === null) return null;
 
+      const comision = selectComisionCliente(state) ?? 0;
+
       await api.put(API_URLS.update(registroId), {
         precio_lay: precioLay,
-        comision: 0,
+        comision,
       });
 
       dispatch(setRegistroBaseDeDatosActualizado(true));

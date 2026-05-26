@@ -623,8 +623,15 @@ const construirPayloadTramite = (cotizador, runt) => {
     || '';
   const direccion = cotizador.clienteSeleccionado?.direccion || '';
 
-  const precioCliente = Array.isArray(cotizador.preciosCliente) && cotizador.preciosCliente.length > 0
-    ? cotizador.preciosCliente[0]
+  // Precio del cliente que COINCIDE con la tarifa resuelta (cruce por codigo_tarifa),
+  // no el primero de la lista. De ahí sale la comisión que se envía al trámite.
+  const objetivoTarifa = cotizador.tarifaCodigo !== null && cotizador.tarifaCodigo !== undefined && cotizador.tarifaCodigo !== ''
+    ? String(cotizador.tarifaCodigo).trim()
+    : null;
+  const precioCliente = objetivoTarifa
+    ? (cotizador.preciosCliente || []).find(
+        (p) => String(p.codigo_tarifa_codigo ?? '').trim() === objetivoTarifa
+      ) || null
     : null;
 
   return {
@@ -646,8 +653,8 @@ const construirPayloadTramite = (cotizador, runt) => {
     tarifa_codigo: cotizador.tarifaCodigo ? String(cotizador.tarifaCodigo) : '',
     tarifa_manual: !!cotizador.tarifaManual,
 
-    precio_lay: cotizador.tarifaDetalle?.valor || precioCliente?.precio_lay || null,
-    comision: precioCliente?.comision || null,
+    precio_lay: cotizador.tarifaDetalle?.valor || null,
+    comision: precioCliente?.comision ?? null,
 
     placa: runt?.placa || cotizador.datosManual?.placa || '',
     clase: runt?.clase || cotizador.datosManual?.clase || '',

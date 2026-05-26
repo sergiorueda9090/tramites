@@ -156,7 +156,7 @@ const formatFieldName = (field) => {
     sub_cuenta: 'Sub-cuenta',
     usuario: 'Usuario asignado',
     precios: 'Precios',
-    descripcion: 'Descripción',
+    comision: 'Comisión',
     codigo_tarifa: 'Código tarifa',
     detail: 'Detalle',
     non_field_errors: 'Error',

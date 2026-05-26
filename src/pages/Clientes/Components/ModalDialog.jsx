@@ -40,11 +40,11 @@ import { deletePrecioThunk } from '../../../store/clientesStore/clientesThunks';
 // ============================================
 // Columnas esperadas del Excel
 // ============================================
-const EXPECTED_COLUMNS = ['descripcion', 'codigo_tarifa'];
+const EXPECTED_COLUMNS = ['codigo_tarifa', 'comision'];
 
 const COLUMN_ALIASES = {
-  descripcion: ['descripcion', 'descripción', 'desc'],
   codigo_tarifa: ['codigo_tarifa', 'código tarifa', 'codigo tarifa', 'codigo', 'código', 'codigotarifa'],
+  comision: ['comision', 'comisión', 'comis'],
 };
 
 /**
@@ -137,22 +137,22 @@ const ExcelPreviewDialog = ({ open, onClose, onConfirm, validRows = [], errorRow
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Fila</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Descripcion</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Codigo tarifa</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Tarifa SOAT</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }} align="right">Comision</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {validRows.map((r, idx) => (
                     <TableRow key={idx} sx={{ bgcolor: 'success.50' }}>
                       <TableCell>{r.row}</TableCell>
-                      <TableCell>{r.descripcion}</TableCell>
                       <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>{r._codigoTexto}</TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary">
                           {r._tarifaDescripcion} · ${Number(r._tarifaValor).toLocaleString('es-CO')}
                         </Typography>
                       </TableCell>
+                      <TableCell align="right">${Number(r.comision).toLocaleString('es-CO')}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -171,8 +171,8 @@ const ExcelPreviewDialog = ({ open, onClose, onConfirm, validRows = [], errorRow
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>Fila</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Descripcion</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Codigo tarifa</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Comision</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Errores</TableCell>
                   </TableRow>
                 </TableHead>
@@ -180,8 +180,8 @@ const ExcelPreviewDialog = ({ open, onClose, onConfirm, validRows = [], errorRow
                   {errorRows.map((err, idx) => (
                     <TableRow key={idx} sx={{ bgcolor: 'error.50' }}>
                       <TableCell>{err.row}</TableCell>
-                      <TableCell>{err.descripcion || <em>(vacio)</em>}</TableCell>
                       <TableCell sx={{ fontFamily: 'monospace' }}>{err.codigo_tarifa || <em>(vacio)</em>}</TableCell>
+                      <TableCell>{(err.comision === '' || err.comision == null) ? <em>(vacio)</em> : err.comision}</TableCell>
                       <TableCell>
                         {err.messages.map((msg, i) => (
                           <Chip key={i} label={msg} size="small" color="error" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
@@ -337,6 +337,17 @@ const ClienteDialog = ({
     return { codigosDuplicados: dups, hayDuplicados: dups.some(Boolean) };
   }, [form.precios]);
 
+  // Comision invalida por precio: vacia, no numerica o negativa.
+  // Cada precio debe tener una comision valida antes de poder guardar.
+  const { comisionesInvalidas, hayComisionInvalida } = React.useMemo(() => {
+    const flags = (form.precios || []).map((p) => {
+      if (p.comision === '' || p.comision === null || p.comision === undefined) return true;
+      const n = Number(p.comision);
+      return Number.isNaN(n) || n < 0;
+    });
+    return { comisionesInvalidas: flags, hayComisionInvalida: flags.some(Boolean) };
+  }, [form.precios]);
+
   const handleChange = (field) => (event) => {
     const value = event.target.type === 'checkbox'
       ? event.target.checked
@@ -353,8 +364,8 @@ const ClienteDialog = ({
   const handleAddPrecio = () => {
     if (onAddPrecio) {
       onAddPrecio({
-        descripcion: '',
         codigo_tarifa: '',
+        comision: '',
       });
     }
   };
@@ -391,7 +402,7 @@ const ClienteDialog = ({
         if (jsonData.length === 0) {
           setExcelPreview({
             validRows: [],
-            errorRows: [{ row: '-', descripcion: '-', codigo_tarifa: '-', messages: ['El archivo esta vacio'] }],
+            errorRows: [{ row: '-', codigo_tarifa: '-', comision: '-', messages: ['El archivo esta vacio'] }],
           });
           setOpenPreviewDialog(true);
           return;
@@ -409,13 +420,13 @@ const ClienteDialog = ({
         const mappedFields = Object.values(columnMap);
         const missingColumns = EXPECTED_COLUMNS.filter((c) => !mappedFields.includes(c));
         if (missingColumns.length > 0) {
-          const labels = { descripcion: 'Descripcion', codigo_tarifa: 'Codigo tarifa' };
+          const labels = { codigo_tarifa: 'Codigo tarifa', comision: 'Comision' };
           setExcelPreview({
             validRows: [],
             errorRows: [{
               row: '-',
-              descripcion: '-',
               codigo_tarifa: '-',
+              comision: '-',
               messages: [`Columnas faltantes: ${missingColumns.map((c) => labels[c]).join(', ')}`],
             }],
           });
@@ -425,10 +436,10 @@ const ClienteDialog = ({
 
         // Codigos YA presentes en el formulario (precios actuales del cliente).
         // Permite detectar duplicados entre Excel y los precios ya configurados.
-        const codigosEnForm = new Map(); // codigo_tarifa_id (str) -> descripcion actual
+        const codigosEnForm = new Set(); // codigo_tarifa_id (str)
         (form.precios || []).forEach((p) => {
           if (p.codigo_tarifa) {
-            codigosEnForm.set(String(p.codigo_tarifa), p.descripcion || '(sin descripcion)');
+            codigosEnForm.add(String(p.codigo_tarifa));
           }
         });
 
@@ -437,7 +448,7 @@ const ClienteDialog = ({
         //   - contra form.precios: codigo ya configurado en el cliente
         const validRows = [];
         const errorRows = [];
-        const codigosVistosEnExcel = new Map(); // codigoLower -> {row, descripcion}
+        const codigosVistosEnExcel = new Map(); // codigoLower -> {row}
 
         jsonData.forEach((row, index) => {
           const mapped = {};
@@ -446,10 +457,6 @@ const ClienteDialog = ({
           });
 
           const messages = [];
-
-          // Validar descripcion
-          const desc = String(mapped.descripcion || '').trim();
-          if (!desc) messages.push('Descripcion vacia');
 
           // Validar codigo_tarifa: tiene que existir en el tarifario SOAT
           const codigoRaw = String(mapped.codigo_tarifa || '').trim();
@@ -463,6 +470,22 @@ const ClienteDialog = ({
             }
           }
 
+          // Validar comision: requerida, numerica y >= 0
+          const comisionRaw = String(mapped.comision ?? '').trim();
+          let comisionNum = null;
+          if (!comisionRaw) {
+            messages.push('Comision vacia');
+          } else {
+            const parsed = Number(comisionRaw.replace(/[^0-9.,-]/g, '').replace(/\./g, '').replace(',', '.'));
+            if (Number.isNaN(parsed)) {
+              messages.push(`Comision "${comisionRaw}" no es un valor numerico`);
+            } else if (parsed < 0) {
+              messages.push('La comision no puede ser negativa');
+            } else {
+              comisionNum = parsed;
+            }
+          }
+
           // Validar duplicados solo si el codigo es valido
           if (tarifa) {
             const codigoKey = codigoRaw.toLowerCase();
@@ -472,26 +495,25 @@ const ClienteDialog = ({
               messages.push(`Codigo "${tarifa.codigo_tarifa}" duplicado en el archivo (ya aparecio en la fila ${previo.row})`);
             }
             // 2) Duplicado contra precios ya configurados en el formulario
-            const descActual = codigosEnForm.get(String(tarifa.id));
-            if (descActual) {
-              messages.push(`El cliente ya tiene el codigo "${tarifa.codigo_tarifa}" en el precio "${descActual}"`);
+            if (codigosEnForm.has(String(tarifa.id))) {
+              messages.push(`El cliente ya tiene configurado el codigo "${tarifa.codigo_tarifa}"`);
             }
           }
 
           if (messages.length > 0) {
             errorRows.push({
               row: index + 2,
-              descripcion: mapped.descripcion ?? '',
               codigo_tarifa: mapped.codigo_tarifa ?? '',
+              comision: mapped.comision ?? '',
               messages,
             });
           } else {
             // Marcar como visto para detectar duplicados en filas siguientes
-            codigosVistosEnExcel.set(codigoRaw.toLowerCase(), { row: index + 2, descripcion: desc });
+            codigosVistosEnExcel.set(codigoRaw.toLowerCase(), { row: index + 2 });
             validRows.push({
               row: index + 2,
-              descripcion: desc,
               codigo_tarifa: tarifa.id,
+              comision: comisionNum,
               _codigoTexto: tarifa.codigo_tarifa,
               _tarifaDescripcion: tarifa.descripcion,
               _tarifaValor: tarifa.valor,
@@ -505,7 +527,7 @@ const ClienteDialog = ({
       } catch {
         setExcelPreview({
           validRows: [],
-          errorRows: [{ row: '-', descripcion: '-', codigo_tarifa: '-', messages: ['No se pudo leer el archivo. Verifique que sea un Excel valido (.xlsx, .xls)'] }],
+          errorRows: [{ row: '-', codigo_tarifa: '-', comision: '-', messages: ['No se pudo leer el archivo. Verifique que sea un Excel valido (.xlsx, .xls)'] }],
         });
         setOpenPreviewDialog(true);
       }
@@ -522,8 +544,8 @@ const ClienteDialog = ({
     validRows.forEach((row) => {
       if (onAddPrecio) {
         onAddPrecio({
-          descripcion: row.descripcion,
           codigo_tarifa: row.codigo_tarifa,
+          comision: row.comision,
         });
       }
     });
@@ -671,7 +693,7 @@ const ClienteDialog = ({
                     Ver codigos validos
                   </Button>
                 </Tooltip>
-                <Tooltip title="Cargar precios desde archivo Excel (.xlsx). Columnas: descripcion, codigo_tarifa. Veras un preview antes de importar.">
+                <Tooltip title="Cargar precios desde archivo Excel (.xlsx). Columnas: codigo_tarifa, comision. Veras un preview antes de importar.">
                   <Button
                     size="small"
                     startIcon={<UploadFileIcon />}
@@ -710,20 +732,20 @@ const ClienteDialog = ({
                 <li>
                   Columnas requeridas (en la primera fila, en cualquier orden):
                   <Box component="code" sx={{ mx: 0.5, px: 0.6, bgcolor: 'action.hover', borderRadius: 0.5, fontFamily: 'monospace' }}>
-                    descripcion
+                    codigo_tarifa
                   </Box>
                   y
                   <Box component="code" sx={{ mx: 0.5, px: 0.6, bgcolor: 'action.hover', borderRadius: 0.5, fontFamily: 'monospace' }}>
-                    codigo_tarifa
+                    comision
                   </Box>
                   .
                 </li>
                 <li>
-                  <strong>descripcion</strong>: texto libre, no puede estar vacia.
-                </li>
-                <li>
                   <strong>codigo_tarifa</strong>: debe coincidir <em>exactamente</em> con un codigo
                   registrado en el Tarifario SOAT — pulsa "Ver codigos validos" para listarlos.
+                </li>
+                <li>
+                  <strong>comision</strong>: monto en pesos (COP) que agrega el cliente. Numero mayor o igual a 0, no puede estar vacio.
                 </li>
                 <li>
                   <strong>Sin duplicados</strong>: el mismo codigo no puede repetirse entre filas del Excel,
@@ -743,6 +765,12 @@ const ClienteDialog = ({
               </Alert>
             )}
 
+            {hayComisionInvalida && (
+              <Alert severity="error" sx={{ mb: 1 }}>
+                Hay precios sin una <strong>comision</strong> valida. Ingresa un monto mayor o igual a 0 en cada precio antes de guardar.
+              </Alert>
+            )}
+
             {form.precios && form.precios.length > 0 ? (
               form.precios.map((precio, index) => (
                 <Paper
@@ -751,13 +779,6 @@ const ClienteDialog = ({
                   sx={{ p: 2 }}
                 >
                   <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                    <TextField
-                      size="small"
-                      label="Descripcion"
-                      value={precio.descripcion || ''}
-                      onChange={handlePrecioChange(index, 'descripcion')}
-                      sx={{ flex: 2 }}
-                    />
                     <Autocomplete
                       size="small"
                       options={tarifariosSoat}
@@ -793,6 +814,22 @@ const ClienteDialog = ({
                       )}
                       sx={{ flex: 2 }}
                     />
+                    <TextField
+                      size="small"
+                      label="Comision"
+                      type="number"
+                      value={precio.comision ?? ''}
+                      onChange={handlePrecioChange(index, 'comision')}
+                      required
+                      placeholder="0"
+                      error={comisionesInvalidas[index]}
+                      helperText={comisionesInvalidas[index] ? 'Ingresa una comision valida (>= 0)' : undefined}
+                      InputProps={{
+                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        inputProps: { min: 0, step: '0.01' },
+                      }}
+                      sx={{ flex: 1 }}
+                    />
                     <IconButton
                       color="error"
                       onClick={() => handleRemovePrecio(index)}
@@ -815,7 +852,7 @@ const ClienteDialog = ({
           <Button
             variant="contained"
             onClick={onSave}
-            disabled={!form.nombre || !form.sub_cuenta || hayDuplicados}
+            disabled={!form.nombre || !form.sub_cuenta || hayDuplicados || hayComisionInvalida}
           >
             {isEditing ? 'Guardar cambios' : 'Crear cliente'}
           </Button>
