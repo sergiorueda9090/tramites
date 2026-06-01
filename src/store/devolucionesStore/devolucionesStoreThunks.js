@@ -7,8 +7,6 @@ import {
   setDevoluciones,
   setClientes,
   setTarjetas,
-  setSubCuentas,
-  setLoadingSubCuentas,
   setPagination,
   closeModal,
   openEditModal,
@@ -27,7 +25,6 @@ const API_URLS = {
   // URLs auxiliares para cargar datos de selects
   clientes: '/api/clientes/list/',
   tarjetas: '/api/tarjetas/list/',
-  subCuentas: '/api/sub_cuentas/list/',
 };
 
 /**
@@ -211,30 +208,14 @@ export const loadTarjetasThunk = () => {
 };
 
 /**
- * Cargar sub-cuentas para el select del formulario
- */
-export const loadSubCuentasThunk = () => {
-  return async (dispatch) => {
-    try {
-      dispatch(setLoadingSubCuentas(true));
-      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
-      const subCuentas = response.data.results || response.data;
-      dispatch(setSubCuentas(subCuentas));
-    } catch (error) {
-      console.error('Error cargando sub-cuentas:', error);
-      dispatch(setLoadingSubCuentas(false));
-    }
-  };
-};
-
-/**
- * Cargar datos auxiliares (clientes, tarjetas y sub-cuentas) para los formularios
+ * Cargar datos auxiliares (clientes y tarjetas) para los formularios.
+ * La sub-cuenta de debito/credito se deriva automaticamente del cliente
+ * y de la tarjeta seleccionados; ya no se selecciona manualmente.
  */
 export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadClientesThunk());
     dispatch(loadTarjetasThunk());
-    dispatch(loadSubCuentasThunk());
   };
 };
 

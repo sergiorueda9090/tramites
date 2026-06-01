@@ -20,7 +20,6 @@ import {
   selectAppliedFilters,
   selectClientes,
   selectTarjetas,
-  selectSubCuentas,
   setPage,
   setPageSize,
   setSort,
@@ -68,7 +67,6 @@ const Devoluciones = () => {
   const loading = useSelector(selectLoading);
   const clientes = useSelector(selectClientes);
   const tarjetas = useSelector(selectTarjetas);
-  const subCuentas = useSelector(selectSubCuentas);
 
   /**
    * Construye los parámetros de consulta para el backend
@@ -248,7 +246,6 @@ const Devoluciones = () => {
         open={openModal}
         onClose={handleCloseModal}
         onSave={handleSave}
-        subCuentas={subCuentas}
         selectedDevolucion={selectedDevolucion}
         form={form}
         onFormChange={handleFormChange}

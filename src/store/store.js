@@ -29,6 +29,7 @@ import { planDeCuotasStore } from './planDeCuotasStore/planDeCuotasStore';
 import { subCuentasStore } from './subCuentasStore/subCuentasStore';
 import { proveedoresStore } from './proveedoresStore/proveedoresStore';
 import { apiMetricsStore } from './apiMetricsStore/apiMetricsStore';
+import { dashboardContableStore } from './dashboardContableStore/dashboardContableStore';
 
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
@@ -68,5 +69,6 @@ export const store = configureStore({
     subCuentasStore: subCuentasStore.reducer,
     proveedoresStore: proveedoresStore.reducer,
     apiMetricsStore: apiMetricsStore.reducer,
+    dashboardContableStore: dashboardContableStore.reducer,
   },
 });
