@@ -19,6 +19,7 @@ import {
   Chip,
 } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) return '$0';
@@ -46,23 +47,45 @@ const UtilidadOcasionalDialog = ({
     onFormChange(field, event.target.value);
   };
 
+  const selectedTarjeta = tarjetas.find((t) => String(t.id) === String(form.tarjeta)) || null;
   const selectedSubCuenta = subCuentas.find((s) => String(s.id) === String(form.sub_cuenta)) || null;
 
+  const tarjetaSubCuenta = selectedTarjeta
+    ? {
+        codigo: selectedTarjeta.sub_cuenta_codigo,
+        nombre: selectedTarjeta.sub_cuenta_nombre,
+      }
+    : null;
+
   // Preview en vivo del 4x1000 y total — replica el cálculo del backend.
-  const { tarjetaSeleccionada, aplica4x1000, cuatroPorMilCalc, totalCalc } = useMemo(() => {
-    const tId = form.tarjeta ? Number(form.tarjeta) : null;
-    const tarjeta = tarjetas.find((t) => t.id === tId) || null;
-    const aplica = tarjeta?.cuatro_por_mil === '1';
+  const { aplica4x1000, montoBase, cuatroPorMilCalc, totalCalc, esGanancia, esPerdida } = useMemo(() => {
+    const aplica = selectedTarjeta?.cuatro_por_mil === '1';
     const valor = Number(form.valor || 0);
-    const cuatro = aplica && !Number.isNaN(valor) ? (valor * 4) / 1000 : 0;
-    const total = (Number.isNaN(valor) ? 0 : valor) + cuatro;
+    const safeValor = Number.isNaN(valor) ? 0 : valor;
+    const base = Math.abs(safeValor);
+    const cuatro = aplica ? (base * 4) / 1000 : 0;
+    const totalMagnitud = base + cuatro;
     return {
-      tarjetaSeleccionada: tarjeta,
       aplica4x1000: aplica,
+      montoBase: base,
       cuatroPorMilCalc: cuatro,
-      totalCalc: total,
+      totalCalc: safeValor > 0 ? totalMagnitud : -totalMagnitud,
+      esGanancia: safeValor > 0,
+      esPerdida: safeValor < 0,
     };
-  }, [form.tarjeta, form.valor, tarjetas]);
+  }, [form.valor, selectedTarjeta]);
+
+  // Validaciones locales.
+  const tarjetaSinSubCuenta = selectedTarjeta && !tarjetaSubCuenta?.codigo;
+  const mismaSubCuenta =
+    selectedTarjeta && form.sub_cuenta &&
+    selectedTarjeta.sub_cuenta &&
+    String(selectedTarjeta.sub_cuenta) === String(form.sub_cuenta);
+  const valorCero = form.valor !== '' && form.valor !== null && Number(form.valor) === 0;
+
+  const canSave =
+    form.tarjeta && form.valor && form.fecha && form.sub_cuenta &&
+    !valorCero && !tarjetaSinSubCuenta && !mismaSubCuenta;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -88,6 +111,16 @@ const UtilidadOcasionalDialog = ({
             </Select>
           </FormControl>
 
+          {selectedTarjeta && (
+            <SubCuentaInfo
+              icon={<CreditCardIcon fontSize="small" />}
+              label="Sub-cuenta de la tarjeta (banco)"
+              codigo={tarjetaSubCuenta?.codigo}
+              nombre={tarjetaSubCuenta?.nombre}
+              color="secondary"
+            />
+          )}
+
           <TextField
             fullWidth
             label="Valor"
@@ -103,8 +136,8 @@ const UtilidadOcasionalDialog = ({
                 </InputAdornment>
               ),
             }}
-            inputProps={{ min: 0, step: '0.01' }}
-            helperText="El 4×1000 y el total se calculan automáticamente."
+            inputProps={{ step: '0.01' }}
+            helperText="Positivo = ganancia, negativo = pérdida. El 4×1000 y el total se calculan automáticamente."
           />
 
           <TextField
@@ -139,37 +172,32 @@ const UtilidadOcasionalDialog = ({
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Sub-cuenta"
+                label="Sub-cuenta de ingreso / utilidad"
                 required
                 placeholder="Buscar por código o nombre..."
-                helperText="Obligatoria y única: no se puede repetir entre registros"
+                helperText="Contracuenta del banco en el asiento (no puede ser la misma de la tarjeta)"
               />
             )}
           />
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Débito"
-              type="number"
-              value={form.debito ?? '0'}
-              onChange={handleChange('debito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-            <TextField
-              fullWidth
-              label="Crédito"
-              type="number"
-              value={form.credito ?? '0'}
-              onChange={handleChange('credito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-          </Box>
+          {tarjetaSinSubCuenta && (
+            <Alert severity="error">
+              La tarjeta seleccionada no tiene sub-cuenta contable asignada. Asignala antes de continuar.
+            </Alert>
+          )}
+          {mismaSubCuenta && (
+            <Alert severity="error">
+              La sub-cuenta de ingreso no puede ser la misma que la de la tarjeta. El asiento contable no se puede registrar.
+            </Alert>
+          )}
+          {valorCero && (
+            <Alert severity="error">
+              El valor no puede ser 0.
+            </Alert>
+          )}
 
           {/* Preview del cálculo */}
-          {tarjetaSeleccionada && (
+          {selectedTarjeta && form.valor !== '' && !valorCero && (
             <Alert
               severity={aplica4x1000 ? 'warning' : 'info'}
               icon={false}
@@ -180,6 +208,8 @@ const UtilidadOcasionalDialog = ({
                   <Typography variant="body2" fontWeight={600}>
                     Cálculo automático
                   </Typography>
+                  {esGanancia && <Chip size="small" label="Ganancia" color="success" variant="outlined" />}
+                  {esPerdida && <Chip size="small" label="Pérdida" color="error" variant="outlined" />}
                   <Chip
                     size="small"
                     label={aplica4x1000 ? 'Aplica 4x1000' : 'No aplica 4x1000'}
@@ -188,8 +218,8 @@ const UtilidadOcasionalDialog = ({
                   />
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Valor:</Typography>
-                  <Typography variant="body2">{formatCurrency(form.valor)}</Typography>
+                  <Typography variant="body2">Base (|valor|):</Typography>
+                  <Typography variant="body2">{formatCurrency(montoBase)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2">4×1000:</Typography>
@@ -197,7 +227,7 @@ const UtilidadOcasionalDialog = ({
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
                   <Typography variant="body2" fontWeight={600}>Total:</Typography>
-                  <Typography variant="body2" fontWeight={600} color="primary">
+                  <Typography variant="body2" fontWeight={600} color={esPerdida ? 'error' : 'primary'}>
                     {formatCurrency(totalCalc)}
                   </Typography>
                 </Box>
@@ -211,7 +241,7 @@ const UtilidadOcasionalDialog = ({
         <Button
           variant="contained"
           onClick={onSave}
-          disabled={!form.tarjeta || !form.valor || !form.fecha || !form.sub_cuenta}
+          disabled={!canSave}
         >
           {isEditing ? 'Guardar cambios' : 'Crear utilidad'}
         </Button>
@@ -219,5 +249,34 @@ const UtilidadOcasionalDialog = ({
     </Dialog>
   );
 };
+
+const SubCuentaInfo = ({ icon, label, codigo, nombre, color = 'default' }) => (
+  <Box
+    sx={{
+      p: 1.5,
+      borderRadius: 1,
+      border: 1,
+      borderColor: 'divider',
+      bgcolor: 'action.hover',
+    }}
+  >
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+      {icon}
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+    </Stack>
+    {codigo ? (
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Chip size="small" label={codigo} color={color} />
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {nombre || '-'}
+        </Typography>
+      </Stack>
+    ) : (
+      <Typography variant="body2" color="error">
+        Sin sub-cuenta asignada
+      </Typography>
+    )}
+  </Box>
+);
 
 export default UtilidadOcasionalDialog;

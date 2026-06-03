@@ -48,9 +48,6 @@ const initialState = {
     valor: '',
     observacion: '',
     fecha: '',
-    debito: '0',
-    credito: '0',
-    sub_cuenta: '',
   },
 
   // Datos auxiliares para selects
@@ -155,9 +152,6 @@ export const gastosStore = createSlice({
         valor: '',
         observacion: '',
         fecha: new Date().toISOString().slice(0, 16),
-        debito: '0',
-        credito: '0',
-        sub_cuenta: '',
       };
     },
     openEditModal: (state, action) => {
@@ -170,9 +164,6 @@ export const gastosStore = createSlice({
         valor: action.payload.valor || '',
         observacion: action.payload.observacion || '',
         fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
-        debito: action.payload.debito ?? '0',
-        credito: action.payload.credito ?? '0',
-        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
