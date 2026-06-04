@@ -35,6 +35,20 @@ const initialState = {
   // Filtros
   filters: { ...initialFilters },
   appliedFilters: { ...initialFilters },
+
+  // Sub-cuentas auxiliares (para la configuración)
+  subCuentas: [],
+  loadingSubCuentas: false,
+
+  // Configuración: sub-cuenta de débito por defecto
+  config: {
+    sub_cuenta_debito: null,
+    sub_cuenta_debito_codigo: null,
+    sub_cuenta_debito_nombre: null,
+    updated_at: null,
+  },
+  loadingConfig: false,
+  savingConfig: false,
 };
 
 export const cuatroPorMilStore = createSlice({
@@ -60,6 +74,25 @@ export const cuatroPorMilStore = createSlice({
     },
     setStatsLoading: (state, action) => {
       state.statsLoading = action.payload;
+    },
+
+    setSubCuentas: (state, action) => {
+      state.subCuentas = action.payload;
+      state.loadingSubCuentas = false;
+    },
+    setLoadingSubCuentas: (state, action) => {
+      state.loadingSubCuentas = action.payload;
+    },
+
+    setConfig: (state, action) => {
+      state.config = { ...state.config, ...action.payload };
+      state.loadingConfig = false;
+    },
+    setLoadingConfig: (state, action) => {
+      state.loadingConfig = action.payload;
+    },
+    setSavingConfig: (state, action) => {
+      state.savingConfig = action.payload;
     },
 
     setPagination: (state, action) => {
@@ -119,6 +152,11 @@ export const {
   setRegistros,
   setStats,
   setStatsLoading,
+  setSubCuentas,
+  setLoadingSubCuentas,
+  setConfig,
+  setLoadingConfig,
+  setSavingConfig,
   setPagination,
   setPage,
   setPageSize,
@@ -136,6 +174,9 @@ export const selectLoading       = (state) => state.cuatroPorMilStore.loading;
 export const selectError         = (state) => state.cuatroPorMilStore.error;
 export const selectStats         = (state) => state.cuatroPorMilStore.stats;
 export const selectStatsLoading  = (state) => state.cuatroPorMilStore.statsLoading;
+export const selectSubCuentas    = (state) => state.cuatroPorMilStore.subCuentas;
+export const selectConfig        = (state) => state.cuatroPorMilStore.config;
+export const selectSavingConfig  = (state) => state.cuatroPorMilStore.savingConfig;
 export const selectPagination    = (state) => state.cuatroPorMilStore.pagination;
 export const selectPage          = (state) => state.cuatroPorMilStore.pagination.page;
 export const selectPageSize      = (state) => state.cuatroPorMilStore.pagination.pageSize;

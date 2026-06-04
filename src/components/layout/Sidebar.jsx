@@ -111,7 +111,7 @@ const menuItems = [
           { text: 'Cargos No Registrados', icon: ReportProblemIcon,          path: ROUTES.CARGOS_NO_REGISTRADOS,  moduleCode: 'cargos_no_registrados', color: '#d32f2f' },
           // { text: 'Ajuste de Saldo',       icon: BalanceIcon,                path: ROUTES.AJUSTE_SALDO,           moduleCode: 'ajuste_saldo',          color: '#0288d1' },
           { text: 'Gastos',                icon: TrendingDownIcon,           path: ROUTES.GASTOS,                 moduleCode: 'gastos',                color: '#c62828' },
-          { text: 'Categorías de pagos',   icon: CategoryIcon,               path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria',      color: '#ef5350' },
+          { text: 'Categorías de gastos',  icon: CategoryIcon,               path: ROUTES.GASTOS_CATEGORIA,       moduleCode: 'gastos_categoria',      color: '#ef5350' },
           { text: '4 x 1000',              icon: PercentIcon,                path: ROUTES.CUATRO_POR_MIL,         moduleCode: 'cuatro_por_mil',        color: '#fb8c00' },
           { text: 'Utilidades',            icon: MonetizationOnIcon,         path: ROUTES.UTILIDADES,             moduleCode: 'utilidades',            color: '#2e7d32' },
           { text: 'Utilidad ocasional',    icon: SavingsIcon,                path: ROUTES.UTILIDAD_OCASIONAL,     moduleCode: 'utilidad_ocasional',    color: '#66bb6a' },

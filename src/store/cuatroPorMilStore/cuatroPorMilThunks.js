@@ -7,6 +7,11 @@ import {
   setPagination,
   setStats,
   setStatsLoading,
+  setSubCuentas,
+  setLoadingSubCuentas,
+  setConfig,
+  setLoadingConfig,
+  setSavingConfig,
 } from './cuatroPorMilStore';
 
 const API_URLS = {
@@ -14,6 +19,54 @@ const API_URLS = {
   stats:   '/api/cuatro_por_mil/stats/',
   detail:  (id) => `/api/cuatro_por_mil/${id}/`,
   history: (id) => `/api/cuatro_por_mil/${id}/history/`,
+  subCuentas:   '/api/sub_cuentas/list/',
+  config:       '/api/cuatro_por_mil/config/',
+  configUpdate: '/api/cuatro_por_mil/config/update/',
+};
+
+// ───────────────────── Sub-cuentas + Configuración ─────────────────────
+export const loadSubCuentasThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingSubCuentas(true));
+      const response = await api.get(API_URLS.subCuentas, { params: { page_size: 1000 } });
+      dispatch(setSubCuentas(response.data.results || response.data));
+    } catch (error) {
+      console.error('Error cargando sub-cuentas:', error);
+      dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
+export const loadConfigThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingConfig(true));
+      const response = await api.get(API_URLS.config);
+      dispatch(setConfig(response.data));
+    } catch (error) {
+      console.error('Error cargando configuración de 4x1000:', error);
+      dispatch(setLoadingConfig(false));
+    }
+  };
+};
+
+export const saveConfigThunk = (payload) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setSavingConfig(true));
+      const response = await api.put(API_URLS.configUpdate, payload);
+      dispatch(setConfig(response.data));
+      AlertService.success('Configuración guardada', 'La sub-cuenta de débito se actualizó correctamente.');
+      return { success: true };
+    } catch (error) {
+      const msg = error.response?.data?.error || 'No se pudo guardar la configuración.';
+      AlertService.error('Error', msg);
+      return { success: false, error: msg };
+    } finally {
+      dispatch(setSavingConfig(false));
+    }
+  };
 };
 
 const MODULO_LABELS = {

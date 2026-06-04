@@ -33,8 +33,6 @@ const initialState = {
     id: null,
     nombre: '',
     descripcion: '',
-    debito: '0',
-    credito: '0',
     sub_cuenta: '',
   },
 
@@ -113,7 +111,7 @@ export const gastosCategoriaStore = createSlice({
     openCreateModal: (state) => {
       state.openModal = true;
       state.selectedCategoria = null;
-      state.form = { id: null, nombre: '', descripcion: '', debito: '0', credito: '0', sub_cuenta: '' };
+      state.form = { id: null, nombre: '', descripcion: '', sub_cuenta: '' };
     },
     openEditModal: (state, action) => {
       state.openModal = true;
@@ -122,8 +120,6 @@ export const gastosCategoriaStore = createSlice({
         id: action.payload.id,
         nombre: action.payload.nombre || '',
         descripcion: action.payload.descripcion || '',
-        debito: action.payload.debito ?? '0',
-        credito: action.payload.credito ?? '0',
         sub_cuenta: action.payload.sub_cuenta || '',
       };
     },

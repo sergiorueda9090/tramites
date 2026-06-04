@@ -11,10 +11,20 @@ const initialFilters = {
 const initialForm = {
   id: null,
   tarjeta: '',
+  tipo: 'ganancia',
   valor: '',
   observacion: '',
   fecha: '',
-  sub_cuenta: '',
+};
+
+const initialConfig = {
+  sub_cuenta_positiva: null,
+  sub_cuenta_positiva_codigo: null,
+  sub_cuenta_positiva_nombre: null,
+  sub_cuenta_negativa: null,
+  sub_cuenta_negativa_codigo: null,
+  sub_cuenta_negativa_nombre: null,
+  updated_at: null,
 };
 
 const initialState = {
@@ -51,6 +61,11 @@ const initialState = {
   tarjetas: [],
   subCuentas: [],
   loadingSubCuentas: false,
+
+  // Configuracion global de sub-cuentas (positivos / negativos)
+  config: { ...initialConfig },
+  loadingConfig: false,
+  savingConfig: false,
 };
 
 export const utilidadOcasionalStore = createSlice({
@@ -79,6 +94,18 @@ export const utilidadOcasionalStore = createSlice({
     },
     setLoadingSubCuentas: (state, action) => {
       state.loadingSubCuentas = action.payload;
+    },
+
+    // Configuracion global
+    setConfig: (state, action) => {
+      state.config = { ...initialConfig, ...action.payload };
+      state.loadingConfig = false;
+    },
+    setLoadingConfig: (state, action) => {
+      state.loadingConfig = action.payload;
+    },
+    setSavingConfig: (state, action) => {
+      state.savingConfig = action.payload;
     },
 
     setPagination: (state, action) => {
@@ -140,13 +167,15 @@ export const utilidadOcasionalStore = createSlice({
     openEditModal: (state, action) => {
       state.openModal = true;
       state.selectedUtilidad = action.payload;
+      // El valor se muestra siempre positivo; el tipo viene del backend (o se
+      // deriva del signo para registros antiguos).
       state.form = {
         id: action.payload.id,
         tarjeta: action.payload.tarjeta?.id || '',
-        valor: action.payload.valor || '',
+        tipo: action.payload.tipo || (Number(action.payload.valor) < 0 ? 'perdida' : 'ganancia'),
+        valor: action.payload.valor != null ? String(Math.abs(Number(action.payload.valor))) : '',
         observacion: action.payload.observacion || '',
         fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
-        sub_cuenta: action.payload.sub_cuenta || '',
       };
     },
     closeModal: (state) => {
@@ -174,6 +203,9 @@ export const {
   setTarjetas,
   setSubCuentas,
   setLoadingSubCuentas,
+  setConfig,
+  setLoadingConfig,
+  setSavingConfig,
   setPagination,
   setPage,
   setPageSize,
@@ -196,6 +228,9 @@ export const selectLoading          = (state) => state.utilidadOcasionalStore.lo
 export const selectError            = (state) => state.utilidadOcasionalStore.error;
 export const selectTarjetas         = (state) => state.utilidadOcasionalStore.tarjetas;
 export const selectSubCuentas       = (state) => state.utilidadOcasionalStore.subCuentas;
+export const selectConfig           = (state) => state.utilidadOcasionalStore.config;
+export const selectLoadingConfig    = (state) => state.utilidadOcasionalStore.loadingConfig;
+export const selectSavingConfig     = (state) => state.utilidadOcasionalStore.savingConfig;
 export const selectPagination       = (state) => state.utilidadOcasionalStore.pagination;
 export const selectPage             = (state) => state.utilidadOcasionalStore.pagination.page;
 export const selectPageSize         = (state) => state.utilidadOcasionalStore.pagination.pageSize;

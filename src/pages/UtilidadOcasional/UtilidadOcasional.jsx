@@ -20,6 +20,8 @@ import {
   selectLoading,
   selectTarjetas,
   selectSubCuentas,
+  selectConfig,
+  selectSavingConfig,
   setPage,
   setPageSize,
   setSort,
@@ -39,12 +41,14 @@ import {
   viewThunk,
   showThunk,
   loadAuxDataThunk,
+  saveConfigThunk,
 } from '../../store/utilidadOcasionalStore/utilidadOcasionalThunks';
 
 import {
   UtilidadOcasionalFilters,
   UtilidadOcasionalDataTable,
   UtilidadOcasionalDialog,
+  UtilidadOcasionalConfigPanel,
 } from './Components';
 
 const UtilidadOcasional = () => {
@@ -66,6 +70,8 @@ const UtilidadOcasional = () => {
   const loading          = useSelector(selectLoading);
   const tarjetas         = useSelector(selectTarjetas);
   const subCuentas       = useSelector(selectSubCuentas);
+  const config           = useSelector(selectConfig);
+  const savingConfig     = useSelector(selectSavingConfig);
 
   const buildQueryParams = useCallback(() => {
     const params = { page, page_size: pageSize };
@@ -117,6 +123,7 @@ const UtilidadOcasional = () => {
   const handleCloseModal = () => dispatch(closeModal());
   const handleFormChange = (field, value) => dispatch(updateForm({ field, value }));
   const handleSave       = () => dispatch(saveThunk(form));
+  const handleSaveConfig = (payload) => dispatch(saveConfigThunk(payload));
 
   return (
     <Box>
@@ -144,6 +151,14 @@ const UtilidadOcasional = () => {
           </Button>
         )}
       </Box>
+
+      <UtilidadOcasionalConfigPanel
+        config={config}
+        subCuentas={subCuentas}
+        saving={savingConfig}
+        canEdit={canEdit('utilidad_ocasional')}
+        onSave={handleSaveConfig}
+      />
 
       <UtilidadOcasionalFilters
         filters={filters}
@@ -179,7 +194,7 @@ const UtilidadOcasional = () => {
         form={form}
         onFormChange={handleFormChange}
         tarjetas={tarjetas}
-        subCuentas={subCuentas}
+        config={config}
       />
     </Box>
   );

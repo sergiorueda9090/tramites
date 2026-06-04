@@ -8,7 +8,6 @@ import {
   Autocomplete,
   Button,
   Box,
-  InputAdornment,
 } from '@mui/material';
 
 const SubCuentaDialog = ({
@@ -40,14 +39,6 @@ const SubCuentaDialog = ({
       }
     }
     onFormChange('codigo', letters + digits);
-  };
-
-  // Numericos: aceptar solo numeros + un punto decimal opcional
-  const handleNumericChange = (field) => (event) => {
-    const raw = event.target.value;
-    if (raw === '' || /^-?\d*\.?\d*$/.test(raw)) {
-      onFormChange(field, raw);
-    }
   };
 
   const codigoInvalido = form.codigo !== '' && !/^[A-Z]{3}\d{3}$/.test(form.codigo);
@@ -118,49 +109,9 @@ const SubCuentaDialog = ({
             }
           />
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Débito"
-              value={form.debito ?? ''}
-              onChange={handleNumericChange('debito')}
-              disabled={isEditing}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                inputMode: 'decimal',
-              }}
-              helperText={isEditing ? 'Inmutable después de creada' : undefined}
-            />
-            <TextField
-              fullWidth
-              label="Crédito"
-              value={form.credito ?? ''}
-              onChange={handleNumericChange('credito')}
-              disabled={isEditing}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                inputMode: 'decimal',
-              }}
-              helperText={isEditing ? 'Inmutable después de creada' : undefined}
-            />
-          </Box>
-
-          <TextField
-            fullWidth
-            label="Acumulado"
-            value={form.acumulado ?? ''}
-            onChange={handleNumericChange('acumulado')}
-            disabled={isEditing}
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              inputMode: 'decimal',
-            }}
-            helperText={
-              isEditing
-                ? 'Inmutable después de creada'
-                : 'Saldo acumulado de la sub-cuenta'
-            }
-          />
+          {/* Los saldos contables (débito/crédito/acumulado) no se capturan ni se editan
+              aquí: una sub-cuenta arranca en 0 y los movimientos los registra el libro
+              mayor. Se consultan en la tabla / Dashboard Contable. */}
         </Box>
       </DialogContent>
       <DialogActions>

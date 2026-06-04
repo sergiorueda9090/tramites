@@ -84,26 +84,6 @@ const CategoriaDialog = ({
             )}
           />
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Débito"
-              type="number"
-              value={form.debito ?? '0'}
-              onChange={handleChange('debito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-            <TextField
-              fullWidth
-              label="Crédito"
-              type="number"
-              value={form.credito ?? '0'}
-              onChange={handleChange('credito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>

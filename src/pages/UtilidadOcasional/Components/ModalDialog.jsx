@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Autocomplete,
   Button,
   Box,
   FormControl,
@@ -17,9 +16,14 @@ import {
   Stack,
   Typography,
   Chip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) return '$0';
@@ -39,7 +43,7 @@ const UtilidadOcasionalDialog = ({
   form,
   onFormChange,
   tarjetas = [],
-  subCuentas = [],
+  config = {},
 }) => {
   const isEditing = !!selectedUtilidad;
 
@@ -48,7 +52,6 @@ const UtilidadOcasionalDialog = ({
   };
 
   const selectedTarjeta = tarjetas.find((t) => String(t.id) === String(form.tarjeta)) || null;
-  const selectedSubCuenta = subCuentas.find((s) => String(s.id) === String(form.sub_cuenta)) || null;
 
   const tarjetaSubCuenta = selectedTarjeta
     ? {
@@ -57,35 +60,54 @@ const UtilidadOcasionalDialog = ({
       }
     : null;
 
-  // Preview en vivo del 4x1000 y total — replica el cálculo del backend.
-  const { aplica4x1000, montoBase, cuatroPorMilCalc, totalCalc, esGanancia, esPerdida } = useMemo(() => {
+  const tipo = form.tipo || 'ganancia';
+  const esGanancia = tipo === 'ganancia';
+  const esPerdida = tipo === 'perdida';
+
+  // El valor siempre es positivo; el `tipo` decide la contracuenta (config global):
+  //   ganancia -> sub-cuenta de positivos | pérdida -> sub-cuenta de negativos.
+  const valorNum = Math.abs(Number(form.valor));
+  const tieneValor = form.valor !== '' && form.valor !== null && !Number.isNaN(valorNum) && valorNum !== 0;
+  const aplicableSubCuenta = esGanancia
+    ? {
+        codigo: config.sub_cuenta_positiva_codigo,
+        nombre: config.sub_cuenta_positiva_nombre,
+        configurada: !!config.sub_cuenta_positiva,
+        etiqueta: 'Sub-cuenta para ganancia (positivos)',
+      }
+    : {
+        codigo: config.sub_cuenta_negativa_codigo,
+        nombre: config.sub_cuenta_negativa_nombre,
+        configurada: !!config.sub_cuenta_negativa,
+        etiqueta: 'Sub-cuenta para pérdida (negativos)',
+      };
+
+  // Preview en vivo del 4x1000 y total — replica el cálculo del backend (siempre positivo).
+  const { aplica4x1000, montoBase, cuatroPorMilCalc, totalCalc } = useMemo(() => {
     const aplica = selectedTarjeta?.cuatro_por_mil === '1';
-    const valor = Number(form.valor || 0);
-    const safeValor = Number.isNaN(valor) ? 0 : valor;
-    const base = Math.abs(safeValor);
+    const base = Math.abs(Number(form.valor || 0)) || 0;
     const cuatro = aplica ? (base * 4) / 1000 : 0;
-    const totalMagnitud = base + cuatro;
     return {
       aplica4x1000: aplica,
       montoBase: base,
       cuatroPorMilCalc: cuatro,
-      totalCalc: safeValor > 0 ? totalMagnitud : -totalMagnitud,
-      esGanancia: safeValor > 0,
-      esPerdida: safeValor < 0,
+      totalCalc: base + cuatro,
     };
   }, [form.valor, selectedTarjeta]);
 
   // Validaciones locales.
   const tarjetaSinSubCuenta = selectedTarjeta && !tarjetaSubCuenta?.codigo;
-  const mismaSubCuenta =
-    selectedTarjeta && form.sub_cuenta &&
-    selectedTarjeta.sub_cuenta &&
-    String(selectedTarjeta.sub_cuenta) === String(form.sub_cuenta);
   const valorCero = form.valor !== '' && form.valor !== null && Number(form.valor) === 0;
+  // La contracuenta del tipo actual debe estar configurada en la pantalla.
+  const faltaConfig = tieneValor && !aplicableSubCuenta?.configurada;
+  // La contracuenta no puede coincidir con la sub-cuenta de la tarjeta.
+  const mismaSubCuenta =
+    aplicableSubCuenta?.codigo && tarjetaSubCuenta?.codigo &&
+    String(aplicableSubCuenta.codigo) === String(tarjetaSubCuenta.codigo);
 
   const canSave =
-    form.tarjeta && form.valor && form.fecha && form.sub_cuenta &&
-    !valorCero && !tarjetaSinSubCuenta && !mismaSubCuenta;
+    form.tarjeta && form.valor && form.fecha &&
+    !valorCero && !tarjetaSinSubCuenta && !faltaConfig && !mismaSubCuenta;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -121,12 +143,38 @@ const UtilidadOcasionalDialog = ({
             />
           )}
 
+          {/* Tipo: ganancia o pérdida. El valor siempre se ingresa positivo. */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              Tipo de utilidad
+            </Typography>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              size="small"
+              color={esGanancia ? 'success' : 'error'}
+              value={tipo}
+              onChange={(_, newTipo) => { if (newTipo) onFormChange('tipo', newTipo); }}
+            >
+              <ToggleButton value="ganancia">
+                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} /> Ganancia
+              </ToggleButton>
+              <ToggleButton value="perdida">
+                <TrendingDownIcon fontSize="small" sx={{ mr: 0.5 }} /> Pérdida
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
           <TextField
             fullWidth
             label="Valor"
             type="number"
             value={form.valor || ''}
-            onChange={handleChange('valor')}
+            onChange={(e) => {
+              // El valor siempre se ingresa/almacena positivo (magnitud).
+              const v = e.target.value;
+              onFormChange('valor', v === '' ? '' : String(Math.abs(Number(v))));
+            }}
             required
             placeholder="0"
             InputProps={{
@@ -136,8 +184,8 @@ const UtilidadOcasionalDialog = ({
                 </InputAdornment>
               ),
             }}
-            inputProps={{ step: '0.01' }}
-            helperText="Positivo = ganancia, negativo = pérdida. El 4×1000 y el total se calculan automáticamente."
+            inputProps={{ step: '0.01', min: 0 }}
+            helperText="Ingresa el valor en positivo. El tipo (ganancia/pérdida), el 4×1000 y el total se calculan automáticamente."
           />
 
           <TextField
@@ -160,34 +208,31 @@ const UtilidadOcasionalDialog = ({
             rows={3}
           />
 
-          <Autocomplete
-            fullWidth
-            options={subCuentas}
-            value={selectedSubCuenta}
-            onChange={(_, newValue) => onFormChange('sub_cuenta', newValue ? newValue.id : '')}
-            getOptionLabel={(option) =>
-              option ? `${option.codigo} — ${option.nombre_sub_cuenta}` : ''
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Sub-cuenta de ingreso / utilidad"
-                required
-                placeholder="Buscar por código o nombre..."
-                helperText="Contracuenta del banco en el asiento (no puede ser la misma de la tarjeta)"
-              />
-            )}
-          />
+          {/* Contracuenta automatica segun el tipo (configuracion global). */}
+          {aplicableSubCuenta?.configurada && (
+            <SubCuentaInfo
+              icon={<AccountBalanceIcon fontSize="small" />}
+              label={aplicableSubCuenta.etiqueta}
+              codigo={aplicableSubCuenta.codigo}
+              nombre={aplicableSubCuenta.nombre}
+              color={esGanancia ? 'success' : 'error'}
+            />
+          )}
 
           {tarjetaSinSubCuenta && (
             <Alert severity="error">
               La tarjeta seleccionada no tiene sub-cuenta contable asignada. Asignala antes de continuar.
             </Alert>
           )}
+          {faltaConfig && (
+            <Alert severity="warning">
+              No hay una sub-cuenta configurada para {esGanancia ? 'ganancia (positivos)' : 'pérdida (negativos)'}.
+              Configurala en la pantalla de Utilidad Ocasional antes de registrar.
+            </Alert>
+          )}
           {mismaSubCuenta && (
             <Alert severity="error">
-              La sub-cuenta de ingreso no puede ser la misma que la de la tarjeta. El asiento contable no se puede registrar.
+              La sub-cuenta configurada coincide con la de la tarjeta. El asiento contable no se puede registrar.
             </Alert>
           )}
           {valorCero && (

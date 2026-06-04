@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography } from '@mui/material';
+import usePermissions from '../../hooks/usePermissions';
 
 import {
   selectFilters,
@@ -15,6 +16,9 @@ import {
   selectLoading,
   selectStats,
   selectStatsLoading,
+  selectSubCuentas,
+  selectConfig,
+  selectSavingConfig,
   setPage,
   setPageSize,
   setSort,
@@ -28,16 +32,21 @@ import {
   listAllThunk,
   fetchStatsThunk,
   viewThunk,
+  loadSubCuentasThunk,
+  loadConfigThunk,
+  saveConfigThunk,
 } from '../../store/cuatroPorMilStore/cuatroPorMilThunks';
 
 import {
   CuatroPorMilFilters,
   CuatroPorMilDataTable,
   CuatroPorMilStatsPanel,
+  CuatroPorMilConfigPanel,
 } from './Components';
 
 const CuatroPorMil = () => {
   const dispatch = useDispatch();
+  const { canEdit } = usePermissions();
 
   const filters         = useSelector(selectFilters);
   const activeFilters   = useSelector(selectActiveFilters);
@@ -51,6 +60,9 @@ const CuatroPorMil = () => {
   const loading         = useSelector(selectLoading);
   const stats           = useSelector(selectStats);
   const statsLoading    = useSelector(selectStatsLoading);
+  const subCuentas      = useSelector(selectSubCuentas);
+  const config          = useSelector(selectConfig);
+  const savingConfig    = useSelector(selectSavingConfig);
 
   const buildQueryParams = useCallback(() => {
     const params = { page, page_size: pageSize };
@@ -75,6 +87,12 @@ const CuatroPorMil = () => {
   useEffect(() => {
     fetchRegistros();
   }, [fetchRegistros]);
+
+  // Cargar sub-cuentas y configuración (panel de configuración).
+  useEffect(() => {
+    dispatch(loadSubCuentasThunk());
+    dispatch(loadConfigThunk());
+  }, [dispatch]);
 
   // Stats: dependen sólo de los filtros aplicados, no de paginación ni sort.
   // Fetch independiente y en paralelo con el listado.
@@ -104,6 +122,9 @@ const CuatroPorMil = () => {
   // Vista de detalle (read-only)
   const handleView = (registro) => dispatch(viewThunk(registro));
 
+  // Configuración
+  const handleSaveConfig = (payload) => dispatch(saveConfigThunk(payload));
+
   return (
     <Box>
       <Box
@@ -125,6 +146,14 @@ const CuatroPorMil = () => {
           </Typography>
         </Box>
       </Box>
+
+      <CuatroPorMilConfigPanel
+        config={config}
+        subCuentas={subCuentas}
+        saving={savingConfig}
+        canEdit={canEdit('cuatro_por_mil')}
+        onSave={handleSaveConfig}
+      />
 
       <CuatroPorMilFilters
         filters={filters}

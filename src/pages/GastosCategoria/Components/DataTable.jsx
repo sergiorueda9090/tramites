@@ -82,34 +82,6 @@ const columns = [
       ),
   },
   {
-    field: 'debito',
-    headerName: 'Débito',
-    minWidth: 120,
-    align: 'right',
-    renderCell: ({ value }) => {
-      const num = parseFloat(value) || 0;
-      return (
-        <Typography variant="body2" fontWeight={500} color="primary.main">
-          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(num)}
-        </Typography>
-      );
-    },
-  },
-  {
-    field: 'credito',
-    headerName: 'Crédito',
-    minWidth: 120,
-    align: 'right',
-    renderCell: ({ value }) => {
-      const num = parseFloat(value) || 0;
-      return (
-        <Typography variant="body2" fontWeight={500} color="secondary.main">
-          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(num)}
-        </Typography>
-      );
-    },
-  },
-  {
     field: 'sub_cuenta',
     headerName: 'Sub-cuenta',
     minWidth: 200,

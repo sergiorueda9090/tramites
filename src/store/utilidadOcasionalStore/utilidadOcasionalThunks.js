@@ -8,6 +8,9 @@ import {
   setTarjetas,
   setSubCuentas,
   setLoadingSubCuentas,
+  setConfig,
+  setLoadingConfig,
+  setSavingConfig,
   setPagination,
   closeModal,
   openEditModal,
@@ -25,6 +28,8 @@ const API_URLS = {
   // Auxiliares
   tarjetas:   '/api/tarjetas/list/',
   subCuentas: '/api/sub_cuentas/list/',
+  config:       '/api/utilidad_ocasional/config/',
+  configUpdate: '/api/utilidad_ocasional/config/update/',
 };
 
 export const loadSubCuentasThunk = () => {
@@ -37,6 +42,38 @@ export const loadSubCuentasThunk = () => {
     } catch (error) {
       console.error('Error cargando sub-cuentas:', error);
       dispatch(setLoadingSubCuentas(false));
+    }
+  };
+};
+
+// ───────────────────────── Configuracion global de sub-cuentas ─────────────────────────
+export const loadConfigThunk = () => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoadingConfig(true));
+      const response = await api.get(API_URLS.config);
+      dispatch(setConfig(response.data));
+    } catch (error) {
+      console.error('Error cargando configuracion de utilidad ocasional:', error);
+      dispatch(setLoadingConfig(false));
+    }
+  };
+};
+
+export const saveConfigThunk = (payload) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setSavingConfig(true));
+      const response = await api.put(API_URLS.configUpdate, payload);
+      dispatch(setConfig(response.data));
+      AlertService.success('Configuración guardada', 'Las sub-cuentas se actualizaron correctamente.');
+      return { success: true };
+    } catch (error) {
+      const msg = error.response?.data?.error || 'No se pudo guardar la configuración.';
+      AlertService.error('Error', msg);
+      return { success: false, error: msg };
+    } finally {
+      dispatch(setSavingConfig(false));
     }
   };
 };
@@ -162,6 +199,7 @@ export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadTarjetasThunk());
     dispatch(loadSubCuentasThunk());
+    dispatch(loadConfigThunk());
   };
 };
 
@@ -198,6 +236,8 @@ export const createThunk = (data) => {
         if (value === '' || value === null || value === undefined) return;
         cleanData[key] = value;
       });
+      // El valor siempre se envía positivo (la magnitud); el `tipo` define ganancia/pérdida.
+      if (cleanData.valor !== undefined) cleanData.valor = Math.abs(Number(cleanData.valor));
 
       const response = await api.post(API_URLS.create, cleanData);
 
@@ -234,6 +274,10 @@ export const updateThunk = (utilidadId, data) => {
         if (value === null || value === undefined) return;
         cleanData[key] = value;
       });
+      // El valor siempre se envía positivo (la magnitud); el `tipo` define ganancia/pérdida.
+      if (cleanData.valor !== undefined && cleanData.valor !== '') {
+        cleanData.valor = Math.abs(Number(cleanData.valor));
+      }
 
       const response = await api.put(API_URLS.update(utilidadId), cleanData);
 

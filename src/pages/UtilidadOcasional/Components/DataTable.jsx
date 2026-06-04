@@ -96,6 +96,22 @@ const columns = [
     },
   },
   {
+    field: 'tipo',
+    headerName: 'Tipo',
+    minWidth: 110,
+    renderCell: ({ row }) => {
+      const esPerdida = row.tipo === 'perdida';
+      return (
+        <Chip
+          label={row.tipo_display || (esPerdida ? 'Pérdida' : 'Ganancia')}
+          size="small"
+          color={esPerdida ? 'error' : 'success'}
+          variant="outlined"
+        />
+      );
+    },
+  },
+  {
     field: 'valor',
     headerName: 'Valor',
     minWidth: 130,
