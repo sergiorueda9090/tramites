@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constants';
+import { toDatetimeLocal } from '../../utils/helpers';
 
 const initialState = {
   // Lista de relaciones de gasto (transacciones financieras)
@@ -151,7 +152,7 @@ export const gastosStore = createSlice({
         tarjeta: '',
         valor: '',
         observacion: '',
-        fecha: new Date().toISOString().slice(0, 16),
+        fecha: toDatetimeLocal(),
       };
     },
     openEditModal: (state, action) => {
@@ -163,7 +164,7 @@ export const gastosStore = createSlice({
         tarjeta: action.payload.tarjeta?.id || '',
         valor: action.payload.valor || '',
         observacion: action.payload.observacion || '',
-        fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
+        fecha: action.payload.fecha ? toDatetimeLocal(action.payload.fecha) : '',
       };
     },
     closeModal: (state) => {

@@ -418,15 +418,13 @@ export const viewThunk = (utilidad) => {
       ? new Date(utilidad.fecha).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
       : '-';
     const tarjetaNumero = utilidad.tarjeta?.numero;
-    const aplica4x1000  = utilidad.tarjeta?.cuatro_por_mil === '1';
 
     await AlertService.info(
       `Utilidad ocasional #${utilidad.id}`,
       `
         <div style="text-align: left;">
-          <p><strong>Tarjeta:</strong> ${tarjetaNumero ? `**** ${tarjetaNumero.slice(-4)}` : '-'}${utilidad.tarjeta?.titular ? ` - ${utilidad.tarjeta.titular}` : ''}${aplica4x1000 ? ' <span style="color:#ed6c02">(aplica 4x1000)</span>' : ''}</p>
+          <p><strong>Tarjeta:</strong> ${tarjetaNumero ? `**** ${tarjetaNumero.slice(-4)}` : '-'}${utilidad.tarjeta?.titular ? ` - ${utilidad.tarjeta.titular}` : ''}</p>
           <p><strong>Valor:</strong> ${formatCurrency(utilidad.valor)}</p>
-          <p><strong>4x1000:</strong> ${formatCurrency(utilidad.cuatro_por_mil)}</p>
           <p><strong>Total:</strong> ${formatCurrency(utilidad.total)}</p>
           <p><strong>Fecha:</strong> ${fechaFormateada}</p>
           <p><strong>Observación:</strong> ${utilidad.observacion || '-'}</p>

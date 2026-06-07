@@ -1,8 +1,8 @@
 // Fuente unica de la URL del backend: se configura en el archivo .env
 // Local:     REACT_APP_API_URL=http://localhost:8000
 // Produccion: REACT_APP_API_URL=https://tramitesbackend.movilidad2a.com
-//export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tramitesbackend.movilidad2a.com';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+//export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tramitesbackend.movilidad2a.com';
 console.log('1 API BASE URL:', API_BASE_URL);
 export const ROUTES = {
   HOME: '/',

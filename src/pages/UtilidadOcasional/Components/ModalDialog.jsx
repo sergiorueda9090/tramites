@@ -82,18 +82,8 @@ const UtilidadOcasionalDialog = ({
         etiqueta: 'Sub-cuenta para pérdida (negativos)',
       };
 
-  // Preview en vivo del 4x1000 y total — replica el cálculo del backend (siempre positivo).
-  const { aplica4x1000, montoBase, cuatroPorMilCalc, totalCalc } = useMemo(() => {
-    const aplica = selectedTarjeta?.cuatro_por_mil === '1';
-    const base = Math.abs(Number(form.valor || 0)) || 0;
-    const cuatro = aplica ? (base * 4) / 1000 : 0;
-    return {
-      aplica4x1000: aplica,
-      montoBase: base,
-      cuatroPorMilCalc: cuatro,
-      totalCalc: base + cuatro,
-    };
-  }, [form.valor, selectedTarjeta]);
+  // La utilidad ocasional NO genera 4x1000; el total es siempre el valor base.
+  const montoBase = useMemo(() => Math.abs(Number(form.valor || 0)) || 0, [form.valor]);
 
   // Validaciones locales.
   const tarjetaSinSubCuenta = selectedTarjeta && !tarjetaSubCuenta?.codigo;
@@ -127,7 +117,6 @@ const UtilidadOcasionalDialog = ({
                 <MenuItem key={tarjeta.id} value={tarjeta.id}>
                   **** {(tarjeta.numero || '').slice(-4)}
                   {tarjeta.titular ? ` - ${tarjeta.titular}` : ''}
-                  {tarjeta.cuatro_por_mil === '1' ? ' (4x1000)' : ''}
                 </MenuItem>
               ))}
             </Select>
@@ -185,7 +174,7 @@ const UtilidadOcasionalDialog = ({
               ),
             }}
             inputProps={{ step: '0.01', min: 0 }}
-            helperText="Ingresa el valor en positivo. El tipo (ganancia/pérdida), el 4×1000 y el total se calculan automáticamente."
+            helperText="Ingresa el valor en positivo. El tipo (ganancia/pérdida) define la dirección del asiento."
           />
 
           <TextField
@@ -241,39 +230,25 @@ const UtilidadOcasionalDialog = ({
             </Alert>
           )}
 
-          {/* Preview del cálculo */}
+          {/* Preview del cálculo (la utilidad ocasional no genera 4x1000). */}
           {selectedTarjeta && form.valor !== '' && !valorCero && (
             <Alert
-              severity={aplica4x1000 ? 'warning' : 'info'}
+              severity="info"
               icon={false}
               sx={{ '& .MuiAlert-message': { width: '100%' } }}
             >
               <Stack spacing={0.5}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body2" fontWeight={600}>
-                    Cálculo automático
+                    Resumen
                   </Typography>
                   {esGanancia && <Chip size="small" label="Ganancia" color="success" variant="outlined" />}
                   {esPerdida && <Chip size="small" label="Pérdida" color="error" variant="outlined" />}
-                  <Chip
-                    size="small"
-                    label={aplica4x1000 ? 'Aplica 4x1000' : 'No aplica 4x1000'}
-                    color={aplica4x1000 ? 'warning' : 'default'}
-                    variant="outlined"
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">Base (|valor|):</Typography>
-                  <Typography variant="body2">{formatCurrency(montoBase)}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">4×1000:</Typography>
-                  <Typography variant="body2">{formatCurrency(cuatroPorMilCalc)}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
                   <Typography variant="body2" fontWeight={600}>Total:</Typography>
                   <Typography variant="body2" fontWeight={600} color={esPerdida ? 'error' : 'primary'}>
-                    {formatCurrency(totalCalc)}
+                    {formatCurrency(montoBase)}
                   </Typography>
                 </Box>
               </Stack>

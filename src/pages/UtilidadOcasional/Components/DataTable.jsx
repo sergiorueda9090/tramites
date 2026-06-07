@@ -73,20 +73,10 @@ const columns = [
     renderCell: ({ row }) => {
       const tarjeta = row.tarjeta;
       if (!tarjeta) return '-';
-      const aplica4x1000 = tarjeta.cuatro_por_mil === '1';
       return (
         <Box>
           <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
             **** {(tarjeta.numero || '').slice(-4)}
-            {aplica4x1000 && (
-              <Chip
-                label="4x1000"
-                size="small"
-                color="warning"
-                variant="outlined"
-                sx={{ ml: 1, height: 18, '& .MuiChip-label': { px: 0.75, fontSize: '0.65rem' } }}
-              />
-            )}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {tarjeta.titular || ''}
@@ -120,20 +110,6 @@ const columns = [
       <Typography variant="body2" fontWeight={500}>
         {formatCurrency(value)}
       </Typography>
-    ),
-  },
-  {
-    field: 'cuatro_por_mil',
-    headerName: '4x1000',
-    minWidth: 110,
-    align: 'right',
-    renderCell: ({ value }) => (
-      <Chip
-        label={formatCurrency(value)}
-        size="small"
-        color={parseFloat(value) > 0 ? 'warning' : 'default'}
-        variant="outlined"
-      />
     ),
   },
   {

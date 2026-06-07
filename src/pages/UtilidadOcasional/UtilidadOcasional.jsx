@@ -142,7 +142,7 @@ const UtilidadOcasional = () => {
             Utilidad ocasional
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Gestión de utilidades ocasionales — el 4×1000 se aplica automáticamente si la tarjeta lo tiene activo.
+            Gestión de utilidades ocasionales (ganancias y pérdidas). No genera 4×1000.
           </Typography>
         </Box>
         {canCreate('utilidad_ocasional') && (

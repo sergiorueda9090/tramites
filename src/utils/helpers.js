@@ -14,6 +14,21 @@ export const formatDateTime = (date) => {
   return dayjs(date).format(DATE_TIME_FORMAT);
 };
 
+/**
+ * Formatea una fecha para usarla como valor de un <input type="datetime-local">.
+ * Devuelve hora LOCAL en formato 'YYYY-MM-DDTHH:mm'.
+ *
+ * NO usar `new Date().toISOString().slice(0,16)`: toISOString() devuelve UTC,
+ * por lo que en Colombia (UTC-5) el input mostraría la hora adelantada +5h.
+ *
+ * @param {Date|string|number} [date] - Fecha a formatear. Si se omite, usa la hora actual.
+ * @returns {string} Cadena local lista para el input, o '' si la fecha es inválida.
+ */
+export const toDatetimeLocal = (date) => {
+  const d = date ? dayjs(date) : dayjs();
+  return d.isValid() ? d.format('YYYY-MM-DDTHH:mm') : '';
+};
+
 export const formatCurrency = (amount, currency = 'COP') => {
   if (amount === null || amount === undefined) return '-';
   return new Intl.NumberFormat('es-CO', {

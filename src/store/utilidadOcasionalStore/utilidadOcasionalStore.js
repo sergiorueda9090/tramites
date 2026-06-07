@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_PAGE_SIZE } from '../../utils/constants';
+import { toDatetimeLocal } from '../../utils/helpers';
 
 const initialFilters = {
   search: '',
@@ -161,7 +162,7 @@ export const utilidadOcasionalStore = createSlice({
       state.selectedUtilidad = null;
       state.form = {
         ...initialForm,
-        fecha: new Date().toISOString().slice(0, 16),
+        fecha: toDatetimeLocal(),
       };
     },
     openEditModal: (state, action) => {
@@ -175,7 +176,7 @@ export const utilidadOcasionalStore = createSlice({
         tipo: action.payload.tipo || (Number(action.payload.valor) < 0 ? 'perdida' : 'ganancia'),
         valor: action.payload.valor != null ? String(Math.abs(Number(action.payload.valor))) : '',
         observacion: action.payload.observacion || '',
-        fecha: action.payload.fecha ? action.payload.fecha.slice(0, 16) : '',
+        fecha: action.payload.fecha ? toDatetimeLocal(action.payload.fecha) : '',
       };
     },
     closeModal: (state) => {
