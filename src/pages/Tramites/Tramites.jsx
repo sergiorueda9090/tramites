@@ -59,6 +59,7 @@ import {
   TramiteDialog,
   HistoryDialog,
   PagoTimerDialog,
+  GenerarLinkDialog,
 } from './Components';
 
 const TRAMITES_VIEW_ID = 'tramites_list';
@@ -221,6 +222,11 @@ const Tramites = () => {
     dispatch(enviarAPasarelaDesdeTramiteThunk(tramite, { esperarConfirmacionPago }));
   };
 
+  // Generador de links de pago (Previsora / Mundial)
+  const [generarLink, setGenerarLink] = useState({ open: false, tramite: null });
+  const handleGenerarLink = (tramite) => setGenerarLink({ open: true, tramite });
+  const handleCloseGenerarLink = () => setGenerarLink({ open: false, tramite: null });
+
   const handleCloseHistory = () => {
     dispatch(closeHistoryDialog());
   };
@@ -301,6 +307,7 @@ const Tramites = () => {
         onView={handleView}
         onEdit={canEdit('tramites') ? handleEdit : undefined}
         onHistory={handleHistory}
+        onGenerarLink={handleGenerarLink}
         onEnviarAPasarela={canCreate('pasarela_de_pago') ? handleEnviarAPasarela : undefined}
         onDelete={canDelete('tramites') ? handleDelete : undefined}
         // Presencia colaborativa por celda
@@ -342,6 +349,13 @@ const Tramites = () => {
         tramite={pagoTimer.tramite}
         tarjetas={tarjetas}
         onResult={handlePagoTimerResult}
+      />
+
+      {/* Generador de links de pago (Previsora / Mundial) */}
+      <GenerarLinkDialog
+        open={generarLink.open}
+        tramite={generarLink.tramite}
+        onClose={handleCloseGenerarLink}
       />
     </Box>
   );

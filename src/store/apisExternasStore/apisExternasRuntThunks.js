@@ -99,6 +99,7 @@ const API_URL_VIN            = '/api/cotizador/vin/';
 const API_URL_RUNT_VIN       = '/api/cotizador/runt_vin/';
 const API_URL_RUNT_VEHICULO_VIN = '/api/cotizador/runt_vehiculo_vin/';
 const API_URL_FALABELLA      = '/api/cotizador/api_falabella/';
+const API_URL_PLACA          = '/api/cotizador/placa/';
 
 
 // API CEDULAS
@@ -206,6 +207,53 @@ export const consultarInformacionUsuarioThunk = ({ numero_documento }) => {
       dispatch(setError(message));
       AlertService.error(title, html);
       return null;
+    }
+  };
+};
+
+
+/**
+ * Verificar el nombre del titular en el RUNT por número de documento.
+ *
+ * A diferencia de consultarInformacionUsuarioThunk, este thunk es "silencioso":
+ * NO muestra una alerta de error si la persona no existe / el servicio falla,
+ * porque el "no encontrado" es un caso esperado que habilita el ingreso manual
+ * del nombre en el cotizador (flujo Cero KM).
+ *
+ * Nota: el servicio externo del RUNT resuelve por documento únicamente
+ * (`/api/runt/{numero_documento}`); `tipo_documento` se envía como parámetro
+ * para compatibilidad futura pero el backend actual no lo utiliza.
+ *
+ * @returns {{ inscrito: boolean, nombre: string, data: object|null }}
+ */
+export const consultarNombreTitularThunk = ({ tipo_documento, numero_documento }) => {
+  return async (dispatch) => {
+    if (!numero_documento) {
+      return { inscrito: false, nombre: '', data: null };
+    }
+    try {
+      dispatch(showBackdrop('Verificando titular en RUNT...'));
+
+      const response = await api.get(API_GET_INFO_EXTERNAL, {
+        params: { numero_documento, tipo_documento },
+      });
+
+      const data = response.data || {};
+      const nombre = `${data.nombres || ''} ${data.apellidos || ''}`.trim();
+      const inscrito = !data.no_inscrito && nombre !== '';
+
+      // Solo persistimos la persona si realmente está inscrita; si no, limpiamos
+      // para que el usuario ingrese el nombre manualmente.
+      dispatch(setPersona(inscrito ? data : null));
+      dispatch(hideBackdrop());
+
+      return { inscrito, nombre, data };
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+      // No inscrito / servicio no disponible → habilitar ingreso manual.
+      dispatch(setPersona(null));
+      return { inscrito: false, nombre: '', data: null };
     }
   };
 };
@@ -326,6 +374,63 @@ export const extraerDatosFotoVinThunk = ({ imagen }) => {
       const title = titleForStatus(error?.response?.status);
       const html = buildBackendErrorHtml(error);
       const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo procesar la foto del VIN';
+      dispatch(setError(message));
+      AlertService.error(title, html);
+      return null;
+    }
+  };
+};
+
+/**
+ * 2da opción del cotizador Cero KM: consulta por PLACA escrita.
+ * Paso 1: POST /api/cotizador/placa/ → el servicio externo devuelve el 'Vin'.
+ * Paso 2: GET /api/cotizador/runt_vehiculo_vin/?vin=<Vin> → datos del vehículo.
+ * (El nombre del titular se resuelve aparte con el botón "Verificar nombre".)
+ */
+export const extraerDatosPorPlacaThunk = ({ placa }) => {
+  return async (dispatch) => {
+    try {
+      dispatch(setLoading(true));
+      dispatch(showBackdrop('Consultando placa...'));
+
+      // Paso 1: placa → Vin
+      // El servicio externo devuelve el VIN anidado en `Data.Vin`
+      // (la vista `external_placa` reenvía la respuesta tal cual). Se mantienen
+      // los accesos planos como fallback por si el backend la aplana a futuro.
+      const placaResponse = await api.post(API_URL_PLACA, { placa });
+      const placaData = placaResponse.data || {};
+      const vin =
+        placaData.Data?.Vin ||
+        placaData.data?.Vin ||
+        placaData.Vin ||
+        placaData.vin ||
+        null;
+
+      if (!vin) {
+        dispatch(hideBackdrop());
+        dispatch(setLoading(false));
+        AlertService.error('Error', 'No se pudo obtener el VIN a partir de la placa.');
+        return null;
+      }
+
+      dispatch(setVinExtraido(vin));
+
+      // Paso 2: Vin → datos del vehículo en RUNT
+      dispatch(showBackdrop('Consultando vehículo en RUNT por VIN...'));
+      const runtVinResponse = await api.get(API_URL_RUNT_VEHICULO_VIN, { params: { vin } });
+      dispatch(setVehiculo(runtVinResponse.data));
+
+      dispatch(hideBackdrop());
+      dispatch(setLoading(false));
+
+      return runtVinResponse.data;
+
+    } catch (error) {
+      dispatch(hideBackdrop());
+      dispatch(setLoading(false));
+      const title = titleForStatus(error?.response?.status);
+      const html = buildBackendErrorHtml(error);
+      const message = error?.response?.data?.error || error?.response?.data?.detail || error?.message || 'No se pudo consultar la placa';
       dispatch(setError(message));
       AlertService.error(title, html);
       return null;

@@ -13,6 +13,7 @@ import { gastosMainStore }          from './gastosMainStore/gastosMainStore';
 import { gastosStore }              from './gastosStore/gastosStore';
 import { tarifarioSoatStore }       from './tarifarioSoatStore/tarifarioSoatStore';
 import { cotizadorStore }           from './cotizadorStore/cotizadorStore';
+import { cotizadorRapidoStore }           from './cotizadorRapidoStore/cotizadorRapidoStore';
 import { apisExternasRuntStore }    from './apisExternasStore/apisExternasRuntStore';
 import { baseDeDatosStore }         from './baseDeDatosStore/baseDeDatosStore';
 import {apiAppStore}                from './apiAppStore/apiAppStore';
@@ -30,7 +31,7 @@ import { subCuentasStore } from './subCuentasStore/subCuentasStore';
 import { proveedoresStore } from './proveedoresStore/proveedoresStore';
 import { apiMetricsStore } from './apiMetricsStore/apiMetricsStore';
 import { dashboardContableStore } from './dashboardContableStore/dashboardContableStore';
-
+import { correosAleatoriosStore } from './correosAleatoriosStore/correosAleatoriosStore';
 import presenceReducer    from './presenceStore/presenceStore';
 import cellPresenceReducer from './cellPresenceStore/cellPresenceStore';
 
@@ -53,6 +54,7 @@ export const store = configureStore({
     gastosMainStore : gastosMainStore.reducer,
     tarifarioSoatStore: tarifarioSoatStore.reducer,
     cotizadorStore: cotizadorStore.reducer,
+    cotizadorRapidoStore: cotizadorRapidoStore.reducer,
     apisExternasRuntStore: apisExternasRuntStore.reducer,
     baseDeDatosStore: baseDeDatosStore.reducer,
     apiAppStore: apiAppStore.reducer,
@@ -70,5 +72,6 @@ export const store = configureStore({
     proveedoresStore: proveedoresStore.reducer,
     apiMetricsStore: apiMetricsStore.reducer,
     dashboardContableStore: dashboardContableStore.reducer,
+    correosAleatoriosStore: correosAleatoriosStore.reducer,
   },
 });

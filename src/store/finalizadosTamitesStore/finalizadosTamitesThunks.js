@@ -46,10 +46,32 @@ const API_URLS = {
   pdfUpdate: (id, pdfId) => `/api/finalizados_tramites/${id}/pdfs/${pdfId}/update/`,
   pdfDelete: (id, pdfId) => `/api/finalizados_tramites/${id}/pdfs/${pdfId}/delete/`,
   pdfDownload: (id, pdfId) => `/api/finalizados_tramites/${id}/pdfs/${pdfId}/download/`,
+  pdfDescargarPrevisora: (id) => `/api/finalizados_tramites/${id}/pdfs/descargar/previsora/`,
+  pdfDescargarMundial: (id) => `/api/finalizados_tramites/${id}/pdfs/descargar/mundial/`,
   // Auxiliares
   clientes: '/api/clientes/list/',
   etiquetas: '/api/etiquetas/list/',
   tarjetas: '/api/tarjetas/list/',
+};
+
+const escapeHtml = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+// Extrae la causa legible del campo `detalle` reenviado por servicios externos
+// (Previsora PDF / S3), que puede venir como JSON string o texto plano.
+const extraerCausaDetalle = (detalle) => {
+  if (!detalle) return null;
+  let d = detalle;
+  if (typeof d === 'string') {
+    const txt = d.trim();
+    if (!txt) return null;
+    try { d = JSON.parse(txt); } catch { return txt; }
+  }
+  if (d && typeof d === 'object') {
+    return d.detail || d.descripcionRespuesta || d.message || d.error || null;
+  }
+  return null;
 };
 
 const extractApiError = (error) => {
@@ -63,6 +85,8 @@ const extractApiError = (error) => {
     case 403: title = 'Acceso denegado'; break;
     case 404: title = 'No encontrado'; break;
     case 500: title = 'Error del servidor'; break;
+    case 502: title = 'Servicio no disponible'; break;
+    case 503: title = 'Servicio no disponible'; break;
     default: title = 'Error';
   }
 
@@ -75,6 +99,17 @@ const extractApiError = (error) => {
   }
 
   const mainMessage = response.error || response.detail || 'Ha ocurrido un error';
+
+  // Causa real reenviada por un servicio externo en `detalle`.
+  const causa = extraerCausaDetalle(response.detalle);
+  if (causa) {
+    const statusTag = status ? ` <span style="color:#999;">(HTTP ${status})</span>` : '';
+    const htmlMessage =
+      `<p style="margin:0 0 8px;font-weight:600;color:#d32f2f;">${escapeHtml(causa)}</p>` +
+      `<p style="margin:0;font-size:0.85rem;color:#666;">${escapeHtml(mainMessage)}${statusTag}</p>`;
+    return { title, message: causa, htmlMessage };
+  }
+
   let htmlMessage = `<p style="margin-bottom: 12px;">${mainMessage}</p>`;
 
   if (typeof response === 'object' && !response.error && !response.detail) {
@@ -519,4 +554,38 @@ export const fetchFinalizadoSilentThunk = (finalizadoId) => {
       return null;
     }
   };
+};
+
+// ==================== DESCARGA AUTOMÁTICA DE PDF (por aseguradora) ====================
+
+/**
+ * Descarga el PDF de la aseguradora indicada ('previsora' | 'mundial') y lo
+ * adjunta al finalizado. Solo válido dentro de la ventana de 5 min (el backend
+ * la valida). Tras éxito, refresca la lista de PDFs del manager y la tabla.
+ */
+export const descargarPdfAseguradoraThunk = (finalizadoId, aseguradora) => async (dispatch) => {
+  if (!finalizadoId) return null;
+  const url = aseguradora === 'mundial'
+    ? API_URLS.pdfDescargarMundial(finalizadoId)
+    : API_URLS.pdfDescargarPrevisora(finalizadoId);
+  const nombre = aseguradora === 'mundial' ? 'Mundial' : 'Previsora';
+  try {
+    dispatch(showBackdrop(`Descargando PDF de ${nombre}...`));
+    const response = await api.post(url);
+    // Refrescar la lista de PDFs del manager y el conteo en la tabla.
+    dispatch(loadPdfsThunk(finalizadoId));
+    dispatch(listAllThunk());
+    dispatch(hideBackdrop());
+    await AlertService.success(
+      'PDF descargado',
+      `El PDF de ${nombre} se adjuntó correctamente al trámite finalizado.`,
+      { timer: 2500 }
+    );
+    return response.data;
+  } catch (error) {
+    dispatch(hideBackdrop());
+    const { title, htmlMessage } = extractApiError(error);
+    AlertService.error(title, htmlMessage);
+    return null;
+  }
 };

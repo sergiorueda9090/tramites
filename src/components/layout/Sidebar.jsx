@@ -36,6 +36,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import CategoryIcon from '@mui/icons-material/Category';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import StorageIcon from '@mui/icons-material/Storage';
 import ApiIcon from '@mui/icons-material/Api';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
@@ -92,6 +93,8 @@ const menuItems = [
       { text: 'Proveedores',            icon: LocalShippingIcon,      path: ROUTES.PROVEEDORES,            moduleCode: 'proveedores',          color: '#8e24aa' },
       { text: 'Tarifario SOAT',         icon: ReceiptLongIcon,        path: ROUTES.TARIFARIO_SOAT,         moduleCode: 'tarifario_soat',       color: '#00897b' },
       { text: 'Cotizador',              icon: CalculateIcon,          path: ROUTES.COTIZADOR,              moduleCode: 'cotizador',            color: '#7c4dff' },
+      { text: 'Cotizador Rápido',       icon: CalculateIcon,          path: ROUTES.COTIZADOR_RAPIDO,       moduleCode: 'cotizador_rapido',     color: '#00bcd4' },
+      { text: 'Correos Aleatorios',     icon: MarkEmailReadIcon,      path: ROUTES.CORREOS_ALEATORIOS,     moduleCode: 'correos_aleatorios',   color: '#26a69a' },
       { text: 'Base de Datos',          icon: StorageIcon,            path: ROUTES.BASE_DE_DATOS,          moduleCode: 'base_de_datos',        color: '#607d8b' },
       { text: 'Casos Especiales',       icon: ReportProblemIcon,      path: ROUTES.CASOS_ESPECIALES,       moduleCode: 'casos_especiales',     color: '#ff9800' },
       { text: 'Trámites',               icon: AssignmentTurnedInIcon, path: ROUTES.TRAMITES,               moduleCode: 'tramites',             color: '#1976d2' },

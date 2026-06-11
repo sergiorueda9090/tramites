@@ -24,6 +24,8 @@ const Gastos          = lazy(() => import('../pages/Gastos'));
 const GastosCategoria = lazy(() => import('../pages/GastosCategoria'));
 const TarifarioSoat   = lazy(() => import('../pages/TarifarioSoat'));
 const Cotizador       = lazy(() => import('../pages/Cotizador'));
+const CotizadorRapido = lazy(() => import('../pages/CotizadorRapido'));
+const CorreosAleatorios = lazy(() => import('../pages/CorreosAleatorios'));
 const BaseDeDatos     = lazy(() => import('../pages/BaseDeDatos'));
 const CasosEspeciales = lazy(() => import('../pages/CasosEspeciales'));
 const Tramites        = lazy(() => import('../pages/Tramites'));
@@ -90,6 +92,8 @@ const AppRouter = () => {
             <Route path="gastos-categoria" element={<ProtectedModule moduleCode="gastos_categoria"><GastosCategoria /></ProtectedModule>} />
             <Route path="tarifario-soat"  element={<ProtectedModule moduleCode="tarifario_soat"><TarifarioSoat /></ProtectedModule>} />
             <Route path="cotizador"      element={<ProtectedModule moduleCode="cotizador"><Cotizador /></ProtectedModule>} />
+            <Route path="cotizador-rapido" element={<ProtectedModule moduleCode="cotizador_rapido"><CotizadorRapido /></ProtectedModule>} />
+            <Route path="correos-aleatorios" element={<ProtectedModule moduleCode="correos_aleatorios"><CorreosAleatorios /></ProtectedModule>} />
             <Route path="base-de-datos"  element={<ProtectedModule moduleCode="base_de_datos"><BaseDeDatos /></ProtectedModule>} />
             <Route path="casos-especiales" element={<ProtectedModule moduleCode="casos_especiales"><CasosEspeciales /></ProtectedModule>} />
             <Route path="tramites" element={<ProtectedModule moduleCode="tramites"><Tramites /></ProtectedModule>} />

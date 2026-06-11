@@ -18,6 +18,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Alert,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -29,6 +30,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import {
   selectPdfsManager,
   selectPdfsHasChanges,
@@ -45,6 +47,7 @@ import {
   commitPdfsChangesThunk,
   downloadPdfThunk,
   fetchPdfBlobUrlThunk,
+  descargarPdfAseguradoraThunk,
   cachePdfFile,
   getCachedPdfFile,
   clearPdfFileCache,
@@ -52,6 +55,13 @@ import {
 import AlertService from '../../../services/alertService';
 
 const MAX_BYTES_FILE = 15 * 1024 * 1024; // 15 MB
+
+// Formatea milisegundos restantes como mm:ss (mínimo 00:00).
+const fmtRemaining = (ms) => {
+  if (ms == null || ms <= 0) return '00:00';
+  const s = Math.floor(ms / 1000);
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
 
 const formatSize = (bytes) => {
   if (!bytes) return '0 B';
@@ -86,6 +96,14 @@ const PdfsManagerDialog = () => {
 
   // Limpiar URL blob al cerrar el manager o desmontar
   useEffect(() => () => releasePreviewUrl(), []);
+
+  // Reloj para la cuenta regresiva de la ventana de descarga (tic cada segundo).
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!manager.open) return undefined;
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [manager.open]);
 
   const openPreviewExisting = async (pdf) => {
     releasePreviewUrl();
@@ -218,6 +236,17 @@ const PdfsManagerDialog = () => {
   const isMarkedDelete = (id) => manager.pendingDelete.includes(id);
   const totalNuevos = manager.newFiles.length;
 
+  // ── Descarga automática del PDF por aseguradora (ventana de 5 min) ──
+  const finalizado = manager.finalizado || {};
+  const entidad = (finalizado.entidad || '').toUpperCase();
+  const ENT_LABEL = { MUNDIAL: 'Mundial', PREVISORA: 'Previsora', SOLIDARIA: 'Solidaria', MANUAL: 'Manual' };
+  const deadlineMs = finalizado.pdf_descarga_hasta ? new Date(finalizado.pdf_descarga_hasta).getTime() : null;
+  const remainingMs = deadlineMs != null ? deadlineMs - nowTs : null;
+  const ventanaExpirada = !!finalizado.pdf_descarga_vencida || (remainingMs != null && remainingMs <= 0);
+  const mostrarPrevisora = !entidad || ['PREVISORA', 'MANUAL', 'SOLIDARIA'].includes(entidad);
+  const mostrarMundial = !entidad || ['MUNDIAL', 'MANUAL', 'SOLIDARIA'].includes(entidad);
+  const handleAutoDownload = (aseg) => dispatch(descargarPdfAseguradoraThunk(finalizado.id, aseg));
+
   return (
     <Dialog open={manager.open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -235,6 +264,51 @@ const PdfsManagerDialog = () => {
       </DialogTitle>
 
       <DialogContent dividers sx={{ minHeight: 360 }}>
+        {/* ── Descarga automática del PDF por aseguradora (ventana de 5 min) ── */}
+        <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: 'action.hover' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2">Descarga automática del PDF</Typography>
+              {entidad && <Chip size="small" label={ENT_LABEL[entidad] || entidad} color="primary" variant="outlined" />}
+            </Box>
+            {deadlineMs != null && (
+              <Chip
+                icon={<AccessTimeIcon />}
+                size="small"
+                color={ventanaExpirada ? 'default' : (remainingMs < 60000 ? 'error' : 'warning')}
+                variant={ventanaExpirada ? 'outlined' : 'filled'}
+                label={ventanaExpirada ? 'Ventana expirada' : `Disponible ${fmtRemaining(remainingMs)}`}
+              />
+            )}
+          </Box>
+
+          {ventanaExpirada ? (
+            <Alert severity="warning" sx={{ mt: 1.5 }}>
+              La ventana de 5 minutos para descargar automáticamente el PDF ya expiró. Puedes subir el PDF manualmente más abajo.
+            </Alert>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
+                {mostrarPrevisora && (
+                  <Button size="small" variant="contained" startIcon={<DownloadIcon />} onClick={() => handleAutoDownload('previsora')}>
+                    PDF Previsora
+                  </Button>
+                )}
+                {mostrarMundial && (
+                  <Button size="small" variant="outlined" startIcon={<DownloadIcon />} onClick={() => handleAutoDownload('mundial')}>
+                    PDF Mundial (S3)
+                  </Button>
+                )}
+              </Box>
+              {!entidad && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  Este finalizado no tiene aseguradora registrada (registro previo a esta función). Elige el portal correspondiente.
+                </Typography>
+              )}
+            </>
+          )}
+        </Box>
+
         {/* Drop zone */}
         <input
           ref={fileInputRef}

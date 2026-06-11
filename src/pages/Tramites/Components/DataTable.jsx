@@ -22,6 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PaymentIcon from '@mui/icons-material/Payment';
+import LinkIcon from '@mui/icons-material/Link';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 import CellPresenceOverlay from '../../../components/common/CellPresenceOverlay';
@@ -307,6 +308,7 @@ const TramitesDataTable = ({
   onHistory,
   onDelete,
   onEnviarAPasarela,
+  onGenerarLink,
   emptyMessage = 'No se encontraron trámites',
   stickyHeader = true,
   maxHeight = 600,
@@ -370,7 +372,7 @@ const TramitesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onGenerarLink) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -418,7 +420,7 @@ const TramitesDataTable = ({
                       </TableCell>
                     );
                   })}
-                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onGenerarLink) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -439,6 +441,13 @@ const TramitesDataTable = ({
                           <Tooltip title="Ver historial">
                             <IconButton size="small" onClick={() => onHistory(row)} color="warning">
                               <HistoryIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onGenerarLink && (
+                          <Tooltip title="Generar link de pago">
+                            <IconButton size="small" onClick={() => onGenerarLink(row)} color="secondary">
+                              <LinkIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}

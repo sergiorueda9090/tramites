@@ -30,10 +30,42 @@ const API_URLS = {
   // URL de pasarela de pago (para "Enviar a Pasarela" desde un trámite)
   pasarelaCreate: '/api/pasarela_de_pago/create/',
   pasarelaConfirmarPago: (id) => `/api/pasarela_de_pago/${id}/confirmar-pago/`,
+  // Generadores de links de pago (usan un correo aleatorio del pool)
+  generarLinkPrevisora: '/api/tramites/generar-link/previsora/',
+  generarLinkMundial: '/api/tramites/generar-link/mundial/',
   // URLs auxiliares para selects
   clientes: '/api/clientes/list/',
   etiquetas: '/api/etiquetas/list/',
   tarifarios: '/api/tarifario_soat/list/',
+};
+
+const escapeHtml = (s) => String(s ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+/**
+ * Extrae la causa legible desde el campo `detalle` que reenvían las vistas que
+ * consumen servicios externos (Previsora / Mundial / RUNT). El cuerpo del
+ * servicio externo suele venir como JSON string (a veces anidado), p.ej.:
+ *   { "error": "Error del servicio externo: 400",
+ *     "detalle": "{\"detail\":\"En estos momentos no se ha logrado...\"}" }
+ * Devuelve el texto de la causa o null si no se puede extraer.
+ */
+const extraerCausaDetalle = (detalle) => {
+  if (!detalle) return null;
+  let d = detalle;
+  if (typeof d === 'string') {
+    const txt = d.trim();
+    if (!txt) return null;
+    try { d = JSON.parse(txt); } catch { return txt; } // no es JSON: mostrar el texto crudo
+  }
+  if (d && typeof d === 'object') {
+    return d.detail || d.descripcionRespuesta || d.message || d.error || null;
+  }
+  return null;
 };
 
 /**
@@ -50,6 +82,7 @@ const extractApiError = (error) => {
     case 403: title = 'Acceso denegado'; break;
     case 404: title = 'No encontrado'; break;
     case 500: title = 'Error del servidor'; break;
+    case 502: title = 'Servicio no disponible'; break;
     default: title = 'Error';
   }
 
@@ -62,7 +95,26 @@ const extractApiError = (error) => {
   }
 
   const mainMessage = response.error || response.detail || 'Ha ocurrido un error';
-  let htmlMessage = `<p style="margin-bottom: 12px;">${mainMessage}</p>`;
+
+  // Causa real reenviada por un servicio externo en `detalle`: se muestra de
+  // forma prominente para que el usuario sepa exactamente qué pasó.
+  // Si la vista adjuntó el correo aleatorio usado, lo mostramos para que el
+  // usuario confirme que sí se envió un correo del pool.
+  const correoLine = response.correo_usado
+    ? `<p style="margin:8px 0 0;font-size:0.85rem;color:#555;">Correo usado: <strong>${escapeHtml(response.correo_usado)}</strong></p>`
+    : '';
+
+  const causa = extraerCausaDetalle(response.detalle);
+  if (causa) {
+    const statusTag = status ? ` <span style="color:#999;">(HTTP ${status})</span>` : '';
+    const htmlMessage =
+      `<p style="margin:0 0 8px;font-weight:600;color:#d32f2f;">${escapeHtml(causa)}</p>` +
+      `<p style="margin:0;font-size:0.85rem;color:#666;">${escapeHtml(mainMessage)}${statusTag}</p>` +
+      correoLine;
+    return { title, message: causa, htmlMessage };
+  }
+
+  let htmlMessage = `<p style="margin-bottom: 12px;">${mainMessage}</p>${correoLine}`;
 
   if (typeof response === 'object' && !response.error && !response.detail) {
     const errorEntries = Object.entries(response);
@@ -795,6 +847,7 @@ const construirPayloadPasarela = (tramite) => ({
 
   tipo_tramite: tramite.tipo_tramite || 'SOAT',
   tipo_vehiculo: tramite.tipo_vehiculo || '',
+  entidad: tramite.entidad || '',
 
   grupo_soat: tramite.grupo_soat || '',
   grupo_clase_runt: tramite.grupo_clase_runt || '',
@@ -999,6 +1052,71 @@ export const fetchTramiteSilentThunk = (tramiteId) => {
       return response.data;
     } catch (error) {
       console.warn('[fetchTramiteSilentThunk] error:', error?.response?.status, tramiteId);
+      return null;
+    }
+  };
+};
+
+/**
+ * Extrae la URL del link de pago desde la respuesta del servicio externo,
+ * probando los nombres de campo conocidos (la forma exacta depende del proveedor).
+ */
+const extraerUrlPago = (data) =>
+  data?.data?.url || data?.data?.link || data?.data?.urlpago || data?.url || data?.link || null;
+
+/**
+ * Genera el link de pago de Previsora para un trámite.
+ * payload: { placa, tipodocumento, documento, nombre, nombre2?, apellido, apellido2?, telefono, correo? }
+ * El backend toma un correo aleatorio del pool si no se envía `correo`.
+ * Devuelve { proveedor, url, correo_usado, raw, payload } o null si falla.
+ */
+export const generarLinkPrevisoraThunk = (payload) => {
+  return async (dispatch) => {
+    try {
+      dispatch(showBackdrop('Generando link de Previsora...'));
+      const response = await api.post(API_URLS.generarLinkPrevisora, payload);
+      const data = response.data || {};
+      dispatch(hideBackdrop());
+      return {
+        proveedor: 'previsora',
+        url: extraerUrlPago(data),
+        correo_usado: data.correo_usado || null,
+        raw: data.data,
+        payload: data.payload || payload,
+      };
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
+      return null;
+    }
+  };
+};
+
+/**
+ * Genera el link de pago de Mundial para un trámite.
+ * payload: { placa, tipo_documento, nro_documento, telefono, email? }
+ * El backend toma un correo aleatorio del pool si no se envía `email`.
+ * Devuelve { proveedor, url, correo_usado, raw, payload } o null si falla.
+ */
+export const generarLinkMundialThunk = (payload) => {
+  return async (dispatch) => {
+    try {
+      dispatch(showBackdrop('Generando link de Mundial...'));
+      const response = await api.post(API_URLS.generarLinkMundial, payload);
+      const data = response.data || {};
+      dispatch(hideBackdrop());
+      return {
+        proveedor: 'mundial',
+        url: extraerUrlPago(data),
+        correo_usado: data.correo_usado || null,
+        raw: data.data,
+        payload: data.payload || payload,
+      };
+    } catch (error) {
+      dispatch(hideBackdrop());
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
       return null;
     }
   };
