@@ -4,6 +4,7 @@ import websocketService from '../services/websocketService';
 import { removeTramiteById } from '../store/tamitesStore/tamitesStore';
 import { fetchTramiteSilentThunk } from '../store/tamitesStore/tamitesThunks';
 import notificationService from '../services/notificationService';
+import soundService from '../services/soundService';
 
 /**
  * Hook que escucha eventos de tiempo real sobre cambios de datos en el
@@ -48,6 +49,7 @@ export const useTramitesRealtime = () => {
 
     if (data.type === 'tramite_added' && data.tramite_id != null) {
       console.log('[useTramitesRealtime] tramite_added (silencioso)', data);
+      soundService.playNotification();
       dispatch(fetchTramiteSilentThunk(data.tramite_id)).then((item) => {
         const placa = item?.placa ? ` — Placa ${item.placa}` : '';
         const idTxt = item?.id ?? data.tramite_id;
@@ -62,6 +64,10 @@ export const useTramitesRealtime = () => {
   };
 
   useEffect(() => {
+    // Desbloquea el audio en el primer gesto del usuario para que la primera
+    // notificación de tiempo real pueda sonar (política de autoplay).
+    soundService.installUnlockOnFirstGesture();
+
     const stable = (data) => {
       if (handlerRef.current) handlerRef.current(data);
     };
