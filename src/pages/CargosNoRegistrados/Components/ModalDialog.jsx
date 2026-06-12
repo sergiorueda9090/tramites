@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Autocomplete,
   Button,
   Box,
   FormControl,
@@ -13,8 +12,14 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  Alert,
+  Stack,
+  Typography,
+  Chip,
 } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 const CargoNoRegistradoDialog = ({
   open,
@@ -25,16 +30,41 @@ const CargoNoRegistradoDialog = ({
   onFormChange,
   clientes = [],
   tarjetas = [],
-  subCuentas = [],
 }) => {
   const isEditing = !!selectedCargoNoRegistrado;
 
   const handleChange = (field) => (event) => {
-    const value = event.target.value;
-    onFormChange(field, value);
+    onFormChange(field, event.target.value);
   };
 
-  const selectedSubCuenta = subCuentas.find((s) => String(s.id) === String(form.sub_cuenta)) || null;
+  const selectedCliente = clientes.find((c) => String(c.id) === String(form.cliente)) || null;
+  const selectedTarjeta = tarjetas.find((t) => String(t.id) === String(form.tarjeta)) || null;
+
+  const clienteSubCuenta = selectedCliente
+    ? {
+        codigo: selectedCliente.sub_cuenta_codigo,
+        nombre: selectedCliente.sub_cuenta_nombre,
+      }
+    : null;
+  const tarjetaSubCuenta = selectedTarjeta
+    ? {
+        codigo: selectedTarjeta.sub_cuenta_codigo,
+        nombre: selectedTarjeta.sub_cuenta_nombre,
+      }
+    : null;
+
+  // Validacion local: para guardar tanto cliente como tarjeta deben tener sub-cuenta valida.
+  const clienteSinSubCuenta = selectedCliente && !clienteSubCuenta?.codigo;
+  const tarjetaSinSubCuenta = selectedTarjeta && !tarjetaSubCuenta?.codigo;
+  const mismaSubCuenta =
+    selectedCliente && selectedTarjeta &&
+    selectedCliente.sub_cuenta &&
+    selectedTarjeta.sub_cuenta &&
+    selectedCliente.sub_cuenta === selectedTarjeta.sub_cuenta;
+
+  const canSave =
+    form.cliente && form.tarjeta && form.valor && form.fecha &&
+    !clienteSinSubCuenta && !tarjetaSinSubCuenta && !mismaSubCuenta;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -58,6 +88,16 @@ const CargoNoRegistradoDialog = ({
             </Select>
           </FormControl>
 
+          {selectedCliente && (
+            <SubCuentaInfo
+              icon={<AccountBalanceIcon fontSize="small" />}
+              label="Sub-cuenta del cliente (DÉBITO)"
+              codigo={clienteSubCuenta?.codigo}
+              nombre={clienteSubCuenta?.nombre}
+              color="primary"
+            />
+          )}
+
           <FormControl fullWidth required>
             <InputLabel>Tarjeta</InputLabel>
             <Select
@@ -73,6 +113,32 @@ const CargoNoRegistradoDialog = ({
               ))}
             </Select>
           </FormControl>
+
+          {selectedTarjeta && (
+            <SubCuentaInfo
+              icon={<CreditCardIcon fontSize="small" />}
+              label="Sub-cuenta de la tarjeta (CRÉDITO)"
+              codigo={tarjetaSubCuenta?.codigo}
+              nombre={tarjetaSubCuenta?.nombre}
+              color="secondary"
+            />
+          )}
+
+          {clienteSinSubCuenta && (
+            <Alert severity="error">
+              El cliente seleccionado no tiene sub-cuenta contable asignada. Asignala antes de continuar.
+            </Alert>
+          )}
+          {tarjetaSinSubCuenta && (
+            <Alert severity="error">
+              La tarjeta seleccionada no tiene sub-cuenta contable asignada. Asignala antes de continuar.
+            </Alert>
+          )}
+          {mismaSubCuenta && (
+            <Alert severity="error">
+              El cliente y la tarjeta tienen la misma sub-cuenta. El asiento contable no se puede registrar.
+            </Alert>
+          )}
 
           <TextField
             fullWidth
@@ -106,47 +172,6 @@ const CargoNoRegistradoDialog = ({
             InputLabelProps={{ shrink: true }}
           />
 
-          <Autocomplete
-            fullWidth
-            options={subCuentas}
-            value={selectedSubCuenta}
-            onChange={(_, newValue) => onFormChange('sub_cuenta', newValue ? newValue.id : '')}
-            getOptionLabel={(option) =>
-              option ? `${option.codigo} — ${option.nombre_sub_cuenta}` : ''
-            }
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Sub-cuenta"
-                required
-                placeholder="Buscar por código o nombre..."
-                helperText="Obligatoria y única: no se puede repetir entre registros"
-              />
-            )}
-          />
-
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Débito"
-              type="number"
-              value={form.debito ?? '0'}
-              onChange={handleChange('debito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-            <TextField
-              fullWidth
-              label="Crédito"
-              type="number"
-              value={form.credito ?? '0'}
-              onChange={handleChange('credito')}
-              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-              inputProps={{ min: 0, step: '0.01' }}
-            />
-          </Box>
-
           <TextField
             fullWidth
             label="Observación"
@@ -163,7 +188,7 @@ const CargoNoRegistradoDialog = ({
         <Button
           variant="contained"
           onClick={onSave}
-          disabled={!form.cliente || !form.tarjeta || !form.valor || !form.fecha || !form.sub_cuenta}
+          disabled={!canSave}
         >
           {isEditing ? 'Guardar cambios' : 'Crear cargo'}
         </Button>
@@ -171,5 +196,34 @@ const CargoNoRegistradoDialog = ({
     </Dialog>
   );
 };
+
+const SubCuentaInfo = ({ icon, label, codigo, nombre, color = 'default' }) => (
+  <Box
+    sx={{
+      p: 1.5,
+      borderRadius: 1,
+      border: 1,
+      borderColor: 'divider',
+      bgcolor: 'action.hover',
+    }}
+  >
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+      {icon}
+      <Typography variant="caption" color="text.secondary">{label}</Typography>
+    </Stack>
+    {codigo ? (
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Chip size="small" label={codigo} color={color} />
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {nombre || '-'}
+        </Typography>
+      </Stack>
+    ) : (
+      <Typography variant="body2" color="error">
+        Sin sub-cuenta asignada
+      </Typography>
+    )}
+  </Box>
+);
 
 export default CargoNoRegistradoDialog;

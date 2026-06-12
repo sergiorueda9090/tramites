@@ -1062,7 +1062,8 @@ export const fetchTramiteSilentThunk = (tramiteId) => {
  * probando los nombres de campo conocidos (la forma exacta depende del proveedor).
  */
 const extraerUrlPago = (data) =>
-  data?.data?.url || data?.data?.link || data?.data?.urlpago || data?.url || data?.link || null;
+  data?.data?.url || data?.data?.link || data?.data?.urlpago || data?.data?.urlPago ||
+  data?.data?.linkPago || data?.url || data?.link || null;
 
 /**
  * Genera el link de pago de Previsora para un trámite.

@@ -231,7 +231,6 @@ export const loadAuxDataThunk = () => {
   return async (dispatch) => {
     dispatch(loadClientesThunk());
     dispatch(loadTarjetasThunk());
-    dispatch(loadSubCuentasThunk());
   };
 };
 
