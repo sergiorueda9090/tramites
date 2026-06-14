@@ -51,6 +51,7 @@ export const useTramitesRealtime = () => {
     // de la fila + toast/sonido al terminar. No recarga la lista.
     if ((data.type === 'link_pago_started' || data.type === 'link_pago_done')
         && data.tramite_id != null) {
+      console.log('[useTramitesRealtime]', data.type, '→ tramite', data.tramite_id, data.link_pago);
       dispatch(updateLinkPagoEstado({ tramite_id: data.tramite_id, link_pago: data.link_pago }));
       if (data.type === 'link_pago_done' && data.link_pago?.estado === 'exitoso') {
         soundService.playNotification();
