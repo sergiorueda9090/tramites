@@ -13,8 +13,16 @@ import {
   Divider,
   TextField,
   MenuItem,
+  IconButton,
+  Tooltip,
+  Link as MuiLink,
 } from '@mui/material';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import LinkIcon from '@mui/icons-material/Link';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
@@ -51,6 +59,11 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
   const [observacion, setObservacion] = useState('');
   const [tarjetaId, setTarjetaId] = useState('');
+  // Comprobante de pago (imagen). OBLIGATORIO para habilitar "Pago exitoso".
+  const [comprobante, setComprobante] = useState(null);
+  const [comprobantePreview, setComprobantePreview] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef(null);
   const intervalRef = useRef(null);
   const onResultRef = useRef(onResult);
   const observacionRef = useRef('');
@@ -60,11 +73,54 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
   useEffect(() => { observacionRef.current = observacion; }, [observacion]);
   useEffect(() => { tarjetaIdRef.current = tarjetaId; }, [tarjetaId]);
 
+  // Asignar/quitar la imagen del comprobante (solo imágenes).
+  const setArchivo = (file) => {
+    if (!file || !file.type?.startsWith('image/')) return;
+    setComprobante(file);
+    setComprobantePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  };
+  const quitarArchivo = () => {
+    setComprobante(null);
+    setComprobantePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return '';
+    });
+  };
+
+  // Pegar imagen con Ctrl+V mientras el modal está abierto.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i += 1) {
+        if (items[i].type?.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            setArchivo(file);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    };
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return undefined;
     setSecondsLeft(TOTAL_SECONDS);
     setObservacion('');
     setTarjetaId('');
+    setComprobante(null);
+    setComprobantePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return '';
+    });
     intervalRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -81,7 +137,7 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
 
   const handleExitoso = () => {
     clearInterval(intervalRef.current);
-    onResult?.(true, observacion.trim(), tarjetaId || null);
+    onResult?.(true, observacion.trim(), tarjetaId || null, comprobante);
   };
 
   const handleNoExito = () => {
@@ -93,6 +149,18 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
   const clienteNombre = tramite?.cliente?.nombre || '(sin cliente)';
   const tarifaCod = tramite?.tarifa_codigo || '-';
   const tarifaValor = formatCurrency(tramite?.precio_lay);
+
+  // Link de pago generado automáticamente (job asíncrono). El cajero lo usa
+  // para procesar el pago en la pasarela externa.
+  const linkPago = tramite?.link_pago?.url_pago || '';
+  const linkProveedor = tramite?.link_pago?.proveedor || '';
+  const [linkCopiado, setLinkCopiado] = useState(false);
+  const handleCopyLink = () => {
+    if (!linkPago) return;
+    navigator.clipboard.writeText(linkPago);
+    setLinkCopiado(true);
+    setTimeout(() => setLinkCopiado(false), 1500);
+  };
 
   const progress = (secondsLeft / TOTAL_SECONDS) * 100;
   // Color del cronómetro: verde > 60s, amarillo 30-60s, rojo < 30s.
@@ -177,6 +245,55 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               {placa}
             </Typography>
           </Box>
+
+          {/* Link de pago: lo que el cajero abre/copia para procesar el pago. */}
+          {linkPago ? (
+            <Box
+              sx={{
+                p: 1.5,
+                border: '2px solid',
+                borderColor: 'success.main',
+                borderRadius: 2,
+                backgroundColor: 'rgba(46, 125, 50, 0.06)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
+                <LinkIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'success.main', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}
+                >
+                  Link de pago{linkProveedor ? ` · ${linkProveedor}` : ''}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <MuiLink
+                  href={linkPago}
+                  target="_blank"
+                  rel="noopener"
+                  sx={{ flex: 1, wordBreak: 'break-all', fontSize: '0.8rem' }}
+                >
+                  {linkPago}
+                </MuiLink>
+                <Tooltip title={linkCopiado ? '¡Copiado!' : 'Copiar'}>
+                  <IconButton size="small" color={linkCopiado ? 'success' : 'default'} onClick={handleCopyLink}>
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Abrir">
+                  <IconButton size="small" component="a" href={linkPago} target="_blank" rel="noopener">
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ p: 1.25, border: '1px dashed', borderColor: 'divider', borderRadius: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                Link de pago aún no disponible (generándose o falló su generación).
+              </Typography>
+            </Box>
+          )}
 
           <Box
             sx={{
@@ -371,6 +488,93 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
             }}
           />
 
+          {/* Comprobante de pago (OBLIGATORIO para "Pago exitoso"): arrastrar o pegar (Ctrl+V). */}
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 700, color: comprobante ? 'success.main' : 'error.main' }}
+            >
+              {comprobante ? 'Comprobante de pago ✓' : 'Comprobante de pago (obligatorio para “Pago exitoso”)'}
+            </Typography>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) setArchivo(f);
+                e.target.value = '';
+              }}
+            />
+            {comprobantePreview ? (
+              <Box
+                sx={{
+                  mt: 0.5,
+                  p: 1,
+                  border: '2px solid',
+                  borderColor: 'success.main',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  backgroundColor: 'rgba(46,125,50,0.06)',
+                }}
+              >
+                <Box
+                  component="img"
+                  src={comprobantePreview}
+                  alt="Comprobante de pago"
+                  sx={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600} noWrap>
+                    {comprobante?.name || 'comprobante'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {comprobante ? `${Math.round(comprobante.size / 1024)} KB` : ''}
+                  </Typography>
+                </Box>
+                <Tooltip title="Quitar">
+                  <IconButton size="small" color="error" onClick={quitarArchivo}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            ) : (
+              <Box
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) setArchivo(f);
+                }}
+                sx={{
+                  mt: 0.5,
+                  p: 2,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  border: '2px dashed',
+                  borderColor: dragOver ? 'primary.main' : 'divider',
+                  borderRadius: 2,
+                  backgroundColor: dragOver ? 'rgba(25,118,210,0.08)' : 'transparent',
+                  transition: 'all .15s',
+                }}
+              >
+                <CloudUploadIcon sx={{ fontSize: 32, color: dragOver ? 'primary.main' : 'action.active' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Arrastra la imagen aquí, pégala con Ctrl+V, o haz click para elegir
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Solo imágenes (captura/foto del comprobante de pago)
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
             Realiza el pago en la pasarela externa. Cuando termines, indica si fue
             exitoso o no. Si el tiempo se agota, se considerará como <strong>no exitoso</strong>.
@@ -394,7 +598,7 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
           variant="contained"
           startIcon={<CheckCircleIcon />}
           fullWidth
-          disabled={!tarjetaId}
+          disabled={!tarjetaId || !comprobante}
         >
           Pago exitoso
         </Button>

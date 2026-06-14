@@ -670,14 +670,16 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
+                      <Button
                         onClick={generarTelefonoColombia}
                         size="small"
+                        variant="contained"
+                        startIcon={<ShuffleIcon fontSize="small" />}
                         title="Generar teléfono aleatorio"
-                        color="primary"
+                        sx={{ whiteSpace: 'nowrap', borderRadius: 1.5, px: 1.5, ml: 0.5 }}
                       >
-                        <ShuffleIcon fontSize="small" />
-                      </IconButton>
+                        Generar
+                      </Button>
                     </InputAdornment>
                   ),
                 }}
@@ -745,14 +747,16 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
+                      <Button
                         onClick={generarTelefonoColombia}
                         size="small"
+                        variant="contained"
+                        startIcon={<ShuffleIcon fontSize="small" />}
                         title="Generar teléfono aleatorio"
-                        color="primary"
+                        sx={{ whiteSpace: 'nowrap', borderRadius: 1.5, px: 1.5, ml: 0.5 }}
                       >
-                        <ShuffleIcon fontSize="small" />
-                      </IconButton>
+                        Generar
+                      </Button>
                     </InputAdornment>
                   ),
                 }}
@@ -886,14 +890,16 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton
+                        <Button
                           onClick={generarTelefonoColombia}
                           size="small"
+                          variant="contained"
+                          startIcon={<ShuffleIcon fontSize="small" />}
                           title="Generar teléfono aleatorio"
-                          color="primary"
+                          sx={{ whiteSpace: 'nowrap', borderRadius: 1.5, px: 1.5, ml: 0.5 }}
                         >
-                          <ShuffleIcon fontSize="small" />
-                        </IconButton>
+                          Generar
+                        </Button>
                       </InputAdornment>
                     ),
                   }}

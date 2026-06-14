@@ -65,19 +65,64 @@ const esMotoTramite = (t) => {
   return grupo === 'MOTOS' || grupo === 'CICLOMOTORES' || clase.includes('MOTO');
 };
 
-// Parte el nombre completo en nombre/nombre2/apellido/apellido2 (heurística;
-// el operario puede corregir antes de generar).
+// Partículas que en español forman parte del apellido y se unen al token
+// siguiente ('de la cruz', 'del río'). Espejo de PARTICULAS_APELLIDO del backend.
+const PARTICULAS_APELLIDO = new Set([
+  'de', 'del', 'la', 'las', 'los', 'san', 'santa',
+  'da', 'di', 'do', 'dos', 'van', 'von', 'mac', 'mc',
+]);
+
+// Agrupa los tokens en 'unidades': una partícula se une al token siguiente.
+const agruparUnidades = (tokens) => {
+  const unidades = [];
+  let buffer = [];
+  for (const tok of tokens) {
+    buffer.push(tok);
+    if (!PARTICULAS_APELLIDO.has(tok.toLowerCase())) {
+      unidades.push(buffer.join(' '));
+      buffer = [];
+    }
+  }
+  if (buffer.length) {
+    if (unidades.length) unidades[unidades.length - 1] += ` ${buffer.join(' ')}`;
+    else unidades.push(buffer.join(' '));
+  }
+  return unidades;
+};
+
+// Parte el nombre completo en nombre/nombre2/apellido/apellido2 detectando
+// apellidos compuestos por partículas (heurística; el operario puede corregir).
+// Misma lógica que el backend (partir_nombre).
 const partirNombre = (nombreCompleto) => {
   const tokens = String(nombreCompleto || '').trim().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return { nombre: '', nombre2: '', apellido: '', apellido2: '' };
-  if (tokens.length === 1) return { nombre: tokens[0], nombre2: '', apellido: '', apellido2: '' };
-  if (tokens.length === 2) return { nombre: tokens[0], nombre2: '', apellido: tokens[1], apellido2: '' };
-  if (tokens.length === 3) return { nombre: tokens[0], nombre2: '', apellido: tokens[1], apellido2: tokens[2] };
+
+  const unidades = agruparUnidades(tokens);
+  const n = unidades.length;
+  if (n === 1) return { nombre: unidades[0], nombre2: '', apellido: '', apellido2: '' };
+
+  let idxParticula = -1;
+  for (let i = 0; i < n; i += 1) {
+    if (unidades[i].toLowerCase().split(/\s+/).some((p) => PARTICULAS_APELLIDO.has(p))) {
+      idxParticula = i;
+      break;
+    }
+  }
+
+  let corte;
+  if (idxParticula > 0 && idxParticula < n) corte = idxParticula;
+  else if (n === 2) corte = 1;
+  else corte = n - 2;
+
+  let nombres = unidades.slice(0, corte);
+  const apellidos = unidades.slice(corte);
+  if (nombres.length === 0) nombres = apellidos.length ? [apellidos.shift()] : [''];
+
   return {
-    nombre: tokens[0],
-    nombre2: tokens[1],
-    apellido: tokens[2],
-    apellido2: tokens.slice(3).join(' '),
+    nombre: nombres[0] || '',
+    nombre2: nombres.slice(1).join(' '),
+    apellido: apellidos[0] || '',
+    apellido2: apellidos.slice(1).join(' '),
   };
 };
 

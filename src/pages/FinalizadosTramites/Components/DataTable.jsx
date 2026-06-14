@@ -21,6 +21,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ImageIcon from '@mui/icons-material/Image';
 import Badge from '@mui/material/Badge';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
@@ -113,8 +114,25 @@ const GRUPO_SOAT_COLORS = {
 // ============================================
 // Columns Configuration
 // ============================================
-const buildColumns = ({ onOpenPdfs } = {}) => [
+const buildColumns = ({ onOpenPdfs, onVerComprobante } = {}) => [
   { field: 'id', headerName: 'ID', width: 70 },
+  {
+    field: 'comprobante_pago',
+    headerName: 'Soporte',
+    width: 90,
+    align: 'center',
+    sortable: false,
+    renderCell: ({ row }) =>
+      row.comprobante_pago && onVerComprobante ? (
+        <Tooltip title="Ver soporte de pago">
+          <IconButton size="small" color="success" onClick={() => onVerComprobante(row)}>
+            <ImageIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Typography variant="body2" color="text.secondary">—</Typography>
+      ),
+  },
   {
     field: 'pdfs',
     headerName: 'PDFs',
@@ -343,6 +361,7 @@ const TramitesDataTable = ({
   onDelete,
   onEnviarAPasarela,
   onOpenPdfs,
+  onVerComprobante,
   emptyMessage = 'No se encontraron trámites',
   stickyHeader = true,
   maxHeight = 600,
@@ -353,7 +372,10 @@ const TramitesDataTable = ({
   onCellFocus,
   onCellBlur,
 }) => {
-  const tableColumns = React.useMemo(() => buildColumns({ onOpenPdfs }), [onOpenPdfs]);
+  const tableColumns = React.useMemo(
+    () => buildColumns({ onOpenPdfs, onVerComprobante }),
+    [onOpenPdfs, onVerComprobante],
+  );
   const hasPresence = typeof onCellFocus === 'function' && typeof getOccupant === 'function';
 
   const handleCellClick = (rowId, column) => {

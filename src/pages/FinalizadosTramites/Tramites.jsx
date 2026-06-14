@@ -46,6 +46,7 @@ import {
   showThunk,
   getHistoryThunk,
   loadAuxDataThunk,
+  verComprobanteThunk,
 } from '../../store/finalizadosTamitesStore/finalizadosTamitesThunks';
 import {
   TramitesFilters,
@@ -159,6 +160,13 @@ const TramitesFinalizados = () => {
   // PDFs manager
   const handleOpenPdfs = (finalizado) => dispatch(openPdfsManager(finalizado));
 
+  // Ver el soporte de pago: abrimos la pestaña en el gesto del click (para que el
+  // navegador no la bloquee) y el thunk le carga la URL prefirmada de S3.
+  const handleVerComprobante = (finalizado) => {
+    const ventana = window.open('', '_blank');
+    dispatch(verComprobanteThunk(finalizado.id, ventana));
+  };
+
   return (
     <Box>
       {/* Header */}
@@ -209,6 +217,7 @@ const TramitesFinalizados = () => {
         onView={handleView}
         onEdit={canEdit('finalizados_tramites') ? handleEdit : undefined}
         onOpenPdfs={handleOpenPdfs}
+        onVerComprobante={handleVerComprobante}
         onHistory={handleHistory}
         onDelete={canDelete('finalizados_tramites') ? handleDelete : undefined}
       />

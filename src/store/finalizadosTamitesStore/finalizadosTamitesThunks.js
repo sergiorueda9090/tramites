@@ -40,6 +40,7 @@ const API_URLS = {
   restore: (id) => `/api/finalizados_tramites/${id}/restore/`,
   hardDelete: (id) => `/api/finalizados_tramites/${id}/hard-delete/`,
   history: (id) => `/api/finalizados_tramites/${id}/history/`,
+  comprobanteUrl: (id) => `/api/finalizados_tramites/${id}/comprobante-url/`,
   // PDFs
   pdfsList: (id) => `/api/finalizados_tramites/${id}/pdfs/`,
   pdfsUpload: (id) => `/api/finalizados_tramites/${id}/pdfs/upload/`,
@@ -361,6 +362,25 @@ export const viewThunk = (t) => async () => {
       </div>
     `
   );
+};
+
+/**
+ * Abre el comprobante de pago (almacenado en S3, bucket privado) en una pestaña
+ * nueva. Pide al backend una URL prefirmada temporal y la carga en `ventana`
+ * (abierta sincrónicamente en el gesto del click para no ser bloqueada por el
+ * navegador). Si no se pasa `ventana`, intenta abrir una nueva.
+ */
+export const verComprobanteThunk = (finalizadoId, ventana = null) => async () => {
+  try {
+    const response = await api.get(API_URLS.comprobanteUrl(finalizadoId));
+    const url = response.data?.url;
+    if (!url) throw new Error('sin url');
+    if (ventana) ventana.location.href = url;
+    else window.open(url, '_blank', 'noopener');
+  } catch (error) {
+    if (ventana) { try { ventana.close(); } catch (e) { /* noop */ } }
+    AlertService.error('Comprobante de pago', 'No se pudo abrir el comprobante de pago.');
+  }
 };
 
 export const getHistoryThunk = (id, params = {}) => async (dispatch, getState) => {

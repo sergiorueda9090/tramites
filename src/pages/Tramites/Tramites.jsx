@@ -50,6 +50,7 @@ import {
   getHistoryThunk,
   loadAuxDataThunk,
   enviarAPasarelaDesdeTramiteThunk,
+  reintentarLinkPagoThunk,
 } from '../../store/tamitesStore/tamitesThunks';
 import { listAllThunk as listAllTarjetasThunk } from '../../store/tarjetasStore/tarjetasThunks';
 import { selectTarjetas } from '../../store/tarjetasStore/tarjetasStore';
@@ -59,7 +60,6 @@ import {
   TramiteDialog,
   HistoryDialog,
   PagoTimerDialog,
-  GenerarLinkDialog,
 } from './Components';
 
 const TRAMITES_VIEW_ID = 'tramites_list';
@@ -211,21 +211,19 @@ const Tramites = () => {
     });
   }, []);
 
-  const handlePagoTimerResult = useCallback((exitoso, observacion = '', tarjetaId = null) => {
+  const handlePagoTimerResult = useCallback((exitoso, observacion = '', tarjetaId = null, comprobante = null) => {
     setPagoTimer({ open: false, tramite: null });
     const resolver = pagoTimerResolveRef.current;
     pagoTimerResolveRef.current = null;
-    resolver?.({ exitoso: Boolean(exitoso), observacion, tarjeta: tarjetaId });
+    resolver?.({ exitoso: Boolean(exitoso), observacion, tarjeta: tarjetaId, comprobante });
   }, []);
 
   const handleEnviarAPasarela = (tramite) => {
     dispatch(enviarAPasarelaDesdeTramiteThunk(tramite, { esperarConfirmacionPago }));
   };
 
-  // Generador de links de pago (Previsora / Mundial)
-  const [generarLink, setGenerarLink] = useState({ open: false, tramite: null });
-  const handleGenerarLink = (tramite) => setGenerarLink({ open: true, tramite });
-  const handleCloseGenerarLink = () => setGenerarLink({ open: false, tramite: null });
+  // Reintento de la generación automática (asíncrona) del link de pago
+  const handleReintentarLink = (tramiteId) => dispatch(reintentarLinkPagoThunk(tramiteId));
 
   const handleCloseHistory = () => {
     dispatch(closeHistoryDialog());
@@ -307,7 +305,7 @@ const Tramites = () => {
         onView={handleView}
         onEdit={canEdit('tramites') ? handleEdit : undefined}
         onHistory={handleHistory}
-        onGenerarLink={handleGenerarLink}
+        onReintentarLink={canEdit('tramites') ? handleReintentarLink : undefined}
         onEnviarAPasarela={canCreate('pasarela_de_pago') ? handleEnviarAPasarela : undefined}
         onDelete={canDelete('tramites') ? handleDelete : undefined}
         // Presencia colaborativa por celda
@@ -351,12 +349,6 @@ const Tramites = () => {
         onResult={handlePagoTimerResult}
       />
 
-      {/* Generador de links de pago (Previsora / Mundial) */}
-      <GenerarLinkDialog
-        open={generarLink.open}
-        tramite={generarLink.tramite}
-        onClose={handleCloseGenerarLink}
-      />
     </Box>
   );
 };

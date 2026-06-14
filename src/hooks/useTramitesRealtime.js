@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import websocketService from '../services/websocketService';
-import { removeTramiteById } from '../store/tamitesStore/tamitesStore';
+import { removeTramiteById, updateLinkPagoEstado } from '../store/tamitesStore/tamitesStore';
 import { fetchTramiteSilentThunk } from '../store/tamitesStore/tamitesThunks';
 import notificationService from '../services/notificationService';
 import soundService from '../services/soundService';
@@ -44,6 +44,31 @@ export const useTramitesRealtime = () => {
           duration: 5000,
         });
       });
+      return;
+    }
+
+    // Generación automática del link de pago (job asíncrono): patch silencioso
+    // de la fila + toast/sonido al terminar. No recarga la lista.
+    if ((data.type === 'link_pago_started' || data.type === 'link_pago_done')
+        && data.tramite_id != null) {
+      dispatch(updateLinkPagoEstado({ tramite_id: data.tramite_id, link_pago: data.link_pago }));
+      if (data.type === 'link_pago_done' && data.link_pago?.estado === 'exitoso') {
+        soundService.playNotification();
+        notificationService.show({
+          severity: 'success',
+          title: 'Link de pago listo',
+          message: `Trámite #${data.tramite_id}: link ${data.link_pago.proveedor || ''} generado`,
+          duration: 5000,
+        });
+      }
+      if (data.type === 'link_pago_done' && data.link_pago?.estado === 'error') {
+        notificationService.show({
+          severity: 'warning',
+          title: 'Link de pago falló',
+          message: `Trámite #${data.tramite_id}: ${data.link_pago.error_mensaje || 'error'}`,
+          duration: 7000,
+        });
+      }
       return;
     }
 

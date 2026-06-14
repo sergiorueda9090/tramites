@@ -1,4 +1,4 @@
-import api from '../../services/api';
+import api, { apiService } from '../../services/api';
 import AlertService from '../../services/alertService';
 import { showBackdrop, hideBackdrop } from '../uiStore/uiStore';
 import {
@@ -13,6 +13,7 @@ import {
   openEditModal,
   setHistory,
   prependTramite,
+  updateLinkPagoEstado,
 } from './tamitesStore';
 
 // URLs del módulo tramites
@@ -33,6 +34,8 @@ const API_URLS = {
   // Generadores de links de pago (usan un correo aleatorio del pool)
   generarLinkPrevisora: '/api/tramites/generar-link/previsora/',
   generarLinkMundial: '/api/tramites/generar-link/mundial/',
+  // Reintento de la generación automática (asíncrona) del link de pago
+  reintentarLinkPago: (id) => `/api/tramites/${id}/link-pago/reintentar/`,
   // URLs auxiliares para selects
   clientes: '/api/clientes/list/',
   etiquetas: '/api/etiquetas/list/',
@@ -880,6 +883,9 @@ const construirPayloadPasarela = (tramite) => ({
   telefono: tramite.telefono || '',
   correo: tramite.correo || '',
   direccion: tramite.direccion || '',
+
+  // Snapshot del link de pago generado (para que viaje a Pasarela → Finalizados).
+  link_pago: tramite.link_pago?.url_pago || '',
 });
 
 /**
@@ -916,6 +922,31 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
       ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(tramite.precio_lay)
       : '-';
 
+    // Link de pago generado automáticamente: bloque HTML reutilizable para las
+    // alertas (con botones Copiar/Abrir) y handler para cablear el botón Copiar.
+    const urlPago = tramite.link_pago?.url_pago || '';
+    const urlPagoEsc = escapeHtml(urlPago);
+    const linkProveedor = tramite.link_pago?.proveedor ? ` · ${escapeHtml(tramite.link_pago.proveedor)}` : '';
+    const linkPagoHtml = urlPago
+      ? `<div style="margin-top:12px; padding:10px 12px; border:1px solid #2e7d32; border-radius:8px; background:#e8f5e9; text-align:left;">
+           <p style="margin:0 0 6px; font-weight:600; color:#2e7d32;">Link de pago${linkProveedor}</p>
+           <a href="${urlPagoEsc}" target="_blank" rel="noopener" style="word-break:break-all; font-size:0.8rem; color:#1565c0;">${urlPagoEsc}</a>
+           <div style="margin-top:10px; display:flex; gap:8px;">
+             <button id="swal-copiar-link" type="button" style="cursor:pointer; padding:6px 12px; border:1px solid #2e7d32; border-radius:6px; background:#fff; color:#2e7d32; font-weight:600;">Copiar</button>
+             <a href="${urlPagoEsc}" target="_blank" rel="noopener" style="padding:6px 12px; border:1px solid #1565c0; border-radius:6px; background:#fff; color:#1565c0; font-weight:600; text-decoration:none;">Abrir</a>
+           </div>
+         </div>`
+      : `<p style="margin-top:12px; color:#888; font-size:0.85rem;">Link de pago aún no disponible (generándose o falló su generación).</p>`;
+    const wireCopiarLink = () => {
+      const btn = document.getElementById('swal-copiar-link');
+      if (btn && urlPago) {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(urlPago);
+          btn.textContent = 'Copiado ✓';
+        });
+      }
+    };
+
     // ─── 1) POST inmediato al click ───
     let response;
     let pasarelaId = null;
@@ -937,14 +968,24 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
 
     // Helper interno: marca la pasarela con un estado final. Best-effort,
     // si falla no rompe el flujo (el registro ya existe en Pasarela).
-    const marcarPago = async ({ pago_estado, observacion = '', tarjeta = null }) => {
+    const marcarPago = async ({ pago_estado, observacion = '', tarjeta = null, comprobante = null }) => {
       if (!pasarelaId) return;
       try {
-        await api.post(API_URLS.pasarelaConfirmarPago(pasarelaId), {
-          pago_estado,
-          observacion,
-          tarjeta,
-        });
+        if (comprobante) {
+          // Con comprobante → multipart/form-data (el backend lo lee de request.FILES).
+          const fd = new FormData();
+          fd.append('pago_estado', pago_estado);
+          fd.append('observacion', observacion || '');
+          if (tarjeta) fd.append('tarjeta', tarjeta);
+          fd.append('comprobante_pago', comprobante);
+          await apiService.postForm(API_URLS.pasarelaConfirmarPago(pasarelaId), fd);
+        } else {
+          await api.post(API_URLS.pasarelaConfirmarPago(pasarelaId), {
+            pago_estado,
+            observacion,
+            tarjeta,
+          });
+        }
       } catch (err) {
         console.warn('[enviarAPasarelaDesdeTramiteThunk] confirmar-pago falló:', err);
       }
@@ -964,11 +1005,13 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
             <p style="margin: 4px 0;"><strong>Tarifa:</strong> ${tarifaCod}</p>
             <p style="margin: 4px 0;"><strong>Valor:</strong> ${tarifaValor}</p>
           </div>
+          ${linkPagoHtml}
         `,
         {
           icon: 'question',
           confirmText: 'Sí, continuar',
           cancelText: 'Cancelar (marcar no exitoso)',
+          didOpen: wireCopiarLink,
         }
       );
       if (!primera.isConfirmed) {
@@ -1006,17 +1049,19 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
           ? String(resultado.observacion).trim()
           : '';
         const tarjetaPago = esObjeto && resultado.tarjeta ? resultado.tarjeta : null;
+        const comprobantePago = esObjeto && resultado.comprobante ? resultado.comprobante : null;
 
         await marcarPago({
           pago_estado: exitoso ? 'exitoso' : 'no_exitoso',
           observacion: observacionPago,
           tarjeta: tarjetaPago,
+          comprobante: comprobantePago,
         });
 
         await AlertService.success(
           exitoso ? '¡Pago confirmado!' : 'Pago marcado como no exitoso',
           exitoso
-            ? `El registro de pasarela #${pasarelaId} para la placa <strong>${response.data?.placa || '-'}</strong> quedó marcado como pago exitoso.`
+            ? `El pago de la placa <strong>${response.data?.placa || '-'}</strong> fue confirmado. El trámite pasó directo a <strong>Trámites Finalizados</strong> y salió de Pasarela.`
             : `El registro de pasarela #${pasarelaId} se conservó marcado como pago no exitoso. Revisa la observación si necesitas dar seguimiento.`,
           { timer: 3500 }
         );
@@ -1062,8 +1107,8 @@ export const fetchTramiteSilentThunk = (tramiteId) => {
  * probando los nombres de campo conocidos (la forma exacta depende del proveedor).
  */
 const extraerUrlPago = (data) =>
-  data?.data?.url || data?.data?.link || data?.data?.urlpago || data?.data?.urlPago ||
-  data?.data?.linkPago || data?.url || data?.link || null;
+  data?.data?.urlPago || data?.data?.url || data?.data?.link || data?.data?.urlpago ||
+  data?.data?.linkPago || data?.urlPago || data?.url || data?.link || null;
 
 /**
  * Genera el link de pago de Previsora para un trámite.
@@ -1119,6 +1164,24 @@ export const generarLinkMundialThunk = (payload) => {
       const { title, htmlMessage } = extractApiError(error);
       AlertService.error(title, htmlMessage);
       return null;
+    }
+  };
+};
+
+/**
+ * Reintenta la generación automática (asíncrona) del link de pago de un trámite.
+ * El backend re-encola la tarea Celery; el estado real llega luego por WebSocket
+ * (link_pago_started/done). Aquí solo marcamos la fila como 'pendiente' de
+ * inmediato para feedback óptimista (la barra indeterminada vuelve a aparecer).
+ */
+export const reintentarLinkPagoThunk = (tramiteId) => {
+  return async (dispatch) => {
+    try {
+      await api.post(API_URLS.reintentarLinkPago(tramiteId));
+      dispatch(updateLinkPagoEstado({ tramite_id: tramiteId, link_pago: { estado: 'pendiente', error_mensaje: '' } }));
+    } catch (error) {
+      const { title, htmlMessage } = extractApiError(error);
+      AlertService.error(title, htmlMessage);
     }
   };
 };

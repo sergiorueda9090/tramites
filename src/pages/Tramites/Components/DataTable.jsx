@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Paper,
@@ -13,16 +13,17 @@ import {
   Tooltip,
   Typography,
   Chip,
-  Select,
-  MenuItem,
-  FormControl,
+  LinearProgress,
+  Button,
+  Link as MuiLink,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PaymentIcon from '@mui/icons-material/Payment';
-import LinkIcon from '@mui/icons-material/Link';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 import CellPresenceOverlay from '../../../components/common/CellPresenceOverlay';
@@ -116,48 +117,88 @@ const ENTIDAD_COLOR = {
   MANUAL:    'warning',
 };
 
+// Solo lectura por el momento: la entidad no se puede cambiar desde el listado;
+// se muestra como un Chip estático (sin Select).
 const EntidadSelectCell = ({ row }) => {
   const opciones = ENTIDADES_POR_TIPO_VEHICULO[row.tipo_vehiculo] || [];
-  // Valor inicial: el del backend si pertenece al catálogo del tipo_vehiculo,
+  // Valor a mostrar: el del backend si pertenece al catálogo del tipo_vehiculo,
   // o el primero (default) si no, o '' cuando el tipo_vehiculo no resuelve.
-  const initial =
+  const value =
     row.entidad && opciones.includes(row.entidad)
       ? row.entidad
       : opciones[0] || '';
-  const [value, setValue] = useState(initial);
 
-  if (opciones.length === 0) {
+  if (!value) {
     return <Typography variant="body2" color="text.secondary">-</Typography>;
   }
 
   return (
-    <FormControl size="small" fullWidth onClick={(e) => e.stopPropagation()}>
-      <Select
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        variant="outlined"
-        sx={{
-          fontSize: '0.8125rem',
-          fontWeight: 500,
-          '& .MuiSelect-select': { py: 0.5 },
-        }}
-        renderValue={(selected) => (
-          <Chip
-            label={ENTIDAD_LABELS[selected] || selected}
-            size="small"
-            color={ENTIDAD_COLOR[selected] || 'default'}
-            variant="outlined"
-            sx={{ fontWeight: 500 }}
-          />
-        )}
-      >
-        {opciones.map((opt) => (
-          <MenuItem key={opt} value={opt} dense>
-            {ENTIDAD_LABELS[opt]}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+    <Chip
+      label={ENTIDAD_LABELS[value] || value}
+      size="small"
+      color={ENTIDAD_COLOR[value] || 'default'}
+      variant="outlined"
+      sx={{ fontWeight: 500 }}
+    />
+  );
+};
+
+// ============================================
+// Link de pago — celda con barra de progreso / link / error
+// El estado lo genera un job asíncrono (Celery) y llega por WebSocket.
+// ============================================
+const LinkPagoCell = ({ row, onReintentar }) => {
+  const lp = row.link_pago;
+  if (!lp || !lp.estado) {
+    return <Typography variant="body2" color="text.secondary">—</Typography>;
+  }
+
+  if (lp.estado === 'pendiente' || lp.estado === 'en_proceso') {
+    return (
+      <Box sx={{ minWidth: 120 }} onClick={(e) => e.stopPropagation()}>
+        <Typography variant="caption" color="text.secondary">
+          Generando… {lp.proveedor ? `(${lp.proveedor})` : ''}
+        </Typography>
+        <LinearProgress />
+      </Box>
+    );
+  }
+
+  if (lp.estado === 'exitoso' && lp.url_pago) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+        <MuiLink
+          href={lp.url_pago}
+          target="_blank"
+          rel="noopener"
+          sx={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {lp.proveedor || 'link'}
+        </MuiLink>
+        <Tooltip title="Copiar">
+          <IconButton size="small" onClick={() => navigator.clipboard.writeText(lp.url_pago)}>
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Abrir">
+          <IconButton size="small" component="a" href={lp.url_pago} target="_blank" rel="noopener">
+            <OpenInNewIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    );
+  }
+
+  // error (o exitoso sin URL)
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+      <Tooltip title={lp.error_mensaje || 'Error'}>
+        <Chip size="small" color="error" variant="outlined" label={`Error (${lp.intentos ?? 0})`} />
+      </Tooltip>
+      {onReintentar && (
+        <Button size="small" onClick={() => onReintentar(row.id)}>Reintentar</Button>
+      )}
+    </Box>
   );
 };
 
@@ -243,6 +284,15 @@ const columns = [
     ),
   },
   {
+    field: 'link_pago',
+    headerName: 'Link de pago',
+    minWidth: 180,
+    sortable: false,
+    renderCell: ({ row, onReintentarLink }) => (
+      <LinkPagoCell row={row} onReintentar={onReintentarLink} />
+    ),
+  },
+  {
     field: 'nombre_completo',
     headerName: 'Titular',
     minWidth: 180,
@@ -308,7 +358,7 @@ const TramitesDataTable = ({
   onHistory,
   onDelete,
   onEnviarAPasarela,
-  onGenerarLink,
+  onReintentarLink,
   emptyMessage = 'No se encontraron trámites',
   stickyHeader = true,
   maxHeight = 600,
@@ -328,7 +378,7 @@ const TramitesDataTable = ({
   const renderCellContent = (column, row) => {
     const value = row[column.field];
     if (column.renderCell) {
-      return column.renderCell({ row, value });
+      return column.renderCell({ row, value, onReintentarLink });
     }
     return value ?? '-';
   };
@@ -372,7 +422,7 @@ const TramitesDataTable = ({
                   )}
                 </TableCell>
               ))}
-              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onGenerarLink) && (
+              {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                 <TableCell align="center" sx={{ fontWeight: 600, bgcolor: 'background.paper' }}>
                   Acciones
                 </TableCell>
@@ -420,7 +470,7 @@ const TramitesDataTable = ({
                       </TableCell>
                     );
                   })}
-                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela || onGenerarLink) && (
+                  {showActions && (onView || onEdit || onHistory || onDelete || onEnviarAPasarela) && (
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                         {onView && (
@@ -441,13 +491,6 @@ const TramitesDataTable = ({
                           <Tooltip title="Ver historial">
                             <IconButton size="small" onClick={() => onHistory(row)} color="warning">
                               <HistoryIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onGenerarLink && (
-                          <Tooltip title="Generar link de pago">
-                            <IconButton size="small" onClick={() => onGenerarLink(row)} color="secondary">
-                              <LinkIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         )}

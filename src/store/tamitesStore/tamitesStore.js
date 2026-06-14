@@ -153,6 +153,17 @@ export const tramitesStore = createSlice({
       state.pagination.count = (state.pagination.count || 0) + 1;
     },
 
+    /**
+     * Aplica (merge) el estado del link de pago sobre la fila correspondiente.
+     * Usado por el hook de tiempo real al recibir link_pago_started/done, sin
+     * tocar `loading` ni recargar la lista entera.
+     */
+    updateLinkPagoEstado: (state, action) => {
+      const { tramite_id, link_pago } = action.payload;
+      const t = state.tramites.find((x) => x.id === tramite_id);
+      if (t) t.link_pago = { ...(t.link_pago || {}), ...link_pago };
+    },
+
     // Datos auxiliares
     setClientes: (state, action) => {
       state.clientes = action.payload;
@@ -326,6 +337,7 @@ export const {
   setTramites,
   removeTramiteById,
   prependTramite,
+  updateLinkPagoEstado,
   setClientes,
   setEtiquetas,
   setTarifarios,
