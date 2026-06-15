@@ -15,7 +15,6 @@ import {
   Alert,
   AlertTitle,
   Chip,
-  CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
@@ -74,13 +73,17 @@ const TIPOS_DOCUMENTO = [
  * En ambos casos el nombre resultante se persiste en el store del RUNT
  * (setPersona → nombres/apellidos), que es de donde lo leen los thunks que
  * guardan en base_de_datos / trámites / casos especiales.
+ *
+ * Además de su botón manual, en modo "verificar" expone una función `resolver()`
+ * al padre (vía `titularRef`) para que la verificación se dispare automáticamente
+ * al pulsar "Siguiente": devuelve `true` si el titular quedó resuelto (inscrito o
+ * con nombre manual ya escrito) y `false` si falta que el usuario lo ingrese.
  */
-const TitularNombre = ({ modo }) => {
+const TitularNombre = ({ modo, titularRef }) => {
   const dispatch = useDispatch();
   const tipoDocumento = useSelector(selectTipoDocumento);
   const numeroDocumento = useSelector(selectConsultaDocumento);
 
-  const [verificando, setVerificando] = useState(false);
   const [resultado, setResultado] = useState(null); // { inscrito, nombre }
   const [nombreManual, setNombreManual] = useState('');
 
@@ -97,16 +100,32 @@ const TitularNombre = ({ modo }) => {
     dispatch(setPersona({ nombres: value, apellidos: '' }));
   };
 
-  const handleVerificar = async () => {
-    if (!numeroDocumento) return;
-    setVerificando(true);
-    const res = await dispatch(
-      consultarNombreTitularThunk({ tipo_documento: tipoDocumento, numero_documento: numeroDocumento })
-    );
-    setVerificando(false);
-    setResultado(res || { inscrito: false, nombre: '' });
-    if (!res?.inscrito) setNombreManual('');
-  };
+  // Exponer la resolución del titular al padre para integrarla en "Siguiente".
+  // Solo aplica al modo verificar (en modo manual el nombre ya se persiste al
+  // escribirlo, así que no hay nada que disparar).
+  useEffect(() => {
+    if (modo !== 'verificar' || !titularRef) return undefined;
+    titularRef.current = {
+      resolver: async () => {
+        // Si ya hay un nombre manual escrito (caso "no inscrito"), se conserva.
+        if (resultado && !resultado.inscrito && nombreManual.trim()) return true;
+        // Si una verificación previa confirmó al titular, listo.
+        if (resultado?.inscrito) return true;
+        if (!numeroDocumento) return false;
+        const res = await dispatch(
+          consultarNombreTitularThunk({ tipo_documento: tipoDocumento, numero_documento: numeroDocumento })
+        );
+        setResultado(res || { inscrito: false, nombre: '' });
+        if (res?.inscrito) return true;
+        // No inscrito: se muestra el campo manual y se bloquea el avance hasta
+        // que el usuario escriba el nombre y vuelva a pulsar "Siguiente".
+        return false;
+      },
+    };
+    return () => {
+      if (titularRef) titularRef.current = null;
+    };
+  }, [modo, titularRef, resultado, nombreManual, numeroDocumento, tipoDocumento, dispatch]);
 
   // ── Modo manual: siempre campo de nombre ──
   if (modo === 'manual') {
@@ -126,16 +145,8 @@ const TitularNombre = ({ modo }) => {
   // ── Modo verificar ──
   return (
     <Grid item xs={12}>
-      <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={verificando ? <CircularProgress size={16} /> : <PersonSearchIcon />}
-          onClick={handleVerificar}
-          disabled={!numeroDocumento || verificando}
-        >
-          Verificar nombre en RUNT
-        </Button>
-        {resultado?.inscrito && (
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+        {resultado?.inscrito ? (
           <Chip
             icon={<CheckCircleIcon />}
             color="success"
@@ -143,6 +154,11 @@ const TitularNombre = ({ modo }) => {
             label={`Titular: ${resultado.nombre}`}
             sx={{ fontWeight: 600 }}
           />
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <PersonSearchIcon fontSize="small" />
+            El nombre del titular se verificará automáticamente en RUNT al pulsar "Siguiente".
+          </Typography>
         )}
       </Box>
 
@@ -244,6 +260,10 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
   const [imagenFile, setImagenFile] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Handle imperativo que expone el bloque TitularNombre (modo verificar) para
+  // poder disparar la verificación del nombre en RUNT desde el botón "Siguiente".
+  const titularRef = useRef(null);
+
   // Listener para pegar imágenes con Ctrl+V
   useEffect(() => {
     if (metodoConsulta !== 'IA_FOTO_TARJETA' && metodoConsulta !== 'IA_VIN_RUNT') return;
@@ -341,16 +361,28 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
   // Exponer función de consulta al componente padre via ref
   useEffect(() => {
     if (!consultarRef) return;
-    consultarRef.current = () => {
+    consultarRef.current = async () => {
       switch (metodoConsulta) {
         case 'PLACA_RUNT':
           return dispatch(consultarRuntThunk({ placa: consultaPlaca, tipo_documento: tipoDocumento, numero_documento: consultaDocumento }));
         case 'IA_FOTO_TARJETA':
           return dispatch(extraerDatosRuntThunk({ imagen: imagenFile }));
-        case 'IA_VIN_RUNT':
+        case 'IA_VIN_RUNT': {
+          // Cero KM: verificar primero el nombre del titular en RUNT. Si no está
+          // inscrito y aún no se escribió el nombre, no se avanza.
+          if (titularRef.current) {
+            const titularOk = await titularRef.current.resolver();
+            if (!titularOk) return null;
+          }
           return dispatch(extraerDatosFotoVinThunk({ imagen: imagenFile }));
-        case 'PLACA_FALABELLA':
+        }
+        case 'PLACA_FALABELLA': {
+          if (titularRef.current) {
+            const titularOk = await titularRef.current.resolver();
+            if (!titularOk) return null;
+          }
           return dispatch(extraerDatosPorPlacaThunk({ placa: consultaPlaca }));
+        }
         case 'MANUAL':
           // Poblar el runtStore con los datos manuales y avanzar
           dispatch(setVehiculo({
@@ -685,7 +717,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                 }}
               />
             </Grid>
-            {tipoVehiculo === 'CERO_KM' && <TitularNombre modo="verificar" />}
+            {tipoVehiculo === 'CERO_KM' && <TitularNombre modo="verificar" titularRef={titularRef} />}
           </Grid>
         </Paper>
       )}
@@ -762,7 +794,7 @@ const Step4_MetodoConsulta = ({ consultarRef }) => {
                 }}
               />
             </Grid>
-            <TitularNombre modo="verificar" />
+            <TitularNombre modo="verificar" titularRef={titularRef} />
           </Grid>
         </Paper>
       )}

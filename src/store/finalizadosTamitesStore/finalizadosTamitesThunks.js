@@ -41,6 +41,7 @@ const API_URLS = {
   hardDelete: (id) => `/api/finalizados_tramites/${id}/hard-delete/`,
   history: (id) => `/api/finalizados_tramites/${id}/history/`,
   comprobanteUrl: (id) => `/api/finalizados_tramites/${id}/comprobante-url/`,
+  comprobante: (id) => `/api/finalizados_tramites/${id}/comprobante/`,
   // PDFs
   pdfsList: (id) => `/api/finalizados_tramites/${id}/pdfs/`,
   pdfsUpload: (id) => `/api/finalizados_tramites/${id}/pdfs/upload/`,
@@ -366,18 +367,24 @@ export const viewThunk = (t) => async () => {
 
 /**
  * Abre el comprobante de pago (almacenado en S3, bucket privado) en una pestaña
- * nueva. Pide al backend una URL prefirmada temporal y la carga en `ventana`
- * (abierta sincrónicamente en el gesto del click para no ser bloqueada por el
- * navegador). Si no se pasa `ventana`, intenta abrir una nueva.
+ * nueva. El backend hace de proxy y entrega la imagen por streaming; aquí se
+ * descarga como blob (con el JWT que inyecta el cliente axios) y se abre como
+ * object URL. Así el navegador nunca ve credenciales AWS ni la URL de S3.
+ *
+ * `ventana` se abre sincrónicamente en el gesto del click para no ser bloqueada
+ * por el navegador. Si no se pasa, intenta abrir una nueva.
  */
 export const verComprobanteThunk = (finalizadoId, ventana = null) => async () => {
+  let blobUrl = null;
   try {
-    const response = await api.get(API_URLS.comprobanteUrl(finalizadoId));
-    const url = response.data?.url;
-    if (!url) throw new Error('sin url');
-    if (ventana) ventana.location.href = url;
-    else window.open(url, '_blank', 'noopener');
+    const response = await api.get(API_URLS.comprobante(finalizadoId), { responseType: 'blob' });
+    blobUrl = URL.createObjectURL(response.data);
+    if (ventana) ventana.location.href = blobUrl;
+    else window.open(blobUrl, '_blank', 'noopener');
+    // Liberar el object URL una vez la pestaña ya lo cargó.
+    setTimeout(() => { try { URL.revokeObjectURL(blobUrl); } catch (e) { /* noop */ } }, 60000);
   } catch (error) {
+    if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch (e) { /* noop */ } }
     if (ventana) { try { ventana.close(); } catch (e) { /* noop */ } }
     AlertService.error('Comprobante de pago', 'No se pudo abrir el comprobante de pago.');
   }
