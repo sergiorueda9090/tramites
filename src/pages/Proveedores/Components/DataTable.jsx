@@ -12,10 +12,12 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  Chip,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LockIcon from '@mui/icons-material/Lock';
 import { formatDateTime } from '../../../utils/helpers';
 import Pagination from './Pagination';
 
@@ -76,6 +78,17 @@ const columns = [
         <Typography variant="body2" fontWeight={500}>
           {value || '-'}
         </Typography>
+        {row.protegido && (
+          <Tooltip title="Proveedor del sistema: no se puede editar ni eliminar">
+            <Chip
+              icon={<LockIcon sx={{ fontSize: 14 }} />}
+              label="Sistema"
+              size="small"
+              variant="outlined"
+              sx={{ height: 20, fontSize: '0.7rem' }}
+            />
+          </Tooltip>
+        )}
       </Box>
     ),
   },
@@ -217,19 +230,31 @@ const ProveedoresDataTable = ({
                             </IconButton>
                           </Tooltip>
                         )}
-                        {onEdit && (
-                          <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => onEdit(row)} color="primary">
-                              <EditIcon fontSize="small" />
-                            </IconButton>
+                        {row.protegido ? (
+                          <Tooltip title="Proveedor del sistema: no se puede editar ni eliminar">
+                            <span>
+                              <IconButton size="small" disabled>
+                                <LockIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
-                        )}
-                        {onDelete && (
-                          <Tooltip title="Eliminar">
-                            <IconButton size="small" onClick={() => onDelete(row)} color="error">
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                        ) : (
+                          <>
+                            {onEdit && (
+                              <Tooltip title="Editar">
+                                <IconButton size="small" onClick={() => onEdit(row)} color="primary">
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {onDelete && (
+                              <Tooltip title="Eliminar">
+                                <IconButton size="small" onClick={() => onDelete(row)} color="error">
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </>
                         )}
                       </Box>
                     </TableCell>

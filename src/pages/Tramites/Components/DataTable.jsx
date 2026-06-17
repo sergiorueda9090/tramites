@@ -132,14 +132,29 @@ const EntidadSelectCell = ({ row }) => {
     return <Typography variant="body2" color="text.secondary">-</Typography>;
   }
 
+  // Proveedor asociado (resuelto en el backend desde la entidad). Se muestra su
+  // sub-cuenta contable debajo del chip para evidenciar la asociación.
+  const prov = row.proveedor;
+
   return (
-    <Chip
-      label={ENTIDAD_LABELS[value] || value}
-      size="small"
-      color={ENTIDAD_COLOR[value] || 'default'}
-      variant="outlined"
-      sx={{ fontWeight: 500 }}
-    />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+      <Chip
+        label={ENTIDAD_LABELS[value] || value}
+        size="small"
+        color={ENTIDAD_COLOR[value] || 'default'}
+        variant="outlined"
+        sx={{ fontWeight: 500, alignSelf: 'flex-start' }}
+      />
+      {prov?.sub_cuenta_codigo && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontFamily: 'monospace' }}
+        >
+          {prov.sub_cuenta_codigo}
+        </Typography>
+      )}
+    </Box>
   );
 };
 

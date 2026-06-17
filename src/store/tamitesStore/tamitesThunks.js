@@ -1042,7 +1042,17 @@ export const enviarAPasarelaDesdeTramiteThunk = (tramite, { esperarConfirmacionP
 
       // ─── 3) Modal de timer (3 min) ───
       if (typeof esperarConfirmacionPago === 'function') {
-        const resultado = await esperarConfirmacionPago(tramite);
+        // Re-traer el trámite fresco (con sub-cuentas de cliente / proveedor /
+        // ingresos) por si el row del listado quedó obsoleto respecto al
+        // serializer del backend. Si falla, se usa el row capturado.
+        let tramiteModal = tramite;
+        try {
+          const fresco = await api.get(API_URLS.detail(tramite.id));
+          if (fresco?.data) tramiteModal = fresco.data;
+        } catch (_) {
+          /* sin conexión / detalle no disponible: usamos el row original */
+        }
+        const resultado = await esperarConfirmacionPago(tramiteModal);
         const esObjeto = typeof resultado === 'object' && resultado !== null;
         const exitoso = esObjeto ? Boolean(resultado.exitoso) : Boolean(resultado);
         const observacionPago = esObjeto && resultado.observacion

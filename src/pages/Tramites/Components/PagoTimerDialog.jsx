@@ -46,6 +46,108 @@ const formatCurrency = (value) =>
     ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value)
     : '-';
 
+// Celda de sub-cuenta (código monoespaciado + nombre). '—' si no hay.
+const SubCuentaCell = ({ codigo, nombre, color }) => {
+  if (!codigo && !nombre) {
+    return <Typography variant="caption" color="text.secondary">—</Typography>;
+  }
+  return (
+    <Box>
+      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700, color: color || 'text.primary' }}>
+        {codigo || '—'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" noWrap>
+        {nombre || ''}
+      </Typography>
+    </Box>
+  );
+};
+
+// Una fila de asiento: título + valor, con sus columnas Débito y Crédito.
+const AsientoRow = ({ titulo, valor, debito, credito }) => (
+  <Box sx={{ p: 1.25 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.75 }}>
+      <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        {titulo}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+        {formatCurrency(valor)}
+      </Typography>
+    </Box>
+    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+      <Box sx={{ p: 0.75, borderRadius: 1, border: '1px solid', borderColor: 'error.light', bgcolor: 'rgba(211,47,47,0.05)' }}>
+        <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 700 }}>Débito</Typography>
+        <SubCuentaCell {...debito} color="error.main" />
+      </Box>
+      <Box sx={{ p: 0.75, borderRadius: 1, border: '1px solid', borderColor: 'success.light', bgcolor: 'rgba(46,125,50,0.05)' }}>
+        <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700 }}>Crédito</Typography>
+        <SubCuentaCell {...credito} color="success.main" />
+      </Box>
+    </Box>
+  </Box>
+);
+
+/**
+ * Vista previa (read-only) de los asientos contables que se generarán al
+ * confirmar el pago como exitoso, según el diseño SOAT:
+ *   1. Emisión SOAT  (precio_lay): Débito cliente  / Crédito proveedor.
+ *   2. Comisión SOAT (comision)  : Débito cliente  / Crédito 4135 ingresos.
+ * También muestra la entidad y la sub-cuenta de la tarjeta elegida (informativo).
+ */
+const AsientosContablesPreview = ({ tramite, tarjeta }) => {
+  const cliente = tramite?.cliente || {};
+  const proveedor = tramite?.proveedor || null;
+  const ingresos = tramite?.ingresos_soat_sub_cuenta || null;
+  const entidadLabel = tramite?.entidad_display || tramite?.entidad || '—';
+
+  return (
+    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden' }}>
+      <Box sx={{ px: 1.5, py: 0.5, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <ReceiptLongIcon sx={{ fontSize: 16 }} color="action" />
+        <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Asientos contables (al confirmar pago)
+        </Typography>
+      </Box>
+
+      {/* Cliente, entidad/proveedor y tarjeta elegida, cada uno con su sub-cuenta. */}
+      <Box sx={{ px: 1.5, py: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Cliente</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{cliente?.nombre || '—'}</Typography>
+          <SubCuentaCell codigo={cliente?.sub_cuenta_codigo} nombre={cliente?.sub_cuenta_nombre} />
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Entidad / proveedor</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>{entidadLabel}</Typography>
+          <SubCuentaCell codigo={proveedor?.sub_cuenta_codigo} nombre={proveedor?.sub_cuenta_nombre} />
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">Tarjeta utilizada</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }} noWrap>
+            {tarjeta?.numero || '—'}
+          </Typography>
+          <SubCuentaCell codigo={tarjeta?.sub_cuenta_codigo} nombre={tarjeta?.sub_cuenta_nombre} />
+        </Box>
+      </Box>
+
+      <Stack divider={<Divider />}>
+        <AsientoRow
+          titulo="Emisión SOAT"
+          valor={tramite?.precio_lay}
+          debito={{ codigo: cliente?.sub_cuenta_codigo, nombre: cliente?.sub_cuenta_nombre }}
+          credito={{ codigo: proveedor?.sub_cuenta_codigo, nombre: proveedor?.sub_cuenta_nombre }}
+        />
+        <AsientoRow
+          titulo="Comisión del SOAT"
+          valor={tramite?.comision}
+          debito={{ codigo: cliente?.sub_cuenta_codigo, nombre: cliente?.sub_cuenta_nombre }}
+          credito={{ codigo: ingresos?.sub_cuenta_codigo, nombre: ingresos?.sub_cuenta_nombre }}
+        />
+      </Stack>
+    </Box>
+  );
+};
+
 /**
  * Modal con cuenta regresiva de 3 minutos previa al envío a Pasarela de Pago.
  * El usuario debe indicar si el pago fue exitoso o no.
@@ -161,6 +263,9 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
     setLinkCopiado(true);
     setTimeout(() => setLinkCopiado(false), 1500);
   };
+
+  // Tarjeta elegida (para reflejar su sub-cuenta en la vista previa contable).
+  const tarjetaSeleccionada = tarjetas.find((t) => String(t.id) === String(tarjetaId)) || null;
 
   const progress = (secondsLeft / TOTAL_SECONDS) * 100;
   // Color del cronómetro: verde > 60s, amarillo 30-60s, rojo < 30s.
@@ -466,6 +571,10 @@ const PagoTimerDialog = ({ open, tramite, tarjetas = [], onResult }) => {
               </MenuItem>
             ))}
           </TextField>
+
+          {/* Vista previa de los asientos contables que se generarán al confirmar
+              el pago como exitoso. Solo informativo (read-only). */}
+          <AsientosContablesPreview tramite={tramite} tarjeta={tarjetaSeleccionada} />
 
           {/* Observación opcional: el usuario puede dejar vacío. */}
           <TextField
