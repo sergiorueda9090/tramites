@@ -106,10 +106,6 @@ const ENTIDAD_LABELS = {
   SOLIDARIA: 'Solidaria',
   MANUAL: 'Manual',
 };
-const ENTIDADES_POR_TIPO_VEHICULO = {
-  USADO:   ['MUNDIAL', 'PREVISORA', 'MANUAL'],
-  CERO_KM: ['PREVISORA', 'SOLIDARIA', 'MANUAL'],
-};
 const ENTIDAD_COLOR = {
   MUNDIAL:   'primary',
   PREVISORA: 'info',
@@ -120,13 +116,11 @@ const ENTIDAD_COLOR = {
 // Solo lectura por el momento: la entidad no se puede cambiar desde el listado;
 // se muestra como un Chip estático (sin Select).
 const EntidadSelectCell = ({ row }) => {
-  const opciones = ENTIDADES_POR_TIPO_VEHICULO[row.tipo_vehiculo] || [];
-  // Valor a mostrar: el del backend si pertenece al catálogo del tipo_vehiculo,
-  // o el primero (default) si no, o '' cuando el tipo_vehiculo no resuelve.
-  const value =
-    row.entidad && opciones.includes(row.entidad)
-      ? row.entidad
-      : opciones[0] || '';
+  // Columna de SOLO LECTURA: muestra la entidad REAL almacenada en el trámite.
+  // No re-derivar el valor desde `tipo_vehiculo` (eso provocaba que una entidad
+  // no incluida en el catálogo del tipo —p.ej. MUNDIAL en CERO_KM— cayera al
+  // primer elemento de la lista, mostrando siempre "Previsora").
+  const value = row.entidad || '';
 
   if (!value) {
     return <Typography variant="body2" color="text.secondary">-</Typography>;
@@ -139,7 +133,7 @@ const EntidadSelectCell = ({ row }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
       <Chip
-        label={ENTIDAD_LABELS[value] || value}
+        label={row.entidad_display || ENTIDAD_LABELS[value] || value}
         size="small"
         color={ENTIDAD_COLOR[value] || 'default'}
         variant="outlined"
@@ -509,7 +503,12 @@ const TramitesDataTable = ({
                             </IconButton>
                           </Tooltip>
                         )}
-                        {onEnviarAPasarela && (
+                        {/* Solo cuando el link de pago ya está generado (estado
+                            exitoso + URL disponible). Mientras se genera, falla o
+                            no existe, el trámite no puede enviarse a la pasarela. */}
+                        {onEnviarAPasarela
+                          && row.link_pago?.estado === 'exitoso'
+                          && row.link_pago?.url_pago && (
                           <Tooltip title="Enviar a Pasarela de Pago">
                             <IconButton size="small" onClick={() => onEnviarAPasarela(row)} color="success">
                               <PaymentIcon fontSize="small" />
